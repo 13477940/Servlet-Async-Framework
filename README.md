@@ -8,10 +8,10 @@ It's a tomcat webapp for processing asynchronous http request task simple framew
 
 # Startup
 放置檔案內容到 tomcat/webapp/testasync 之中，並進行編譯，編譯完成後，即可啟動 Tomcat。<br/>
-complier src/java after put source code file to tomcat/webapp/testasync.<br/>
-if compiler done to startup tomcat.
+complie src/java after put source code file to tomcat/webapp/testasync.<br/>
+if compile done to startup tomcat.
 
-# 編譯方式（Compiler Command）
+# 編譯方式（Compile Command）
 command mode to folder：<br/>
 <pre><code>cd tomcat/webapp/testasync/WEB-INF</code></pre>
 
