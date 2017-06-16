@@ -14,7 +14,7 @@ It's a tomcat webapp for processing asynchronous http request task simple framew
 [2] Apache Tomcat 8.5x<br/>
 [3] put "testasync" files to "tomcat/webapp/testasync" folder<br/>
 [4] tomcat/webapp/testasync/WEB-INF/lib/ -> put <a href="https://github.com/alibaba/fastjson">alibaba/fastjson</a> lib</br>
-[5] tomcat/webapp/testasync/WEB-INF/lib/ -> put JDBC lib for access database<br/>
+[5] tomcat/webapp/testasync/WEB-INF/lib/ -> put supported JDBC lib for access database<br/>
 <a href="https://www.microsoft.com/en-us/download/details.aspx?id=11774">MSSQL</a><br/>
 <a href="https://dev.mysql.com/downloads/connector/j/">MySQL</a><br/>
 <a href="https://mariadb.com/kb/en/mariadb/about-mariadb-connector-j/">MariaDB</a><br/>
