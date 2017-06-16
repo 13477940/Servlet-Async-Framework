@@ -29,8 +29,8 @@ if compile done to startup tomcat.
 command mode to folder：<br/>
 <pre><code>cd tomcat/webapp/testasync/WEB-INF</code></pre>
 
-＊Like Unix/Linux/Mac OS:<br/>
+＊For Unix/Linux/Mac OS:<br/>
 <pre><code>javac -cp ../../../lib/*:./lib/*:./classes/:. -d ./classes/. -encoding utf-8 src/*/*.java</code></pre>
 
-＊Windows OS:<br/>
+＊For Windows OS:<br/>
 <pre><code>javac -cp ../../../lib/*;./lib/*;./classes/;. -d ./classes/. -encoding utf-8 src/*/*.java</code></pre>
