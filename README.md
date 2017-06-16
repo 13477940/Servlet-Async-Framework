@@ -12,6 +12,7 @@ complier src/*/*.java after put source code file to tomcat/webapp.<br/>
 if compiler done to startup tomcat.
 
 # 編譯方式（Compiler Command）
+command mode to folder：<br/>
 <pre><code>cd tomcat/webapp/testasync/WEB-INF</code></pre>
 
 ＊Like Unix/Linux/Mac OS:<br/>
