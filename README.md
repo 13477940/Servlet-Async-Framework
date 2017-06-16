@@ -11,7 +11,7 @@ complier src/*/*.java after put source code file to tomcat/webapp.<br/>
 if compiler done to startup tomcat.
 
 # 編譯方式（Compiler Command）
-cd tomcat/webapp/testasync/WEB-INF
+<pre><code>cd tomcat/webapp/testasync/WEB-INF</code></pre>
 
 ＊Like Unix OS:<br/>
 <pre><code>javac -cp ../../../lib/*:./lib/*:./classes/:. -d ./classes/. -encoding utf-8 src/*/*.java</code></pre>
