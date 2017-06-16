@@ -2,7 +2,7 @@
 It's a tomcat webapp for processing asynchronous http request task simple framework instance.
 
 # 必備需求（Demand）
-[1] Java JDK 8+
+[1] Java JDK 8+<br/>
 [2] Apache Tomcat 8.5x
 
 # Startup
