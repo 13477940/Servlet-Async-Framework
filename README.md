@@ -6,4 +6,15 @@ It's a tomcat webapp for processing asynchronous http request task simple framew
 [2] Apache Tomcat 8.5x
 
 # Startup
-部署至 tomcat/webapp 之中，並啟動 Tomcat 即可。
+放置檔案內容到 tomcat/webapp 之中，並進行編譯，編譯完成後，即可啟動 Tomcat。
+complier src/*/*.java after put source code file to tomcat/webapp.
+if compiler done to startup tomcat.
+
+# 編譯方式（Compiler Command）
+cd tomcat/webapp/testasync/WEB-INF
+
+＊Like Unix OS:
+javac -cp ../../../lib/*:./lib/*:./classes/:. -d ./classes/. -encoding utf-8 src/*/*.java
+
+＊Windows OS:
+javac -cp ../../../lib/*;./lib/*;./classes/;. -d ./classes/. -encoding utf-8 src/*/*.java
