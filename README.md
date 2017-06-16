@@ -14,7 +14,8 @@ if compiler done to startup tomcat.
 cd tomcat/webapp/testasync/WEB-INF
 
 ＊Like Unix OS:<br/>
-javac -cp ../../../lib/*:./lib/*:./classes/:. -d ./classes/. -encoding utf-8 src/*/*.java
+<pre><code>javac -cp ../../../lib/*:./lib/*:./classes/:. -d ./classes/. -encoding utf-8 src/*/*.java</code></pre>
+
 
 ＊Windows OS:<br/>
-javac -cp ../../../lib/*;./lib/*;./classes/;. -d ./classes/. -encoding utf-8 src/*/*.java
+<pre><code>javac -cp ../../../lib/*;./lib/*;./classes/;. -d ./classes/. -encoding utf-8 src/*/*.java</code></pre>
