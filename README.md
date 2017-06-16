@@ -14,7 +14,7 @@ if compiler done to startup tomcat.
 # 編譯方式（Compiler Command）
 <pre><code>cd tomcat/webapp/testasync/WEB-INF</code></pre>
 
-＊Like Unix OS:<br/>
+＊Like Unix/Linux/Mac OS:<br/>
 <pre><code>javac -cp ../../../lib/*:./lib/*:./classes/:. -d ./classes/. -encoding utf-8 src/*/*.java</code></pre>
 
 
