@@ -33,4 +33,4 @@ command mode to folder：<br/>
 <pre><code>javac -cp ../../../lib/*:./lib/*:./classes/:. -d ./classes/. -encoding utf-8 src/*/*.java</code></pre>
 
 ＊For Windows OS:<br/>
-<pre><code>javac -cp ../../../lib/*;./lib/*;./classes/;. -d ./classes/. -encoding utf-8 src/*/*.java</code></pre>
+<pre><code>javac -cp ..\..\..\lib\*;.\lib\*;.\classes\;. -d .\classes\. -encoding utf-8 src\*\*.java</code></pre>
