@@ -12,25 +12,27 @@ It's a tomcat webapp for processing asynchronous http request task simple framew
 # 必備需求（Demand）
 [1] Java JDK 8+<br/>
 [2] Apache Tomcat 8.5x<br/>
-[3] put "testasync" files to "tomcat/webapp/testasync" folder<br/>
-[4] tomcat/webapp/testasync/WEB-INF/lib/ -> put <a href="https://github.com/alibaba/fastjson">alibaba/fastjson</a> lib</br>
-[5] tomcat/webapp/testasync/WEB-INF/lib/ -> put supported JDBC lib for access database<br/>
+[3] put "testasync" files to "tomcat/webapps/testasync" folder<br/>
+[4] tomcat/webapps/testasync/WEB-INF/lib/ -> put <a href="https://github.com/alibaba/fastjson">alibaba/fastjson</a> lib</br>
+[5] tomcat/webapps/testasync/WEB-INF/lib/ -> put supported JDBC lib for access database<br/>
 <a href="https://www.microsoft.com/en-us/download/details.aspx?id=11774">MSSQL</a><br/>
 <a href="https://dev.mysql.com/downloads/connector/j/">MySQL</a><br/>
 <a href="https://mariadb.com/kb/en/mariadb/about-mariadb-connector-j/">MariaDB</a><br/>
 <a href="https://jdbc.postgresql.org/">PostgreSQL</a>
 
 # 如何使用（Startup）
-放置檔案內容到 tomcat/webapp/testasync 之中，並進行編譯，編譯完成後，即可啟動 Tomcat。<br/>
-complie src/java after put source code file to tomcat/webapp/testasync.<br/>
+放置檔案內容到 tomcat/webapps/testasync 之中，並進行編譯，編譯完成後，即可啟動 Tomcat。<br/>
+complie src/java after put source code file to tomcat/webapps/testasync.<br/>
 if compile done to startup tomcat.
 
 # 編譯方式（Compile Command）
 command mode to folder：<br/>
-<pre><code>cd tomcat/webapp/testasync/WEB-INF</code></pre>
+<pre><code>cd tomcat/webapps/testasync/WEB-INF/</code></pre>
+or Windows:
+<pre><code>cd tomcat\webapps\testasync\WEB-INF\</code></pre>
 
 ＊For Unix/Linux/Mac OS:<br/>
-<pre><code>javac -cp ../../../lib/*:./lib/*:./classes/:. -d ./classes/. -encoding utf-8 src/*/*.java</code></pre>
+<pre><code>javac -cp ../../../lib/*:./lib/*:./classes/:. -d ./classes/. -encoding utf-8 ./src/*/*.java</code></pre>
 
 ＊For Windows OS:<br/>
-<pre><code>javac -cp ..\..\..\lib\*;.\lib\*;.\classes\;. -d .\classes\. -encoding utf-8 src\*\*.java</code></pre>
+<pre><code>javac -cp ..\..\..\lib\*;.\lib\*;.\classes\;. -d .\classes\. -encoding utf-8 .\src\*\*.java</code></pre>
