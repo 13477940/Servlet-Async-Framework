@@ -5,7 +5,7 @@ It's a tomcat webapp for processing asynchronous http request task simple framew
 ＊非同步處理每個連結至 Servlet 的 HttpRequest（AsyncHttpServlet）<br/>
 ＊可自定義擴充伺服器功能的 RequestHandler 與責任鏈模式架構（Chain Of Responsibility Pattern）<br/>
 ＊檔案上傳處理（File Upload）<br/>
-＊伺服器端檔案瀏覽及下載（File Explore&Download）<br/>
+＊伺服器端檔案瀏覽及下載（File Explore & Download）<br/>
 ＊HTTP Parameters 封裝處理，方便調用（Easy to use HTTP Parameters）<br/>
 ＊實作類似於 Android Handler 功能處理後端非同步任務（Android Handler Instance for Servlet AsyncTask）
 
@@ -25,7 +25,14 @@ It's a tomcat webapp for processing asynchronous http request task simple framew
 # 如何使用（Startup）
 放置檔案內容到 tomcat/webapps/testasync 之中，並進行編譯，編譯完成後，即可啟動 Tomcat。<br/>
 complie src/java after put source code file to tomcat/webapps/testasync.<br/>
-if compile done to startup tomcat.
+if compile done to startup tomcat.<br/>
+<br/>
+＊Index(Form-Data Request Test):
+<pre><code>http://ip:port/testasync/</code></pre>
+＊Page Request(Parameters Test):
+<pre><code>http://ip:port/testasync/service?page=test</code></pre>
+＊File Request(File Explore & Download):
+<pre><code>http://ip:port/testasync/service?file=value</code></pre>
 
 # 編譯方式（Compile Command）
 command mode to folder：<br/>
