@@ -1,7 +1,5 @@
 package framework.runnable;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
 import framework.context.AsyncActionContext;
 import framework.executor.WebAppServiceExecutor;
 import framework.setting.WebAppSettingBuilder;
@@ -12,7 +10,6 @@ import org.apache.tomcat.util.http.fileupload.servlet.ServletRequestContext;
 
 import javax.servlet.AsyncContext;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -63,6 +60,7 @@ public class AsyncContextRunnable implements Runnable {
             requestContext.setIsFileAction(true); // 具有檔案上傳請求
             requestContext.setFiles(files);
         }
+
         WebAppServiceExecutor executor = new WebAppServiceExecutor(requestContext);
         executor.startup();
     }
@@ -80,7 +78,7 @@ public class AsyncContextRunnable implements Runnable {
         requestContext.resetUploadProgress();
 
         // 上傳進度監聽處理
-        upload.setProgressListener(this::updateUploadProgressToSession);
+        // upload.setProgressListener(this::updateUploadProgressToSession);
 
         // 上傳表單列表內容處理
         List<FileItem> items;
@@ -99,25 +97,15 @@ public class AsyncContextRunnable implements Runnable {
         }
     }
 
-    // 此處實作更新上傳進度至 Session 資料中
+    // TODO 此處實作更新上傳進度至 Session 資料中，要注意此處為非執行緒安全操作
+    /*
     private void updateUploadProgressToSession(long readByte, long maxByte, int itemIndex) {
-        // TODO add progress info to session
         HttpSession session = ((HttpServletRequest) asyncContext.getRequest()).getSession();
-        String load = session.getAttribute(requestContext.getUploadProgressTag()).toString();
-
-        JSONObject obj;
-        if(null == load || "null".equals(load) || load.length() == 0) {
-            obj = new JSONObject();
-        } else {
-            obj = JSON.parseObject(load);
-        }
         double dTmp = (double) readByte / (double) maxByte;
         int percent = Double.valueOf(dTmp * 100).intValue();
         if(percent > 100) percent = 100;
-        obj.put(String.valueOf(itemIndex), percent);
-
-        session.setAttribute("upload_progress", obj.toJSONString());
     }
+    */
 
     // form-data 內容處理
     private void createFileTable(List<FileItem> items) {

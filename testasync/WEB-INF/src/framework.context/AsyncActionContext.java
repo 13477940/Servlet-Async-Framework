@@ -203,7 +203,7 @@ public class AsyncActionContext {
                 try {
                     bis.close();
                 } catch(Exception ex) {
-                    // e.printStackTrace();
+                    // ex.printStackTrace();
                 }
             }
         } catch(Exception e) {
@@ -304,6 +304,7 @@ public class AsyncActionContext {
             ins.close();
         } catch(Exception e) {
             // 唯一會出錯的機會只有使用者中斷下載過程時（不可抗拒）
+            // e.printStackTrace();
             try {
                 out.flush();
                 ins.close();
