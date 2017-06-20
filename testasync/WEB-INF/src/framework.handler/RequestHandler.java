@@ -41,7 +41,7 @@ public abstract class RequestHandler {
     /**
      * 取得下一位 Handler
      */
-    private RequestHandler getNextHandler() {
+    public RequestHandler getNextHandler() {
         return this.requestHandler;
     }
 

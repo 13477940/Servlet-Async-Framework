@@ -69,7 +69,7 @@ var testasync = {};
             fData.append("unicode_test", "中文字測試");
             fData.append("myfile", myfile);
 
-            // 具有上傳進度值的 jQuery AJAX
+            // 具有上傳進度值的 jQuery AJAX 實作
             // https://segmentfault.com/a/1190000008791342
             (function() {
                 var ajax = $.ajax({

@@ -7,12 +7,15 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.util.Properties;
 
+/**
+ * 基礎資料庫連線方式，此類別為無 Connection Pool 技術可採用時才選擇的方案
+ */
 public class SimpleDataSource extends ConnectorConfig {
 
     static {}
 
     /**
-     * 取得單一建立資料庫連線，需自行處理 Connection 關閉與回收時機
+     * 取得單一持久資料庫連線，需自行處理 Connection 關閉與回收時機
      */
     public static Connection getConnection() {
         Connection conn = null;

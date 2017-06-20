@@ -16,7 +16,7 @@ public class WebAppController extends HttpServlet {
     private ExecutorService worker; // 執行緒池
 
     public WebAppController() {
-        worker = Executors.newWorkStealingPool();
+        worker = Executors.newCachedThreadPool();
     }
 
     @Override
@@ -68,7 +68,7 @@ public class WebAppController extends HttpServlet {
     @Override
     public void destroy() {
         super.destroy();
-        worker.shutdown(); // 回收執行緒池
+        worker.shutdown();
     }
 
 }

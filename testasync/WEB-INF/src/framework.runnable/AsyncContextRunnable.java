@@ -41,6 +41,7 @@ public class AsyncContextRunnable implements Runnable {
         processRequest();
     }
 
+    // 前端請求處理起始點
     private void processRequest() {
         String contentType = String.valueOf(asyncContext.getRequest().getContentType());
         if(contentType.contains("multipart/form-data")) {
@@ -60,7 +61,6 @@ public class AsyncContextRunnable implements Runnable {
             requestContext.setIsFileAction(true); // 具有檔案上傳請求
             requestContext.setFiles(files);
         }
-
         WebAppServiceExecutor executor = new WebAppServiceExecutor(requestContext);
         executor.startup();
     }
@@ -78,7 +78,7 @@ public class AsyncContextRunnable implements Runnable {
         requestContext.resetUploadProgress();
 
         // 上傳進度監聽處理
-        // upload.setProgressListener(this::updateUploadProgressToSession);
+        // upload.setProgressListener();
 
         // 上傳表單列表內容處理
         List<FileItem> items;
@@ -92,20 +92,10 @@ public class AsyncContextRunnable implements Runnable {
             try {
                 asyncContext.complete();
             } catch (Exception ex) {
-                ex.printStackTrace();
+                // ex.printStackTrace();
             }
         }
     }
-
-    // TODO 此處實作更新上傳進度至 Session 資料中，要注意此處為非執行緒安全操作
-    /*
-    private void updateUploadProgressToSession(long readByte, long maxByte, int itemIndex) {
-        HttpSession session = ((HttpServletRequest) asyncContext.getRequest()).getSession();
-        double dTmp = (double) readByte / (double) maxByte;
-        int percent = Double.valueOf(dTmp * 100).intValue();
-        if(percent > 100) percent = 100;
-    }
-    */
 
     // form-data 內容處理
     private void createFileTable(List<FileItem> items) {

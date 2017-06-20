@@ -24,7 +24,6 @@ public class UploadHandler extends RequestHandler {
 
     @Override
     protected boolean checkIsMyJob(AsyncActionContext requestContext) {
-        // HashMap<String, String> params = requestContext.getParameters();
         return ( requestContext.getIsFileAction() );
     }
 

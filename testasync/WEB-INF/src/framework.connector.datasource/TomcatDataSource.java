@@ -20,11 +20,12 @@ public class TomcatDataSource extends ConnectorConfig {
     private static final int maxErrorCount = 50; // 最大錯誤次數，防止無窮循環
     private static long lastestErrorTime = 0; // 最近一次發生錯誤的時機點
 
-    static {
-        initDataSource();
-    }
+    static {}
 
     public static Connection getConnection() {
+        if(null == dataSource) {
+            initDataSource();
+        }
         Connection conn = null;
         try {
             conn = dataSource.getConnection();
@@ -73,7 +74,9 @@ public class TomcatDataSource extends ConnectorConfig {
      */
     public static void shutdown() {
         try {
-            dataSource.close(true);
+            if(null != dataSource) {
+                dataSource.close(true);
+            }
         } catch (Exception e) {
             // e.printStackTrace();
         }

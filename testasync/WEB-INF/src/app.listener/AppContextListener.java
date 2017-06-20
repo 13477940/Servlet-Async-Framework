@@ -12,21 +12,26 @@ import javax.servlet.ServletContextListener;
 public class AppContextListener implements ServletContextListener {
 
     /**
-     * WebApp 載入時，請於此處建立自定義 Handler 列表
+     * WebApp 啟動時
      */
     @Override
     public void contextInitialized(ServletContextEvent servletContextEvent) {
-        WebAppServicePoolBuilder.build().addHandler(new PageHandler());
-        WebAppServicePoolBuilder.build().addHandler(new FileHandler());
-        WebAppServicePoolBuilder.build().addHandler(new UploadHandler());
+        createWorkListDefine();
     }
 
     /**
-     * WebApp 結束時，可於此處回收 ConnectionPool 等等的系統資源
+     * WebApp 結束時
      */
     @Override
     public void contextDestroyed(ServletContextEvent servletContextEvent) {
         TomcatDataSource.shutdown();
+    }
+
+    // 建立責任鏈實作節點關係
+    private void createWorkListDefine() {
+        WebAppServicePoolBuilder.build().addHandler(new PageHandler());
+        WebAppServicePoolBuilder.build().addHandler(new FileHandler());
+        WebAppServicePoolBuilder.build().addHandler(new UploadHandler());
     }
 
 }
