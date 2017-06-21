@@ -22,7 +22,8 @@ import java.util.HashMap;
 /**
  * HttpRequest 通過了 Controller Servlet 後統一採用此規格作為 Request Context
  * 藉此降低重複操作原生 HttpContext 的麻煩，簡化處理複雜度及程式碼離散度，
- * 當偵測到最終沒有任何一個責任鏈的節點進行處理時，會調用 Invalid Request Handler 進行無效請求回覆
+ * 當偵測到最終沒有任何一個責任鏈的節點進行請求處理時，
+ * 會調用 Invalid Request Handler 進行無效請求回覆
  */
 public class AsyncActionContext {
 
@@ -140,14 +141,16 @@ public class AsyncActionContext {
     }
 
     /**
-     * 於此次非同步請求完全處理完畢時呼叫
+     * 於此次非同步請求處理完畢時呼叫，調用後會回傳 Response
      */
     public void complete() {
         this.asyncContext.complete();
     }
 
     /**
-     * 屬於檔案類型的 form-data 寫入硬碟中儲存實作
+     * 屬於檔案類型的 form-data 寫入硬碟中儲存實作，
+     * 如果於檔案上傳後沒有調用此方法，該檔案將會被放置在暫存資料夾中
+     * 暫存資料夾路徑：TomcatAppFiles/[WebAppName]/temp
      */
     public void writeFile(FileItem fileItem, String path, String fileName) {
         if(null == fileItem) {
@@ -155,7 +158,7 @@ public class AsyncActionContext {
             return;
         }
         if(fileItem.isFormField()) {
-            System.err.println(fileItem.getFieldName() + " 必須是實體檔案才能進行寫入檔案！");
+            System.err.println(fileItem.getFieldName() + " 是個請求參數，必須是實體二進位檔案才能進行寫入檔案的動作");
             return;
         }
         if(null == path || path.length() == 0) {
@@ -164,6 +167,7 @@ public class AsyncActionContext {
         }
         if(null == fileName || fileName.length() == 0) {
             System.err.println("必須設定一個可用的檔案名稱");
+            return;
         }
         // 寫入檔案至該資料夾中
         File file = new File(path, fileName);

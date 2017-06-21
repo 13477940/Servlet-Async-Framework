@@ -61,6 +61,7 @@ public class AsyncContextRunnable implements Runnable {
             requestContext.setIsFileAction(true); // 具有檔案上傳請求
             requestContext.setFiles(files);
         }
+        // 每個 AsyncContext 都獨立具有一個 WebAppServiceExecutor
         WebAppServiceExecutor executor = new WebAppServiceExecutor(requestContext);
         executor.startup();
     }
@@ -78,6 +79,7 @@ public class AsyncContextRunnable implements Runnable {
         requestContext.resetUploadProgress();
 
         // 上傳進度監聽處理
+        // 使用 Session 處理上傳進度值效率較差，建議由前端處理上傳進度
         // upload.setProgressListener();
 
         // 上傳表單列表內容處理

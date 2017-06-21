@@ -20,6 +20,7 @@ public class WebAppServiceExecutor {
             try {
                 handlers.get(0).startup(requestContext);
             } catch (Exception e) {
+                // 個別應用實例尚未到達 requestContext.complete() 而出錯時會進入此處
                 e.printStackTrace();
                 try {
                     JSONObject obj = new JSONObject();
@@ -33,7 +34,15 @@ public class WebAppServiceExecutor {
                 }
             }
         }
-        if(handlers.size() == 0) { requestContext.complete(); }
+        // 尚未成功建立責任鏈時
+        if(handlers.size() == 0) {
+            JSONObject obj = new JSONObject();
+            obj.put("error_code", "500");
+            obj.put("status", "server_side_service_node_is_null");
+            obj.put("msg_zht", "伺服器端尚未建立服務節點");
+            requestContext.printToResponse(obj.toJSONString());
+            requestContext.complete();
+        }
     }
 
     /**
