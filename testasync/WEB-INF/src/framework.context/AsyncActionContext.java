@@ -80,6 +80,9 @@ public class AsyncActionContext {
         return this.files;
     }
 
+    /**
+     * 取得是否具有檔案上傳請求的狀態值
+     */
     public boolean getIsFileAction() {
         return this.isFileAction;
     }

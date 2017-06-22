@@ -13,11 +13,9 @@ import java.util.concurrent.Executors;
 
 public class WebAppController extends HttpServlet {
 
-    private ExecutorService worker; // 執行緒池
+    private ExecutorService worker = null; // 執行緒池
 
-    public WebAppController() {
-        worker = Executors.newCachedThreadPool();
-    }
+    public WebAppController() { worker = Executors.newCachedThreadPool(); }
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -43,7 +41,7 @@ public class WebAppController extends HttpServlet {
                 asyncContext = req.startAsync();
                 canAsync = true;
             } else {
-                System.err.println("Servlet 或 Fileter 等尚未全部開啟非同步支援");
+                System.err.println("Servlet 或 Fileter 等尚未全部開啟非同步支援(async-supported)");
             }
         }
         // 藉由執行緒池接手後續任務，確保 Tomcat 端執行緒可以持續的接收請求
@@ -68,7 +66,7 @@ public class WebAppController extends HttpServlet {
     @Override
     public void destroy() {
         super.destroy();
-        worker.shutdown();
+        if(null != worker) worker.shutdown();
     }
 
 }

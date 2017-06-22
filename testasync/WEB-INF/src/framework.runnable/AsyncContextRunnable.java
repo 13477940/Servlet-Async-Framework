@@ -61,7 +61,7 @@ public class AsyncContextRunnable implements Runnable {
             requestContext.setIsFileAction(true); // 具有檔案上傳請求
             requestContext.setFiles(files);
         }
-        // 每個 AsyncContext 都獨立具有一個 WebAppServiceExecutor
+        // 每個 WebAppServiceExecutor 獨立處理完一個 AsyncActionContext 的 Task 內容
         WebAppServiceExecutor executor = new WebAppServiceExecutor(requestContext);
         executor.startup();
     }
