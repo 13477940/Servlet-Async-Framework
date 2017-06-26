@@ -14,6 +14,7 @@ It's a tomcat webapp for processing asynchronous http request task simple framew
 [2] Apache Tomcat 8.5x<br/>
 [3] put "testasync" files to "tomcat/webapps/testasync" folder<br/>
 [4] tomcat/webapps/testasync/WEB-INF/lib/ -> put <a href="https://github.com/alibaba/fastjson">alibaba/fastjson</a> lib</br>
+[5] tomcat/webapps/testasync/WEB-INF/lib/ -> put <a href="https://github.com/brettwooldridge/HikariCP">brettwooldridge/HikariCP</a> lib</br>
 
 # 選配套件（Optional）
 [1] tomcat/webapps/testasync/WEB-INF/lib/ -> put supported JDBC lib for access database<br/>
