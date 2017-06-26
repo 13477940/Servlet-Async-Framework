@@ -17,17 +17,17 @@ import java.sql.ResultSetMetaData;
 
 public abstract class QueryWorker {
 
-    private QueryService qs = null;
+    private QueryService queryService = null;
 
-    public QueryWorker() { qs = new QueryService(); }
+    public QueryWorker() { queryService = new QueryService(); }
 
     /**
      * 預設的查詢語句結果會存放於記憶體之中，此為無參數帶入的 SQL 指令查詢指令
      */
     protected DataTable simpleQuery(String sql) {
-        SQLContext sqx = qs.getSQLContext(sql);
-        DataTable dt = qs.executeQuery(sqx);
-        qs.close(sqx);
+        SQLContext sqx = queryService.getSQLContext(sql);
+        DataTable dt = queryService.executeQuery(sqx);
+        queryService.close(sqx);
         return dt;
     }
 

@@ -34,7 +34,7 @@ public class RecordService extends DataService {
      * 像是對同一張表新增、修改、刪除幾千筆資料，
      * 使用時在 PreparedStatement 中必須先使用 addBatch 加入該次所有請求。
      */
-    public DataTable executeRecordTable(SQLContext sqx) {
+    public DataTable executeRecordBatch(SQLContext sqx) {
         PreparedStatement pst = sqx.getPreparedStatement();
         DataTable dt = new DataTable();
         try {
