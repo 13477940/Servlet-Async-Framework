@@ -1,5 +1,7 @@
 package framework.servlet;
 
+import framework.connector.datasource.HikariCPDataSource;
+import framework.connector.datasource.TomcatDataSource;
 import framework.runnable.AsyncContextRunnable;
 
 import javax.servlet.AsyncContext;
@@ -8,6 +10,9 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.sql.Driver;
+import java.sql.DriverManager;
+import java.util.Enumeration;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -63,10 +68,26 @@ public class WebAppController extends HttpServlet {
         }
     }
 
+    /**
+     * 由於 Servlet 在 WebApp 中屬於單一實例多執行緒，
+     * 所以當 Servlet 被回收時，亦代表整個 WebApp 即將關閉
+     * 可由此處封裝不需經過使用者操作的資源回收指令
+     */
     @Override
     public void destroy() {
         super.destroy();
-        if(null != worker) worker.shutdown();
+        if(null != worker) worker.shutdown(); // 回收請求處理執行緒池
+        TomcatDataSource.shutdown(); // 回收資料庫連接池
+        HikariCPDataSource.shutdown();
+        Enumeration<Driver> drivers = DriverManager.getDrivers();
+        while(drivers.hasMoreElements()) {
+            Driver driver = drivers.nextElement();
+            try {
+                DriverManager.deregisterDriver(driver);
+            } catch (Exception e) {
+                // e.printStackTrace();
+            }
+        }
     }
 
 }

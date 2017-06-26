@@ -29,7 +29,7 @@ public class PageHandler extends RequestHandler {
 
     private void processRequest() {
         JSONObject obj = new JSONObject();
-        obj.put("url", requestContext.getHttpRequest().getRequestURL());
+        obj.put("url", requestContext.getHttpRequest().getRequestURL().toString());
         obj.put("status", "page_request");
         obj.put("value", String.valueOf(requestContext.getParameters()));
         requestContext.printToResponse(obj.toJSONString());

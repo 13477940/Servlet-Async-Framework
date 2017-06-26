@@ -17,8 +17,7 @@
     </servlet>
     <servlet-mapping>
         <servlet-name>testAsync</servlet-name>
-        <url-pattern>/service</url-pattern>
-        <!-- <url-pattern>/index</url-pattern> -->
+        <url-pattern>/index</url-pattern>
         <!-- <url-pattern>/</url-pattern> -->
     </servlet-mapping>
 

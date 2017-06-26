@@ -14,7 +14,7 @@ import java.util.Properties;
  */
 public class TomcatDataSource extends ConnectorConfig {
 
-    private static DataSource dataSource = null;
+    private static DataSource dataSource = null; // 採用自己的 DataSource 實例為型態
 
     private static int errorCount = 0; // 累計錯誤次數
     private static final int maxErrorCount = 50; // 最大錯誤次數，防止無窮循環
@@ -82,6 +82,7 @@ public class TomcatDataSource extends ConnectorConfig {
         }
     }
 
+    // 初始化資料庫連接池
     private static void initDataSource() {
         Properties prop = WebAppSettingBuilder.build().getWebAppProperties();
         String connectURI = getConnectURI(prop.getProperty("DB_Type"), prop.getProperty("DB_IP"), prop.getProperty("DB_Port"), prop.getProperty("DB_Name"));
