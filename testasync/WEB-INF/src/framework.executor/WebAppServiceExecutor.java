@@ -55,23 +55,22 @@ public class WebAppServiceExecutor {
         ArrayList<RequestHandler> handlers = WebAppServicePoolBuilder.build().prototype(); // 物件範本
         ArrayList<RequestHandler> runHandlers = new ArrayList<>();
         // 建立新實例
-        for (RequestHandler handler_raw : handlers) {
+        for (RequestHandler rawHandler : handlers) {
             try {
-                RequestHandler handler = handler_raw.getClass().newInstance();
-                runHandlers.add(handler);
+                RequestHandler newHandler = rawHandler.getClass().newInstance();
+                runHandlers.add(newHandler);
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
         // 重新設定新實例的責任鏈關係
+        int step = 0;
         if(runHandlers.size() > 0) {
-            for(int i = 0, len = runHandlers.size(); i < len; i++) {
-                RequestHandler handler = handlers.get(i);
-                if(null == handler.getNextHandler()) {
-                    if (i < (len - 1)) {
-                        RequestHandler nextHandler = handlers.get(i + 1);
-                        handler.setNextHandler(nextHandler);
-                    }
+            for (RequestHandler handler : runHandlers) {
+                if (step < (runHandlers.size() - 1)) {
+                    RequestHandler nextHandler = runHandlers.get(step + 1);
+                    handler.setNextHandler(nextHandler);
+                    step++;
                 }
             }
         }

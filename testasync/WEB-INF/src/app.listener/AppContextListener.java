@@ -3,6 +3,7 @@ package app.listener;
 import app.handler.FileHandler;
 import app.handler.PageHandler;
 import app.handler.UploadHandler;
+import framework.executor.WebAppServicePool;
 import framework.executor.WebAppServicePoolBuilder;
 
 import javax.servlet.ServletContextEvent;
@@ -26,9 +27,10 @@ public class AppContextListener implements ServletContextListener {
 
     // 建立責任鏈實作節點關係
     private void createWorkListDefine() {
-        WebAppServicePoolBuilder.build().addHandler(new PageHandler());
-        WebAppServicePoolBuilder.build().addHandler(new FileHandler());
-        WebAppServicePoolBuilder.build().addHandler(new UploadHandler());
+        WebAppServicePool servicePool = WebAppServicePoolBuilder.build();
+        servicePool.addHandler(new PageHandler());
+        servicePool.addHandler(new FileHandler());
+        servicePool.addHandler(new UploadHandler());
     }
 
 }

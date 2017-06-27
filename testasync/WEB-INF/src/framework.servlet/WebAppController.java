@@ -78,7 +78,12 @@ public class WebAppController extends HttpServlet {
         super.destroy();
         if(null != worker) worker.shutdown(); // 回收請求處理執行緒池
         TomcatDataSource.shutdown(); // 回收資料庫連接池
-        HikariCPDataSource.shutdown();
+        HikariCPDataSource.shutdown(); // 回收資料庫連接池
+        unRegAppDrivers();
+    }
+
+    // 釋放 WebApp 用到的 Driver Class 資源
+    private void unRegAppDrivers() {
         Enumeration<Driver> drivers = DriverManager.getDrivers();
         while(drivers.hasMoreElements()) {
             Driver driver = drivers.nextElement();
