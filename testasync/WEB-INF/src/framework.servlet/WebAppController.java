@@ -1,6 +1,7 @@
 package framework.servlet;
 
 import framework.connector.datasource.HikariCPDataSource;
+import framework.connector.datasource.SimpleDataSource;
 import framework.connector.datasource.TomcatDataSource;
 import framework.runnable.AsyncContextRunnable;
 
@@ -77,6 +78,7 @@ public class WebAppController extends HttpServlet {
     public void destroy() {
         super.destroy();
         if(null != worker) worker.shutdown(); // 回收請求處理執行緒池
+        SimpleDataSource.shutdown();
         TomcatDataSource.shutdown(); // 回收資料庫連接池
         HikariCPDataSource.shutdown(); // 回收資料庫連接池
         unRegAppDrivers();
