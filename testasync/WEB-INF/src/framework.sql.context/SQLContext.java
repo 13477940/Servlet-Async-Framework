@@ -1,5 +1,6 @@
 package framework.sql.context;
 
+import framework.hash.HashBuilder;
 import framework.random.RandomBuilder;
 
 import java.sql.Connection;
@@ -13,7 +14,7 @@ public class SQLContext {
     private String ssid = null;
 
     public SQLContext(Connection conn, PreparedStatement pst, String sql) {
-        this.ssid = RandomBuilder.build().getTimeHashToSHA1();
+        this.ssid = HashBuilder.build().stringToSHA1(RandomBuilder.build().getTimeHash());
         this.conn = conn;
         this.pst = pst;
         this.sql = sql;

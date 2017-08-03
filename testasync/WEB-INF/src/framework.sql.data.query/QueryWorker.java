@@ -1,6 +1,7 @@
 package framework.sql.data.query;
 
 import com.alibaba.fastjson.JSONObject;
+import framework.hash.HashBuilder;
 import framework.observer.Bundle;
 import framework.observer.Handler;
 import framework.observer.Message;
@@ -55,7 +56,7 @@ public abstract class QueryWorker {
     // 於硬碟上儲存 ResultSet 實作
     private File onDiskQueryFn(ResultSet rs, String arrayKey) {
         String tempDir = WebAppSettingBuilder.build().getPathContext().getTempDirPath();
-        String fName = RandomBuilder.build().getTimeHashToSHA1();
+        String fName = HashBuilder.build().stringToSHA1(RandomBuilder.build().getTimeHash());
         File file = new File(tempDir + fName + ".json");
         { // 建立 TextFileWriter 進行暫存文檔寫入
             TextFileWriter writer = new TextFileWriter(file);
