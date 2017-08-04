@@ -58,7 +58,7 @@ public abstract class ConnectorConfig {
                 sbd.append(port);
                 sbd.append("/");
                 sbd.append(dbName);
-                sbd.append("?useUnicode=true&CharacterEncoding=utf8mb4");
+                sbd.append("?useSSL=false&useUnicode=true&CharacterEncoding=utf8mb4");
                 break;
             case "mariadb":
                 sbd.append("jdbc:mariadb://");

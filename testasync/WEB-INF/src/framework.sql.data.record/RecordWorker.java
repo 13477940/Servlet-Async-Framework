@@ -14,6 +14,14 @@ public abstract class RecordWorker {
     public RecordWorker() { recordService = new RecordService(); }
 
     /**
+     * 一般來說 SQLContext 需要藉由 RecordService 產生
+     * 每個 RecordWorker 本身於初始化時會具備一個 RecordService
+     */
+    protected RecordService getRecordService() {
+        return recordService;
+    }
+
+    /**
      * 執行 INSERT, UPDATE, DELETE 語法
      */
     protected ArrayList<Integer> executeRecord(SQLContext sqx) {

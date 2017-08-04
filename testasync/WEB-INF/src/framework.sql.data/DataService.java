@@ -4,7 +4,6 @@ import framework.connector.datasource.TomcatDataSource;
 import framework.setting.WebAppSettingBuilder;
 import framework.sql.context.SQLContext;
 
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.util.HashMap;
@@ -55,7 +54,15 @@ public abstract class DataService {
         // 連線狀態封裝
         SQLContext sqx = null;
         try {
-            Connection conn = TomcatDataSource.getConnection();
+            /*
+             * TODO 如果要更改資料庫 Connection 取得方式，藉由此處即可
+             */
+            Connection conn = null;
+            {
+                // conn = SimpleDataSource.getConnection();
+                // conn = HikariCPDataSource.getConnection();
+                conn = TomcatDataSource.getConnection();
+            }
             PreparedStatement pst = conn.prepareStatement(tmp.toString());
             sqx = new SQLContext(conn, pst, sql);
             commandPool.put(sqx.getSSID(), sqx);

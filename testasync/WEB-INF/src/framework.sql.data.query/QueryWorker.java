@@ -23,6 +23,14 @@ public abstract class QueryWorker {
     public QueryWorker() { queryService = new QueryService(); }
 
     /**
+     * 一般來說 SQLContext 需要藉由 QueryService 產生
+     * 每個 QueryWorker 本身於初始化時會具備一個 QueryService
+     */
+    protected QueryService getQueryService() {
+        return queryService;
+    }
+
+    /**
      * 預設的查詢語句結果會存放於記憶體之中，此為無參數帶入的 SQL 指令查詢指令
      */
     protected DataTable simpleQuery(String sql) {
