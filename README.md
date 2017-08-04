@@ -46,3 +46,22 @@ or Windows:
 
 ＊For Windows OS:<br/>
 <pre><code>javac -cp ..\..\..\lib\*;.\lib\*;.\classes\;. -d .\classes\. -encoding utf-8 .\src\*\*.java</code></pre>
+
+# Database Functions Example
+＊For "Read(Select or Query)" Database Table:<br/>
+<pre><code>public class MyDatabaseQuery extends QueryWorker {
+    public DataTable queryTable() {
+        String sql = "SELECT * FROM MyDbTable;";
+        return simpleQuery(sql);
+    }
+}</code></pre>
+
+＊For "Create/Update/Delete" Database Table:<br/>
+<pre><code>public class MyDatabaseRecord extends RecordWorker {
+    public DataTable recordTable() {
+        String sql = "INSERT INTO MyTable VALUES(...);";
+        SQLContext sqx = getRecordService().getSQLContext(sql);
+        DataTable dt = getRecordService().executeRecord(sqx);
+        return dt;
+    }
+}</code></pre>
