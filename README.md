@@ -13,7 +13,7 @@ It's a tomcat webapp for processing asynchronous http request task simple framew
 [1] Java JDK 8+<br/>
 [2] Apache Tomcat 8.5x<br/>
 [3] put "testasync" files to "tomcat/webapps/testasync" folder<br/>
-[4] tomcat/webapps/testasync/WEB-INF/lib/ -> put <a href="https://github.com/alibaba/fastjson">alibaba/fastjson</a> lib</br>
+<!-- [4] tomcat/webapps/testasync/WEB-INF/lib/ -> put <a href="https://github.com/alibaba/fastjson">alibaba/fastjson</a> lib -->
 
 # 選配套件（Optional）
 <a href="https://stackoverflow.com/questions/6981564/why-must-the-jdbc-driver-be-put-in-tomcat-home-lib-folder/7198049#7198049">Why must the JDBC driver be put in TOMCAT_HOME/lib folder?</a><br/>
