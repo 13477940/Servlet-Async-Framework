@@ -51,12 +51,6 @@ public abstract class DataService {
                 }
             }
         }
-        // MySQL 連線設定語法（MySQL 架構一律採用 utf8mb4 確保最高的字集相容度）
-        {
-            if("mysql".equals(dbType)) {
-                preFix.append("SET names utf8mb4;");
-            }
-        }
         // 補上此次請求的 SQL 語法
         preFix.append(sql);
         // 連線狀態封裝
