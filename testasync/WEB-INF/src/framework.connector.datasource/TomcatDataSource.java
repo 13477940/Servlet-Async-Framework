@@ -105,7 +105,7 @@ public class TomcatDataSource extends ConnectorConfig {
         poolConfig.setMinIdle(10); // 最小預備連接數量，與 InitialSize 相同即可（整數）
         poolConfig.setMaxWait(20000); // 連接池滿載時等候時間限制（ms）
         poolConfig.setTimeBetweenEvictionRunsMillis(10000); // 檢查空閑或廢棄的連接頻率（ms），不可小於 1 秒
-        poolConfig.setMinEvictableIdleTimeMillis(60000); // 空閒連接在池中保留最短的時間（ms）
+        poolConfig.setMinEvictableIdleTimeMillis(20000); // 空閒連接在池中保留最短的時間（ms）
 
         // 測試連接是否持續為可使用的
         poolConfig.setTestWhileIdle(true); // 空閒時週期性驗證連接
@@ -113,7 +113,7 @@ public class TomcatDataSource extends ConnectorConfig {
         poolConfig.setTestOnReturn(false); // 連接回收時是否執行驗證
         poolConfig.setValidationQuery("SELECT 1;"); // 驗證連接 SQL 語法
         poolConfig.setValidationQueryTimeout(10); // 單位為秒數，零或負值表示無限大（second）
-        poolConfig.setValidationInterval(60000); // 驗證連接指令頻率，過度密集會造成資源都花在驗證上面（ms）
+        poolConfig.setValidationInterval(20000); // 驗證連接指令頻率，過度密集會造成資源都花在驗證上面（ms）
 
         poolConfig.setRemoveAbandoned(true); // 連接時間大於 RemoveAbandonedTimeout 是否當作可廢棄的連接
         poolConfig.setRemoveAbandonedTimeout(600); // 應該設定成資料庫最長操作的時間限制（second）

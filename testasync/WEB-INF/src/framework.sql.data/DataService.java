@@ -38,19 +38,27 @@ public abstract class DataService {
         // 取得現在存取的資料庫類型
         String dbType = WebAppSettingBuilder.build().getWebAppProperties().getProperty("DB_Type").toLowerCase();
         // 加工 SQL 字串語法為前端用途
-        StringBuilder tmp = new StringBuilder();
+        StringBuilder preFix = new StringBuilder();
         // MSSQL 才有支援 SET NOCOUNT 語法
-        if(dbType.equals("mssql")) {
-            if(NOCOUNT) {
-                // 回傳時除去影響筆數資訊
-                tmp.append("SET NOCOUNT ON;");
-            } else {
-                // 回傳時附帶被影響的筆數資訊
-                tmp.append("SET NOCOUNT OFF;");
+        {
+            if("mssql".equals(dbType)) {
+                if (NOCOUNT) {
+                    // 回傳時除去影響筆數資訊
+                    preFix.append("SET NOCOUNT ON;");
+                } else {
+                    // 回傳時附帶被影響的筆數資訊
+                    preFix.append("SET NOCOUNT OFF;");
+                }
+            }
+        }
+        // MySQL 連線設定語法（MySQL 架構一律採用 utf8mb4 確保最高的字集相容度）
+        {
+            if("mysql".equals(dbType)) {
+                preFix.append("SET names utf8mb4;");
             }
         }
         // 補上此次請求的 SQL 語法
-        tmp.append(sql);
+        preFix.append(sql);
         // 連線狀態封裝
         SQLContext sqx = null;
         try {
@@ -63,7 +71,7 @@ public abstract class DataService {
                 // conn = HikariCPDataSource.getConnection();
                 conn = TomcatDataSource.getConnection();
             }
-            PreparedStatement pst = conn.prepareStatement(tmp.toString());
+            PreparedStatement pst = conn.prepareStatement(preFix.toString());
             sqx = new SQLContext(conn, pst, sql);
             commandPool.put(sqx.getSSID(), sqx);
         } catch(Exception e) {
