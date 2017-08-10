@@ -52,7 +52,8 @@ or Windows:
 <pre><code>public class MyDatabaseQuery extends QueryWorker {
     public DataTable queryTable() {
         String sql = "SELECT * FROM MyDbTable;";
-        return simpleQuery(sql);
+        DataTable res = simpleQuery(sql);
+        return res;
     }
 }</code></pre>
 
@@ -61,7 +62,7 @@ or Windows:
     public DataTable recordTable() {
         String sql = "INSERT INTO MyTable VALUES(...);";
         SQLContext sqx = getRecordService().getSQLContext(sql);
-        DataTable dt = getRecordService().executeRecord(sqx);
-        return dt;
+        DataTable res = getRecordService().executeRecord(sqx);
+        return res;
     }
 }</code></pre>
