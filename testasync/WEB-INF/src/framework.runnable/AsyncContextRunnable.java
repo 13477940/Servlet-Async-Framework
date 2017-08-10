@@ -2,6 +2,9 @@ package framework.runnable;
 
 import framework.context.AsyncActionContext;
 import framework.executor.WebAppServiceExecutor;
+import framework.session.context.UserContext;
+import framework.session.pattern.UserMap;
+import framework.session.service.SessionBuilder;
 import framework.setting.WebAppSettingBuilder;
 import org.apache.tomcat.util.http.fileupload.FileItem;
 import org.apache.tomcat.util.http.fileupload.disk.DiskFileItemFactory;
@@ -10,6 +13,7 @@ import org.apache.tomcat.util.http.fileupload.servlet.ServletRequestContext;
 
 import javax.servlet.AsyncContext;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -34,6 +38,7 @@ public class AsyncContextRunnable implements Runnable {
     public AsyncContextRunnable(AsyncContext asyncContext) {
         this.asyncContext = asyncContext;
         this.requestContext = new AsyncActionContext(asyncContext);
+        checkSessionLoginInfo(requestContext.getHttpSession());
     }
 
     @Override
@@ -67,6 +72,7 @@ public class AsyncContextRunnable implements Runnable {
     }
 
     // 採用檔案處理方式解析 form-data 資料內容
+    // 由於使用 Session 處理上傳進度值效率較差，建議由前端處理上傳進度即可
     private void parseFormData() {
         // 上傳設定初始化
         File tempFile = new File(WebAppSettingBuilder.build().getPathContext().getTempDirPath());
@@ -74,13 +80,6 @@ public class AsyncContextRunnable implements Runnable {
         dfac.setSizeThreshold(4096);
         dfac.setRepository(tempFile);
         ServletFileUpload upload = new ServletFileUpload(dfac);
-
-        // 直到碰到下一個檔案處理才重置 progress 訊息內容
-        requestContext.resetUploadProgress();
-
-        // 上傳進度監聽處理
-        // 使用 Session 處理上傳進度值效率較差，建議由前端處理上傳進度
-        // upload.setProgressListener();
 
         // 上傳表單列表內容處理
         List<FileItem> items;
@@ -182,6 +181,23 @@ public class AsyncContextRunnable implements Runnable {
             }
         }
         webAppStartup(params, null);
+    }
+
+    // 檢查使用者登入資訊是否已存在於 Session
+    private void checkSessionLoginInfo(HttpSession session) {
+        try {
+            UserMap map = SessionBuilder.build().getUserMap();
+            if (null != map) {
+                if(map.prototype().containsKey(session.getId())) return;
+                UserContext userContext = SessionBuilder.build().getUserContext(session);
+                if (null != userContext) {
+                    SessionBuilder.build().setUserContext(session, userContext);
+                    SessionBuilder.build().addUser(session.getId(), userContext);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
 }
