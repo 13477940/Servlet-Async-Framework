@@ -67,7 +67,7 @@ or Windows:
     }
 }</code></pre>
 
-＊if need with further operating, can get PreparedStatement from SQLContext
+＊if need with further operation, can get PreparedStatement from SQLContext
 <pre><code>String sql = "...";
 SQLContext sqx = getQueryService().getSQLContext(sql); // for Read
 try {
