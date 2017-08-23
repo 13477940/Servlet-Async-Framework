@@ -51,7 +51,7 @@ or Windows:
 ＊For "Read(Select or Query)" Database Table:<br/>
 <pre><code>public class MyDatabaseQuery extends QueryWorker {
     public DataTable queryTable() {
-        String sql = "SELECT * FROM MyDbTable;";
+        String sql = "SELECT * FROM MyDBTable;";
         DataTable res = simpleQuery(sql);
         return res;
     }
@@ -60,9 +60,27 @@ or Windows:
 ＊For "Create/Update/Delete" Database Table:<br/>
 <pre><code>public class MyDatabaseRecord extends RecordWorker {
     public DataTable recordTable() {
-        String sql = "INSERT INTO MyTable VALUES(...);";
+        String sql = "INSERT INTO MyDBTable VALUES(...);";
         SQLContext sqx = getRecordService().getSQLContext(sql);
         DataTable res = getRecordService().executeRecord(sqx);
         return res;
     }
 }</code></pre>
+
+＊if need with further operating, can get PreparedStatement from SQLContext
+<pre><code>String sql = "...";
+SQLContext sqx = getQueryService().getSQLContext(sql); // for Read
+try {
+    PreparedStatement ps = sqx.getPreparedStatement();
+} catch (Exception e) {
+    e.printStackTrace();
+}
+</code></pre>
+<pre><code>String sql = "...";
+SQLContext sqx = getRecordService().getSQLContext(sql); // for CUD
+try {
+    PreparedStatement ps = sqx.getPreparedStatement();
+} catch (Exception e) {
+    e.printStackTrace();
+}
+</code></pre>
