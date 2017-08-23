@@ -1,6 +1,5 @@
 package framework.context;
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import framework.observer.Handler;
 import framework.observer.Message;
@@ -35,8 +34,6 @@ public class AsyncActionContext {
     private ArrayList<FileItem> files; // 需要被操作的檔案（已不包含文字表單內容）
 
     private Handler handler; // for invalid runnable
-
-    private final String uploadProgressTag = "upload_progress"; // for Session
 
     /**
      * 初始化 RequestContext
@@ -116,34 +113,6 @@ public class AsyncActionContext {
     }
 
     /**
-     * 重置 Session 中的上傳進度值內容
-     */
-    public void resetUploadProgress() {
-        httpSession.setAttribute(this.uploadProgressTag, "");
-    }
-
-    /**
-     * 取得上傳進度值於 Session 中的 Key，與自定義名詞衝突時方便統一修改
-     */
-    public String getUploadProgressTag() {
-        return this.uploadProgressTag;
-    }
-
-    /**
-     * 取得 Session 中記錄的上傳進度值
-     */
-    public JSONObject getUploadProgress() {
-        String load = httpSession.getAttribute(this.uploadProgressTag).toString();
-        JSONObject obj;
-        if(null == load || "null".equals(load) || load.length() == 0) {
-            obj = new JSONObject();
-        } else {
-            obj = JSON.parseObject(load);
-        }
-        return obj;
-    }
-
-    /**
      * 於此次非同步請求處理完畢時呼叫，調用後會回傳 Response
      */
     public void complete() {
@@ -219,7 +188,8 @@ public class AsyncActionContext {
     }
 
     /**
-     * 輸出檔案至瀏覽器端，isAttachment 影響到瀏覽器是否能預覽（true 時會被當作一般檔案來下載）
+     * 輸出檔案至瀏覽器端；
+     * isAttachment 影響到瀏覽器是否能預覽（true 時會被當作一般檔案來下載）
      */
     public void outputFileToResponse(String path, String fileName, String mimeType, boolean isAttachment) {
         if(null == path) {

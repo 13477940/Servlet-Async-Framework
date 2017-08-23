@@ -58,6 +58,7 @@ public abstract class ConnectorConfig {
                 sbd.append(port);
                 sbd.append("/");
                 sbd.append(dbName);
+                // MySQL 體系要採用 utf8mb4 才能正常支援所有字集
                 sbd.append("?useSSL=false&useUnicode=true&CharacterEncoding=utf8mb4");
                 break;
             case "mariadb":

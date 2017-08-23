@@ -52,7 +52,7 @@ public class HikariCPDataSource extends ConnectorConfig {
                     } else {
                         // 未超過指定時間，但錯誤計數器已到達最大數目時（可能為無法修復的情況時）
                         if(errorCount >= maxErrorCount) {
-                            System.err.println("Connection Pool 短時間內嚴重錯誤次數過多，已介入防止無窮初始化，請檢查程式碼或是資料庫關閉連結的時間配置。");
+                            System.err.println("Connection Pool 短時間內嚴重錯誤次數過多，已介入防止無窮初始化，請檢查資料庫操作程式碼中是否具有尚未正確關閉連結的部分。");
                             return null;
                         } else {
                             // 未超過指定時間，且錯誤次數未超過時

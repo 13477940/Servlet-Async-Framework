@@ -37,11 +37,13 @@ public class SessionService {
     }
 
     public void setUserContext(HttpSession session, UserContext userContext) {
+        if(null == userContext) return;
         session.setAttribute(userContextTag, userContext.getJSONObject().toJSONString());
     }
 
     public UserContext getUserContext(HttpSession session) {
-        String tmp = String.valueOf(session.getAttribute(userContextTag));
+        if(null == session.getAttribute(userContextTag)) return null;
+        String tmp = session.getAttribute(userContextTag).toString();
         if(null == tmp || tmp.length() == 0) return null;
         JSONObject obj = JSON.parseObject(tmp);
         return new UserContext(session, obj);

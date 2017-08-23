@@ -76,6 +76,7 @@ public class WebAppSetting {
         File fExport = new File(wapc.getExportDirPath());
         File fLog = new File(wapc.getLogDirPath());
 
+        // 如果不具有資料夾時則建立
         try {
             if(!fTemp.exists()) fTemp.mkdirs();
             if(!fUpload.exists()) fUpload.mkdirs();

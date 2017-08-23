@@ -69,9 +69,6 @@ public class SimpleDataSource extends ConnectorConfig {
         runTag = false;
         pool.clear();
         worker.shutdown();
-
-        pool = null;
-        worker = null;
     }
 
     public static void setMaxActiveSecond(int second) {

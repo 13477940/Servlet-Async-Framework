@@ -50,7 +50,7 @@ public class TomcatDataSource extends ConnectorConfig {
                     } else {
                         // 未超過指定時間，但錯誤計數器已到達最大數目時（可能為無法修復的情況時）
                         if(errorCount >= maxErrorCount) {
-                            System.err.println("Connection Pool 短時間內嚴重錯誤次數過多，已介入防止無窮初始化，請檢查程式碼或是資料庫關閉連結的時間配置。");
+                            System.err.println("Connection Pool 短時間內嚴重錯誤次數過多，已介入防止無窮初始化，請檢查資料庫操作程式碼中是否具有尚未正確關閉連結的部分。");
                             return null;
                         } else {
                             // 未超過指定時間，且錯誤次數未超過時
@@ -98,7 +98,7 @@ public class TomcatDataSource extends ConnectorConfig {
         // 連接池限制設定
         poolConfig.setDefaultAutoCommit(true);
         poolConfig.setDefaultReadOnly(false);
-        poolConfig.setMaxAge(0); // 連接保持時間（ms），預設為 0 表示始終為開放連接狀態
+        poolConfig.setMaxAge(0); // 連接保持時間（ms），預設為 0 表示該連結始終為連接中的狀態
         poolConfig.setMaxActive(128); // 預備連接數最大數量（整數）
         poolConfig.setMaxIdle(128); // 最大預備連接數量，不大於 MaxActive（整數）
         poolConfig.setInitialSize(10); // 初始連接池大小（整數）
@@ -120,7 +120,7 @@ public class TomcatDataSource extends ConnectorConfig {
         poolConfig.setLogAbandoned(false); // 如果逐筆記錄連接消滅的訊息會造成資源浪費
 
         String sbd = "org.apache.tomcat.jdbc.pool.interceptor.ConnectionState;" +
-                "org.apache.tomcat.jdbc.pool.interceptor.StatementFinalizer";
+                     "org.apache.tomcat.jdbc.pool.interceptor.StatementFinalizer";
         poolConfig.setJdbcInterceptors(sbd);
         dataSource = new DataSource();
         dataSource.setPoolProperties(poolConfig);
