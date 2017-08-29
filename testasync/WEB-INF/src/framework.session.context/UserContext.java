@@ -3,6 +3,7 @@ package framework.session.context;
 import com.alibaba.fastjson.JSONObject;
 import framework.context.AsyncActionContext;
 import framework.time.TimeBuilder;
+import framework.time.pattern.TimeContext;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -112,8 +113,9 @@ public class UserContext {
 
     // 記錄建立時間點
     private void getCreateDT() {
-        this.createDate = TimeBuilder.build().getDate();
-        this.createTime = TimeBuilder.build().getTime();
+        TimeContext timeContext = TimeBuilder.build().getTimeContext();
+        this.createDate = timeContext.getDate();
+        this.createTime = timeContext.getTime();
     }
 
     // 由 REQUEST 判斷遠端 IP
