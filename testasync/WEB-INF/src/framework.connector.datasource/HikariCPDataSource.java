@@ -36,18 +36,12 @@ public class HikariCPDataSource extends ConnectorConfig {
                 long currentErrorTime = System.currentTimeMillis();
                 // 開啟伺服器後第一次發生時
                 if(lastestErrorTime == 0) {
-                    shutdown();
-                    initDataSource();
-                    lastestErrorTime = System.currentTimeMillis();
-                    errorCount++;
+                    resetDataSource(false);
                     return getConnection();
                 } else {
                     // 超過指定時間未重置時，執行重置計數器流程
                     if(currentErrorTime - lastestErrorTime > 3600000) {
-                        shutdown();
-                        initDataSource();
-                        lastestErrorTime = System.currentTimeMillis();
-                        errorCount = 0;
+                        resetDataSource(true);
                         return getConnection();
                     } else {
                         // 未超過指定時間，但錯誤計數器已到達最大數目時（可能為無法修復的情況時）
@@ -56,10 +50,7 @@ public class HikariCPDataSource extends ConnectorConfig {
                             return null;
                         } else {
                             // 未超過指定時間，且錯誤次數未超過時
-                            shutdown();
-                            initDataSource();
-                            lastestErrorTime = System.currentTimeMillis();
-                            errorCount++;
+                            resetDataSource(false);
                             return getConnection();
                         }
                     }
@@ -83,6 +74,18 @@ public class HikariCPDataSource extends ConnectorConfig {
             }
         } catch (Exception e) {
             // e.printStackTrace();
+        }
+    }
+
+    // 重新建立資料庫連接池
+    private static void resetDataSource(boolean timerReset) {
+        shutdown();
+        initDataSource();
+        lastestErrorTime = System.currentTimeMillis();
+        if(timerReset) {
+            errorCount = 0;
+        } else {
+            errorCount++;
         }
     }
 

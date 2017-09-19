@@ -59,8 +59,9 @@ public class UserContext {
      * 從 Session 取出並回復成 UserContext 型態時
      */
     public UserContext(HttpSession session, JSONObject obj) {
+        this.session = session;
         this.requestContext = null;
-        this.sessionID = obj.getString("session_id");
+        this.sessionID = this.session.getId();
         this.account = obj.getString("account");
         this.name = obj.getString("name");
         this.nickName = obj.getString("nickname");
