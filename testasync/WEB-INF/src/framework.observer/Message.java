@@ -41,7 +41,7 @@ public class Message {
     }
 
     public boolean isEmpty() {
-        return null == this.bundle;
+        return ( null == this.bundle );
     }
 
     @Override

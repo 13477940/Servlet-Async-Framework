@@ -2,8 +2,10 @@ package app.handler;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import framework.context.AsyncActionContext;
-import framework.handler.RequestHandler;
+import framework.observer.Handler;
+import framework.observer.Message;
+import framework.web.context.AsyncActionContext;
+import framework.web.handler.RequestHandler;
 
 import java.io.File;
 import java.util.Arrays;
@@ -35,11 +37,22 @@ public class FileHandler extends RequestHandler {
         try {
             if ("path_is_file".equals(res.getString("status"))) {
                 File file = new File(path);
-                requestContext.outputFileToResponse(path, file.getName(), null, false);
+                requestContext.outputFileToResponse(path, file.getName(), null, false, new Handler(){
+                    @Override
+                    public void handleMessage(Message m) {
+                        super.handleMessage(m);
+                        requestContext.complete();
+                    }
+                });
             } else {
-                requestContext.printToResponse(res.toJSONString());
+                requestContext.printToResponse(res.toJSONString(), new Handler(){
+                    @Override
+                    public void handleMessage(Message m) {
+                        super.handleMessage(m);
+                        requestContext.complete();
+                    }
+                });
             }
-            requestContext.complete();
         } catch (Exception e) {
             e.printStackTrace();
             requestContext.complete();

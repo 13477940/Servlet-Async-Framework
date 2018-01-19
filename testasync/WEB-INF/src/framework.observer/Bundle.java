@@ -1,5 +1,6 @@
 package framework.observer;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.Set;
 
@@ -73,6 +74,8 @@ public class Bundle {
     public void putString(String key, String value) {
         map.put(key, value);
     }
+
+    public void putFile(String key, File value) { map.put(key, value); }
 
     public void put(String key, Object value) {
         map.put(key, value);
@@ -204,6 +207,20 @@ public class Bundle {
         if(!map.containsKey(key)) return defaultValue;
         try {
             return (String) map.get(key);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return defaultValue;
+        }
+    }
+
+    public File getFile(String key) {
+        return getFile(key, null);
+    }
+
+    public File getFile(String key, File defaultValue) {
+        if(!map.containsKey(key)) return defaultValue;
+        try {
+            return (File) map.get(key);
         } catch (Exception e) {
             e.printStackTrace();
             return defaultValue;

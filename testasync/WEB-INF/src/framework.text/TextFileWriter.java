@@ -6,96 +6,79 @@ import java.io.FileWriter;
 
 public class TextFileWriter {
 
-    private boolean isEnable = false;
-    private File target = null;
-    private boolean isAppend = true;
+    private File targetFile = null;
 
-    private BufferedWriter writer = null;
+    private BufferedWriter bufferedWriter = null;
     private FileWriter fileWriter = null;
 
-    public TextFileWriter(File target) { initWriter(target, true); }
-    public TextFileWriter(File target, boolean isAppend) { initWriter(target, isAppend); }
-
-    /**
-     * 建立 TextFileWriter 實例
-     */
-    public BufferedWriter build() {
-        if(!isEnable) return null;
+    public TextFileWriter(File targetFile, Boolean isAppend) {
+        this.targetFile = targetFile;
         try {
+            if(null == targetFile || !targetFile.exists()) {
+                throw new Exception("需要使用 TextFileWriter 的檔案不存在");
+            }
             // 內容是否為 append 模式決定在於 FileWriter 而不是 BufferedWriter
-            fileWriter = new FileWriter(target, isAppend);
-            writer = new BufferedWriter(fileWriter);
+            // 此 append 模式影響到第一次寫入時的狀態，意即開檔後是清除重寫還是接續內容寫入
+            fileWriter = new FileWriter(targetFile, isAppend);
+            bufferedWriter = new BufferedWriter(fileWriter);
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return writer;
     }
 
-    /**
-     * 寫入字串內容
-     */
-    public void write(CharSequence charSequence) {
-        if(!isEnable) {
-            System.err.println("TextFileWriter 尚未初始化成功");
-            return;
-        }
-        try {
-            if(!target.canWrite()) {
-                System.err.println(target.getName() + " 該檔案為不可被寫入的狀態");
-            } else {
-                if (null != writer) {
-                    writer.append(charSequence);
-                } else {
-                    System.err.println("請先建立 TextFileWriter 再進行 write 指令");
-                }
+    public void write(CharSequence content) {
+        if(this.targetFile.canWrite()) {
+            try {
+                bufferedWriter.append(content);
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * 關閉 TextFileWriter
-     */
-    public void close() {
-        try {
-            if(null != writer) {
-                if(null != fileWriter) {
-                    fileWriter.flush();
-                }
-                writer.flush();
-                if(null != fileWriter) {
-                    fileWriter.close();
-                }
-                writer.close();
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    // 初始化 TextFileWriter
-    private void initWriter(File target, boolean isAppend) {
-        if(target.isDirectory()) {
-            String str = target.getPath() + target.getName();
-            System.err.println("指定的檔案是一個資料夾："+str);
-            return;
-        }
-        if(target.exists()) {
-            this.target = target;
-            isEnable = true;
         } else {
             try {
-                boolean status = target.createNewFile();
-                if(status) {
-                    this.target = target;
-                    isEnable = true;
-                }
+                throw new Exception(this.targetFile.getName() + " 該檔案為無法寫入的狀態");
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
-        this.isAppend = isAppend;
+    }
+
+    // 關閉順序是固定的，不能更動
+    public void close() {
+        try {
+            if(null != fileWriter) {
+                fileWriter.flush();
+            }
+            if(null != bufferedWriter) {
+                bufferedWriter.flush();
+            }
+            if(null != fileWriter) {
+                fileWriter.close();
+            }
+            if(null != bufferedWriter) {
+                bufferedWriter.close();
+            }
+        } catch (Exception e) {
+            // e.printStackTrace();
+        }
+    }
+
+    public static class Builder {
+        private File targetFile = null;
+        private Boolean isAppend = false; // 預設值
+
+        public TextFileWriter.Builder setTargetFile(File targetFile) {
+            this.targetFile = targetFile;
+            return this;
+        }
+
+        public TextFileWriter.Builder setIsAppend(Boolean isAppend) {
+            this.isAppend = isAppend;
+            return this;
+        }
+
+        public TextFileWriter build() {
+            return new TextFileWriter(this.targetFile, this.isAppend);
+        }
     }
 
 }

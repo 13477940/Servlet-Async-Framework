@@ -5,7 +5,8 @@ import java.util.Calendar;
 /**
  * 藉由 TimeContext 表示那一瞬間的時間狀態
  * 如果要更新時間，則直覺上因該是重新建立一次 TimeContext
- * 所以可以把 TimeContext 視為一個瞬間的時間片段
+ * 所以可以把 TimeContext 視為等同於一個瞬間的時間片段（Time Slice）
+ * 以此方法解決於多執行緒環境下重複操作一個字串資源可能會造成的錯誤
  */
 public class TimeContext {
 

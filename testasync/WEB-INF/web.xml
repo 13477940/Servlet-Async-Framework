@@ -12,7 +12,7 @@
 
     <servlet>
         <servlet-name>testAsync</servlet-name>
-        <servlet-class>framework.servlet.WebAppController</servlet-class>
+        <servlet-class>framework.web.servlet.WebAppController</servlet-class>
         <async-supported>true</async-supported>
     </servlet>
     <servlet-mapping>

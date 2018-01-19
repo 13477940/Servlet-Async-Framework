@@ -1,8 +1,10 @@
 package app.handler;
 
 import com.alibaba.fastjson.JSONObject;
-import framework.context.AsyncActionContext;
-import framework.handler.RequestHandler;
+import framework.observer.Handler;
+import framework.observer.Message;
+import framework.web.context.AsyncActionContext;
+import framework.web.handler.RequestHandler;
 
 import java.util.HashMap;
 
@@ -32,8 +34,13 @@ public class PageHandler extends RequestHandler {
         obj.put("url", requestContext.getHttpRequest().getRequestURL().toString());
         obj.put("status", "page_request");
         obj.put("value", String.valueOf(requestContext.getParameters()));
-        requestContext.printToResponse(obj.toJSONString());
-        requestContext.complete();
+        requestContext.printToResponse(obj.toJSONString(), new Handler(){
+            @Override
+            public void handleMessage(Message m) {
+                super.handleMessage(m);
+                requestContext.complete();
+            }
+        });
     }
 
 }

@@ -59,7 +59,8 @@ public class TimeService {
         ca.setTime(stringToDate(date));
         ca.add(Calendar.DAY_OF_MONTH, range);
 
-        StringBuilder sbd = new StringBuilder();
+        StringBuilder sbd;
+        sbd = new StringBuilder();
         sbd.append(ca.get(Calendar.YEAR));
         sbd.append("-");
         sbd.append(month[ca.get(Calendar.MONTH)]);
@@ -109,12 +110,23 @@ public class TimeService {
 
     // 藉由 Date 解析 ISO-8601 日期字串
     private Date stringToDate(String ISO_8601) {
-        Date date = new Date();
+        Date date;
         try {
             date = ISO8601_date.parse(ISO_8601);
         } catch (Exception e) {
-            System.err.println(ISO_8601 + " 不是標準的 ISO-8601 時間字串");
             e.printStackTrace();
+            date = null;
+        }
+        if(null == date) {
+            try {
+                date = ISO8601_datetime.parse(ISO_8601);
+            } catch (Exception e) {
+                e.printStackTrace();
+                date = null;
+            }
+        }
+        if(null == date) {
+            System.err.println("輸入的 ISO 8601 時間格式有錯誤");
         }
         return date;
     }
