@@ -50,39 +50,23 @@ or Windows:
 <pre><code>javac -cp ..\..\..\lib\*;.\lib\*;.\classes\;. -d .\classes\. -encoding utf-8 .\src\*\*.java</code></pre>
 
 # Database Functions Example
-＊For "Read(Select or Query)" Database Table:<br/>
-<pre><code>public class MyDatabaseQuery extends QueryWorker {
-    public DataTable queryTable() {
-        String sql = "SELECT * FROM MyDBTable;";
-        DataTable res = simpleQuery(sql);
-        return res;
-    }
-}</code></pre>
+<pre><code>ConnectionPool connectionPool = new TomcatDataSource.Builder()
+        .setIP("your_db_ip")
+        .setPort("your_db_port")
+        .setAcc("your_db_user")
+        .setPassword("your_db_password")
+        .setDatabaseType("your_db_type") // mssql, postgresql, mysql or mariadb
+        .setDatabaseName("your_db_name")
+        .build();
 
-＊For "Create/Update/Delete" Database Table:<br/>
-<pre><code>public class MyDatabaseRecord extends RecordWorker {
-    public DataTable recordTable() {
-        String sql = "INSERT INTO MyDBTable VALUES(...);";
-        SQLContext sqx = getRecordService().getSQLContext(sql);
-        DataTable res = getRecordService().executeRecord(sqx);
-        return res;
-    }
-}</code></pre>
+DatabaseAction databaseAction = new DatabaseAction.Builder()
+        .setSQL("your_sql_command")
+        .setConnection(connectionPool.getConnection())
+        .setParameters(ArrayList<String> params) // not necessary
+        .build();
 
-＊if need with further operation, can get PreparedStatement from SQLContext
-<pre><code>String sql = "...";
-SQLContext sqx = getQueryService().getSQLContext(sql); // for Read
-try {
-    PreparedStatement ps = sqx.getPreparedStatement();
-} catch (Exception e) {
-    e.printStackTrace();
-}
-</code></pre>
-<pre><code>String sql = "...";
-SQLContext sqx = getRecordService().getSQLContext(sql); // for CUD
-try {
-    PreparedStatement ps = sqx.getPreparedStatement();
-} catch (Exception e) {
-    e.printStackTrace();
-}
-</code></pre>
+// databaseAction.query(), databaseAction.update() ... etc
+databaseAction.execute();
+
+// close ConnectionPool
+connectionPool.shutdown();</code></pre>
