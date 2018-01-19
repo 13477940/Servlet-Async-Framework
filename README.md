@@ -13,8 +13,10 @@ It's a tomcat webapp for processing asynchronous http request task simple framew
 [1] Java JDK 8+<br/>
 [2] <a href="https://github.com/square/okhttp">OKHTTP</a><br/>
 [3] <a href="https://github.com/square/okio">OKIO</a><br/>
-[4] Apache Tomcat 8.5+<br/>
-[5] put "testasync" files to "tomcat/webapps/testasync" folder<br/>
+[4] <a href="https://github.com/javaee/javamail">JavaMail</a><br/>
+[5] <a href="https://github.com/kohsuke/javax.activation">javax.activation</a><br/>
+[6] Apache Tomcat 8.5+<br/>
+[7] put "testasync" files to "tomcat/webapps/testasync" folder<br/>
 <!-- [4] tomcat/webapps/testasync/WEB-INF/lib/ -> put <a href="https://github.com/alibaba/fastjson">alibaba/fastjson</a> lib -->
 
 # 選配套件（Optional）
