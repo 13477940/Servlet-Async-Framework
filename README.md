@@ -20,10 +20,10 @@ It's a tomcat webapp for processing asynchronous http request task simple framew
 # 選配套件（Optional）
 <a href="https://stackoverflow.com/questions/6981564/why-must-the-jdbc-driver-be-put-in-tomcat-home-lib-folder/7198049#7198049">Why must the JDBC driver be put in TOMCAT_HOME/lib folder?</a><br/>
 ＊tomcat/lib/ -> put supported JDBC lib for access database<br/>
-<a href="https://www.microsoft.com/en-us/download/details.aspx?id=11774">MSSQL</a><br/>
-<a href="https://dev.mysql.com/downloads/connector/j/">MySQL</a><br/>
-<a href="https://mariadb.com/kb/en/mariadb/about-mariadb-connector-j/">MariaDB</a><br/>
-<a href="https://jdbc.postgresql.org/">PostgreSQL</a>
+<a href="https://github.com/Microsoft/mssql-jdbc">MSSQL</a><br/>
+<a href="https://github.com/mysql/mysql-connector-j">MySQL</a><br/>
+<a href="https://github.com/MariaDB/mariadb-connector-j">MariaDB</a><br/>
+<a href="https://github.com/pgjdbc/pgjdbc">PostgreSQL</a>
 
 # 如何使用（Startup）
 放置檔案內容到 tomcat/webapps/testasync 之中，並進行編譯，編譯完成後，即可啟動 Tomcat。<br/>
