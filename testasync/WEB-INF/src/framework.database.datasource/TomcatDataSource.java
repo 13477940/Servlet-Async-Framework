@@ -136,18 +136,18 @@ public class TomcatDataSource extends ConnectorConfig implements ConnectionPool 
     public static class Builder {
         private ConnectContext dbContext = new ConnectContext();
 
-        public TomcatDataSource.Builder setAcc(String acc) {
-            this.dbContext.setDB_ACC(acc);
+        public TomcatDataSource.Builder setAccount(String account) {
+            this.dbContext.setDB_ACC(account);
             return this;
         }
 
-        public TomcatDataSource.Builder setPassword(String pwd) {
-            this.dbContext.setDB_PWD(pwd);
+        public TomcatDataSource.Builder setPassword(String password) {
+            this.dbContext.setDB_PWD(password);
             return this;
         }
 
-        public TomcatDataSource.Builder setIP(String IP) {
-            this.dbContext.setDB_IP(IP);
+        public TomcatDataSource.Builder setIP(String ip) {
+            this.dbContext.setDB_IP(ip);
             return this;
         }
 

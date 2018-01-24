@@ -4,7 +4,7 @@ import framework.web.handler.RequestHandler;
 
 import java.util.ArrayList;
 
-public class WebAppServicePool {
+public abstract class WebAppServicePool {
 
     private ArrayList<RequestHandler> handlers;
 

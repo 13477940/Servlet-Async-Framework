@@ -11,7 +11,10 @@ import javax.activation.MimetypesFileTypeMap;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class HttpClient {
 
@@ -41,7 +44,7 @@ public class HttpClient {
 
     // HTTP GET - x-www-form-urlencoded
     private void useGet(String url, HashMap<String, String> parameters, Handler handler) {
-        OkHttpClient client = OkHttpClientBuilder.build();
+        OkHttpClient client = OkHttpClientStatic.getInstance();
         // 檢查 URL 解析
         HttpUrl httpUrl = HttpUrl.parse(url);
         if(null == httpUrl) {
@@ -83,7 +86,7 @@ public class HttpClient {
 
     // HTTP POST - x-www-form-urlencoded
     private void usePostUrlEncoded(String url, HashMap<String, String> parameters, Handler handler) {
-        OkHttpClient client = OkHttpClientBuilder.build();
+        OkHttpClient client = OkHttpClientStatic.getInstance();
         FormBody.Builder formBodyBuilder = new FormBody.Builder();
         {
             if(null != parameters && parameters.size() > 0) {
@@ -109,7 +112,7 @@ public class HttpClient {
 
     // HTTP POST - multipart/form-data
     private void usePost(String url, HashMap<String, String> parameters, ArrayList<File> files, Handler handler) {
-        OkHttpClient client = OkHttpClientBuilder.build();
+        OkHttpClient client = OkHttpClientStatic.getInstance();
         MultipartBody.Builder fileBodyBuilder = new MultipartBody.Builder();
         {
             if(null != files) {

@@ -5,7 +5,7 @@ import framework.web.context.AsyncActionContext;
 import framework.web.executor.WebAppServiceExecutor;
 import framework.web.session.context.UserContext;
 import framework.web.session.pattern.UserMap;
-import framework.web.session.service.SessionBuilder;
+import framework.web.session.service.SessionServiceStatic;
 import org.apache.tomcat.util.http.fileupload.FileItem;
 import org.apache.tomcat.util.http.fileupload.disk.DiskFileItemFactory;
 import org.apache.tomcat.util.http.fileupload.servlet.ServletFileUpload;
@@ -192,13 +192,13 @@ public class AsyncContextRunnable implements Runnable {
     // 檢查使用者登入資訊是否已存在於 Session
     private void checkSessionLoginInfo(HttpSession session) {
         try {
-            UserMap map = SessionBuilder.build().getUserMap();
+            UserMap map = SessionServiceStatic.getInstance().getUserMap();
             if (null != map) {
                 if(map.prototype().containsKey(session.getId())) return;
-                UserContext userContext = SessionBuilder.build().getUserContext(session);
+                UserContext userContext = SessionServiceStatic.getInstance().getUserContext(session);
                 if (null != userContext) {
-                    SessionBuilder.build().setUserContext(session, userContext);
-                    SessionBuilder.build().addUser(session, userContext);
+                    SessionServiceStatic.getInstance().setUserContext(session, userContext);
+                    SessionServiceStatic.getInstance().addUser(session, userContext);
                 }
             }
         } catch (Exception e) {

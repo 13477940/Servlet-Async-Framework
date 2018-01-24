@@ -1,6 +1,5 @@
 package framework.web.servlet;
 
-import framework.web.http.OkHttpClientBuilder;
 import framework.web.runnable.AsyncContextRunnable;
 
 import javax.servlet.AsyncContext;
@@ -96,7 +95,7 @@ public class WebAppController extends HttpServlet {
             }
         }
         {
-            OkHttpClientBuilder.shutdown();
+            // OkHttpClientStatic.shutdown();
         }
         {
             // SimpleDataSource.shutdown();

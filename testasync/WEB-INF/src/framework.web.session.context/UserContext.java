@@ -1,8 +1,9 @@
 package framework.web.session.context;
 
 import com.alibaba.fastjson.JSONObject;
+import framework.time.TimeService;
 import framework.web.context.AsyncActionContext;
-import framework.time.TimeBuilder;
+import framework.time.TimeServiceStatic;
 import framework.time.pattern.TimeContext;
 
 import javax.servlet.http.HttpServletRequest;
@@ -114,25 +115,69 @@ public class UserContext {
 
     // 記錄建立時間點
     private void getCreateDT() {
-        TimeContext timeContext = TimeBuilder.build().getTimeContext();
+        TimeContext timeContext = TimeServiceStatic.getInstance().getTimeContext();
         this.createDate = timeContext.getDate();
         this.createTime = timeContext.getTime();
     }
 
-    // 由 REQUEST 判斷遠端 IP
+    // 由 HttpServletRequest 判斷遠端 IP
     private String getIpFromRequest() {
-        HttpServletRequest req = requestContext.getHttpRequest();
-        String ip = req.getHeader("x-forwarded-for");
-        if(ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
-            ip = req.getHeader("Proxy-Client-IP");
+        HttpServletRequest request = requestContext.getHttpRequest();
+        String ip = request.getHeader("X-Real-IP");
+        if (null == ip || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("X-Forwarded-For");
         }
-        if(ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
-            ip = req.getHeader("WL-Proxy-Client-IP");
+        if (null == ip || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("Proxy-Client-IP");
         }
-        if(ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
-            ip = req.getRemoteAddr();
+        if (null == ip || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("WL-Proxy-Client-IP");
+        }
+        if (null == ip || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getRemoteAddr();
         }
         return ip;
+    }
+
+    public static class Builder {
+        private AsyncActionContext requestContext = null;
+        private String account = null;
+        private String name = null;
+        private String nickName = null;
+        private String category = null; // 系統權限級別
+
+        public UserContext.Builder setAsyncActionContext(AsyncActionContext requestContext) {
+            this.requestContext = requestContext;
+            return this;
+        }
+
+        public UserContext.Builder setAccount(String account) {
+            this.account = account;
+            return this;
+        }
+
+        public UserContext.Builder setName(String name) {
+            this.name = name;
+            return this;
+        }
+
+        public UserContext.Builder setNickName(String nickName) {
+            this.nickName = nickName;
+            return this;
+        }
+
+        public UserContext.Builder setCategory(String category) {
+            this.category = category;
+            return this;
+        }
+
+        public UserContext build() {
+            return new UserContext(requestContext, account, name, nickName, category);
+        }
+
+        public UserContext build(JSONObject obj) {
+            return new UserContext(requestContext, obj);
+        }
     }
 
 }

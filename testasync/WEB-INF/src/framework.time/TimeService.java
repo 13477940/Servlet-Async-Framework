@@ -6,7 +6,7 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 
-public class TimeService {
+public abstract class TimeService {
 
     private SimpleDateFormat ISO8601_date = new SimpleDateFormat("yyyy-MM-dd");
     private SimpleDateFormat ISO8601_datetime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");

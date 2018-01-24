@@ -1,6 +1,6 @@
 package framework.random;
 
-public class RandomService {
+public abstract class RandomService {
 
     private final String ranStr = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     private final int defaultSize = 10;

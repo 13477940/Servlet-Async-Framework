@@ -3,7 +3,7 @@ package framework.hash;
 import java.security.MessageDigest;
 import java.util.Formatter;
 
-public class HashService {
+public abstract class HashService {
 
     public HashService() {}
 

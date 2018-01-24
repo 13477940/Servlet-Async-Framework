@@ -8,7 +8,7 @@ import framework.web.session.pattern.UserMap;
 import javax.servlet.http.HttpSession;
 import java.util.Map;
 
-public class SessionService {
+public abstract class SessionService {
 
     private UserMap userMap = null;
     private final String userContextTag = "user_context";
@@ -21,16 +21,29 @@ public class SessionService {
         this.userMap = new UserMap();
     }
 
+    public void addUser(UserContext userContext) {
+        addUser(userContext.getSession(), userContext);
+    }
+
     public void addUser(HttpSession session, UserContext userContext) {
         if(null == session) {
-            System.err.println("必須帶入有效的 session 物件");
+            try {
+                throw new Exception("必須帶入有效的 session 物件");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             return;
         }
         if(null == userContext) {
-            System.err.println("必須帶入有效的 UserContext 物件");
+            try {
+                throw new Exception("必須帶入有效的 UserContext 物件");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             return;
         }
         userMap.put(session.getId(), userContext);
+        setUserContext(session, userContext);
     }
 
     public void removeUser(HttpSession session) {

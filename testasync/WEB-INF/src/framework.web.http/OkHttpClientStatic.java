@@ -3,15 +3,22 @@ package framework.web.http;
 import okhttp3.OkHttpClient;
 
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 
-public class OkHttpClientBuilder {
+public class OkHttpClientStatic {
 
     private static OkHttpClient instance = null;
 
     static {}
 
-    public static OkHttpClient build() {
-        if(null == instance) instance = new OkHttpClient();
+    public static OkHttpClient getInstance() {
+        if(null == instance) {
+            instance = new OkHttpClient.Builder()
+                    .connectTimeout(30, TimeUnit.SECONDS)
+                    .readTimeout(30, TimeUnit.SECONDS)
+                    .writeTimeout(30, TimeUnit.SECONDS)
+                    .build();
+        }
         return instance;
     }
 

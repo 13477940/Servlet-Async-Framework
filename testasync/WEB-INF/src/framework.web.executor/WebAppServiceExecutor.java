@@ -66,7 +66,7 @@ public class WebAppServiceExecutor {
      * 藉由此方法修正該錯誤，加強套件功能的隔離性與穩健度
      */
     private ArrayList<RequestHandler> getHandlerChain() {
-        ArrayList<RequestHandler> handlers = WebAppServicePoolBuilder.build().prototype(); // 物件範本
+        ArrayList<RequestHandler> handlers = WebAppServicePoolStatic.getInstance().prototype(); // 物件範本
         ArrayList<RequestHandler> runHandlers = new ArrayList<>(); // 新實例容器
         // 建立新實例，因為是由 ArrayList 實作所以經過 foreach 取出時順序是不變的
         for (RequestHandler rawHandler : handlers) {

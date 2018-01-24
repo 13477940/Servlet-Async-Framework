@@ -156,7 +156,7 @@ public class DatabaseAction {
         return res;
     }
 
-    public Integer[] updateBatch() {
+    public Integer[] updateBatch(PreparedStatement preparedStatement) {
         Integer[] res = null;
         Savepoint savepoint = null;
         try {
@@ -175,7 +175,7 @@ public class DatabaseAction {
         return res;
     }
 
-    public Long[] largeUpdateBatch() {
+    public Long[] largeUpdateBatch(PreparedStatement preparedStatement) {
         Long[] res = null;
         Savepoint savepoint = null;
         try {
