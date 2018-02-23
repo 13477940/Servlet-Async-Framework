@@ -34,6 +34,8 @@ public class AsyncActionContext {
     private boolean isFileAction = false; // 該請求是否具有上傳檔案的需求
     private HashMap<String, String> params;
     private ArrayList<FileItem> files; // 需要被操作的檔案（已不包含文字表單內容）
+    private String urlPath = null; // 儲存此次請求路徑（不包含 domain）
+    private String resourceExten = null; // 請求路徑資源的副檔名，若不具有副檔名則回傳 null
 
     private Handler handler; // for invalid runnable
 
@@ -52,6 +54,43 @@ public class AsyncActionContext {
             }
         } catch (Exception e) {
             e.printStackTrace();
+        }
+        // 處理 URL 路徑的解析（去除協定、域名及參數）
+        {
+            HttpServletRequest httpRequest = null;
+            try {
+                httpRequest = (HttpServletRequest) this.asyncContext.getRequest();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            String url = httpRequest.getRequestURL().toString();
+
+            try {
+                String[] sHttp = url.split("://");
+                String[] sLoca = sHttp[sHttp.length - 1].split("/");
+                StringBuilder sURL = new StringBuilder();
+                for(int i = 0, len = sLoca.length; i < len; i++) {
+                    String tmp = sLoca[i];
+                    if(i == 0) continue;
+                    sURL.append(tmp);
+                    if(i != sLoca.length - 1) sURL.append("/");
+                }
+                this.urlPath = sURL.toString();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            try {
+                String[] pathStrArr = this.urlPath.split("/");
+                if(pathStrArr.length <= 1) return;
+                String[] fileNameSplit = pathStrArr[pathStrArr.length - 1].split("\\.");
+                if(fileNameSplit.length <= 1) return;
+                String exten = fileNameSplit[fileNameSplit.length - 1];
+                this.resourceExten = exten;
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -439,6 +478,21 @@ public class AsyncActionContext {
      */
     public Handler getInvalidRequestHandler() {
         return this.handler;
+    }
+
+    /**
+     * 取得請求路徑（Path），此路徑資訊不包含 protocol, domain 及 parameters 等
+     */
+    public String getUrlPath() {
+        return this.urlPath;
+    }
+
+    /**
+     * 取得資源路徑的副檔名，例如 jquery.min.js 則會取得 js 字串內容，
+     * 若不屬於資源路徑或不具有副檔名時則回傳 null
+     */
+    public String getResourceExtension() {
+        return this.resourceExten;
     }
 
 }
