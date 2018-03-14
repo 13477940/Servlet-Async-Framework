@@ -89,18 +89,11 @@ public class DataRow {
         for(Map.Entry<String, String> entry : prototype().entrySet()) {
             String key = entry.getKey().toLowerCase(); // column key, always lowercase
             String value = entry.getValue(); // column value
-            // 如果欄位值為 NULL 時
-            if(null == value) {
-                obj.put(key, "");
-                continue;
+            if(null != value) {
+                obj.put(key, value);
+            } else {
+                obj.put(key, ""); // 空值處理
             }
-            // 如果欄位值為空字串時
-            if(value.length() == 0) {
-                // row.put(key, "");
-                continue;
-            }
-            // 如果欄位值不為空值
-            obj.put(key, value);
         }
         return obj;
     }

@@ -37,6 +37,9 @@ public class DatabaseAction {
                 e.printStackTrace();
             }
         }
+        /*
+        由於 batch 操作會直接帶入 PreparedStatement 所以不能限制 SQL 為 null
+        直接讓它出錯 exception 給使用者了解即可
         if(null == sql || sql.length() == 0) {
             try {
                 throw new Exception("未輸入正確的 SQL 語法指令");
@@ -44,6 +47,7 @@ public class DatabaseAction {
                 e.printStackTrace();
             }
         }
+        */
         this.autoCommit = autoCommit;
         // 設定 PreparedStatement
         {

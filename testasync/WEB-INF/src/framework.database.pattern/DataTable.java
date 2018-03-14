@@ -79,18 +79,11 @@ public class DataTable {
                 for(String col : cols) {
                     String key = String.valueOf(col).toLowerCase(); // column key, always lowercase
                     String value = rs.getString(col); // column value
-                    // 如果欄位值為 NULL 時
-                    if(null == value) {
+                    if(null != value) {
+                        row.put(key, value);
+                    } else {
                         row.put(key, "");
-                        continue;
                     }
-                    // 如果欄位值為空字串時
-                    if(value.length() == 0) {
-                        // row.put(key, "");
-                        continue;
-                    }
-                    // 如果欄位值不為空值
-                    row.put(key, value);
                 }
                 instance.add(row);
             }

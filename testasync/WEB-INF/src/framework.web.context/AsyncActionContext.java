@@ -64,9 +64,8 @@ public class AsyncActionContext {
                 e.printStackTrace();
             }
 
-            String url = httpRequest.getRequestURL().toString();
-
             try {
+                String url = httpRequest.getRequestURL().toString();
                 String[] sHttp = url.split("://");
                 String[] sLoca = sHttp[sHttp.length - 1].split("/");
                 StringBuilder sURL = new StringBuilder();
@@ -86,8 +85,7 @@ public class AsyncActionContext {
                 if(pathStrArr.length <= 1) return;
                 String[] fileNameSplit = pathStrArr[pathStrArr.length - 1].split("\\.");
                 if(fileNameSplit.length <= 1) return;
-                String exten = fileNameSplit[fileNameSplit.length - 1];
-                this.resourceExten = exten;
+                this.resourceExten = fileNameSplit[fileNameSplit.length - 1];
             } catch (Exception e) {
                 e.printStackTrace();
             }

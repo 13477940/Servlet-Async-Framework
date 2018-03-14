@@ -66,10 +66,11 @@ public abstract class ConnectorConfig {
                 sbd.append("/");
                 sbd.append(dbName);
                 // MySQL 體系要採用 utf8mb4 才能正常支援所有 Unicode 字集
+                // 新增 NULL 值處理原則，zeroDateTimeBehavior=convertToNull
                 if(!useSecurity) {
-                    sbd.append("?useSSL=false&useUnicode=true&CharacterEncoding=utf8mb4");
+                    sbd.append("?useSSL=false&useUnicode=true&CharacterEncoding=utf8mb4&zeroDateTimeBehavior=convertToNull");
                 } else {
-                    sbd.append("?useSSL=true&useUnicode=true&CharacterEncoding=utf8mb4");
+                    sbd.append("?useSSL=true&useUnicode=true&CharacterEncoding=utf8mb4&zeroDateTimeBehavior=convertToNull");
                 }
                 break;
             case "mariadb":
