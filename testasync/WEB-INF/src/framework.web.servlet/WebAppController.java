@@ -19,7 +19,7 @@ public class WebAppController extends HttpServlet {
 
     private ExecutorService worker = null; // 執行緒池
 
-    public WebAppController() { worker = Executors.newCachedThreadPool(); }
+    public WebAppController() {}
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -33,6 +33,12 @@ public class WebAppController extends HttpServlet {
 
     // 執行非同步 Servlet 服務
     private void startAsync(HttpServletRequest req, HttpServletResponse resp) {
+        {
+            // 直到被進行實例化後呼叫功能才建立執行緒池
+            if(null == worker || worker.isTerminated() || worker.isShutdown()) {
+                worker = Executors.newCachedThreadPool();
+            }
+        }
         setEncoding(req, resp);
         boolean canAsync = false;
         AsyncContext asyncContext = null;

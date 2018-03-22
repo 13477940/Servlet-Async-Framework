@@ -171,11 +171,13 @@ public class AsyncContextRunnable implements Runnable {
                 String[] values = entry.getValue();
                 if (values.length > 1) {
                     // 單一 key 具有多個參數時
-                    for (int i = 0, len = values.length; i < len; i++) {
+                    int iCount = 0;
+                    for(String value : values) {
                         String _key = key;
-                        if (i > 0) _key = key + "_" + i;
-                        String value = java.net.URLDecoder.decode(values[i], "UTF-8");
-                        params.put(_key, value);
+                        if(iCount > 0) _key = key + "_" + iCount;
+                        String _value = java.net.URLDecoder.decode(value, "UTF-8");
+                        params.put(_key, _value);
+                        iCount++;
                     }
                 } else {
                     // 單個參數時

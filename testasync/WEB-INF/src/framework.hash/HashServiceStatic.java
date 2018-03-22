@@ -6,7 +6,7 @@ public class HashServiceStatic {
 
     static {}
 
-    public static HashService build() {
+    public static HashService getInstance() {
         if(null == instance) instance = new HashServiceStatic.Instance();
         return instance;
     }

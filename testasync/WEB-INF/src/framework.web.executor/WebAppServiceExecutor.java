@@ -1,7 +1,6 @@
 package framework.web.executor;
 
-import com.alibaba.fastjson.JSONObject;
-import framework.observer.Handler;
+import framework.observer.Bundle;
 import framework.observer.Message;
 import framework.web.context.AsyncActionContext;
 import framework.web.handler.RequestHandler;
@@ -18,43 +17,34 @@ public class WebAppServiceExecutor {
 
     public void startup() {
         ArrayList<RequestHandler> handlers = getHandlerChain();
-        if(handlers.size() > 0) {
-            try {
-                handlers.get(0).startup(requestContext);
-            } catch (Exception e) {
-                // 個別應用實例尚未到達 requestContext.complete() 而出錯時會進入此處
-                e.printStackTrace();
-                try {
-                    JSONObject obj = new JSONObject();
-                    obj.put("error_code", "500");
-                    obj.put("status", "fail");
-                    obj.put("msg_eng", "server_side_exception_error");
-                    obj.put("msg_zht", "伺服器端服務執行過程中發生例外錯誤");
-                    requestContext.printToResponse(obj.toJSONString(), new Handler(){
-                        @Override
-                        public void handleMessage(Message m) {
-                            super.handleMessage(m);
-                            requestContext.complete();
-                        }
-                    });
-                } catch (Exception ex) {
-                    // ex.printStackTrace();
-                }
+        // 尚未成功建立責任鏈時
+        {
+            if (null == handlers || handlers.size() == 0) {
+                Bundle b = new Bundle();
+                b.putString("status", "fail");
+                b.putString("msg_eng", "not_exist_request_handler");
+                Message m = requestContext.getAppExceptionHandler().obtainMessage();
+                m.setData(b);
+                m.sendToTarget();
+                return;
             }
-        } else {
-            // 尚未成功建立責任鏈時
-            JSONObject obj = new JSONObject();
-            obj.put("error_code", "500");
-            obj.put("status", "");
-            obj.put("msg_eng", "server_side_service_node_is_null");
-            obj.put("msg_zht", "伺服器端尚未建立服務節點");
-            requestContext.printToResponse(obj.toJSONString(), new Handler(){
-                @Override
-                public void handleMessage(Message m) {
-                    super.handleMessage(m);
-                    requestContext.complete();
-                }
-            });
+        }
+        // 具有責任鏈時由第一節點進入
+        try {
+            handlers.get(0).startup(requestContext);
+        } catch (Exception e) {
+            // 當有 RequestHandler 開始處理時，但是在尚未到達 requestContext.complete() 結束時，
+            // 程序中間出現任何未被擷取的 Exception 的情況下，就會呼叫此處的 Exception 處理，
+            // 需要注意有可能是前端帶入值的問題，但後端沒有特別進行 Exception 處理也會到達此處
+            e.printStackTrace();
+            {
+                Bundle b = new Bundle();
+                b.putString("status", "fail");
+                b.putString("msg_eng", "server_side_exception_error");
+                Message m = requestContext.getAppExceptionHandler().obtainMessage();
+                m.setData(b);
+                m.sendToTarget();
+            }
         }
     }
 

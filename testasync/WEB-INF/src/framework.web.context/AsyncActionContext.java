@@ -37,55 +37,26 @@ public class AsyncActionContext {
     private String urlPath = null; // 儲存此次請求路徑（不包含 domain）
     private String resourceExten = null; // 請求路徑資源的副檔名，若不具有副檔名則回傳 null
 
-    private Handler handler; // for invalid runnable
+    private Handler appExceptionHandler; // for public exception
+    private Handler invalidRequestHandler; // for invalid request
 
     /**
      * 初始化 RequestContext
      */
     public AsyncActionContext(AsyncContext asyncContext) {
         this.asyncContext = asyncContext;
-        try {
-            if (null == asyncContext) {
-                System.err.println("AsyncContext 為空值，無法正常執行服務");
-            } else {
+        if (null == asyncContext) {
+            System.err.println("AsyncContext 為空值，無法正常執行服務");
+        } else {
+            try {
                 this.httpSession = ((HttpServletRequest) asyncContext.getRequest()).getSession(true);
                 this.reqMethod = ((HttpServletRequest) asyncContext.getRequest()).getMethod();
-                createInvalidRequestHandler(); // 建立預設的無效請求監聽器
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        // 處理 URL 路徑的解析（去除協定、域名及參數）
-        {
-            HttpServletRequest httpRequest = null;
-            try {
-                httpRequest = (HttpServletRequest) this.asyncContext.getRequest();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-            try {
-                String url = httpRequest.getRequestURL().toString();
-                String[] sHttp = url.split("://");
-                String[] sLoca = sHttp[sHttp.length - 1].split("/");
-                StringBuilder sURL = new StringBuilder();
-                for(int i = 0, len = sLoca.length; i < len; i++) {
-                    String tmp = sLoca[i];
-                    if(i == 0) continue;
-                    sURL.append(tmp);
-                    if(i != sLoca.length - 1) sURL.append("/");
+                // 初始化
+                {
+                    createAppExceptionHandler(); // 任一個請求在尚未完畢時出現例外錯誤時的監聽器
+                    createInvalidRequestHandler(); // 請求沒有被任一個責任節點處理時的監聽器
+                    processUrlParse();
                 }
-                this.urlPath = sURL.toString();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-            try {
-                String[] pathStrArr = this.urlPath.split("/");
-                if(pathStrArr.length <= 1) return;
-                String[] fileNameSplit = pathStrArr[pathStrArr.length - 1].split("\\.");
-                if(fileNameSplit.length <= 1) return;
-                this.resourceExten = fileNameSplit[fileNameSplit.length - 1];
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -112,8 +83,24 @@ public class AsyncActionContext {
         this.files = files;
     }
 
+    /**
+     * List 型態的 HTTP Request 上傳檔案內容
+     */
     public ArrayList<FileItem> getFiles() {
         return this.files;
+    }
+
+    /**
+     * Map 型態的 HTTP Request 上傳檔案內容
+     */
+    public HashMap<String, FileItem> getFilesMap() {
+        if(null == this.files || this.files.size() == 0) return null;
+        HashMap<String, FileItem> map = new HashMap<>();
+        for(FileItem fileItem : this.files) {
+            String key = fileItem.getFieldName(); // html form input name
+            map.put(key, fileItem);
+        }
+        return map;
     }
 
     /**
@@ -445,7 +432,7 @@ public class AsyncActionContext {
      * 預設的無效請求事件實作
      */
     private void createInvalidRequestHandler() {
-        handler = new Handler() {
+        this.invalidRequestHandler = new Handler() {
             @Override
             public void handleMessage(Message m) {
                 super.handleMessage(m);
@@ -468,14 +455,56 @@ public class AsyncActionContext {
      * 自定義無效請求事件的監聽器
      */
     public void setInvalidRequestHandler(Handler handler) {
-        this.handler = handler;
+        this.invalidRequestHandler = handler;
     }
 
     /**
      * 取得無效請求事件的監聽器實例
      */
     public Handler getInvalidRequestHandler() {
-        return this.handler;
+        return this.invalidRequestHandler;
+    }
+
+    /**
+     * 預設的廣域 Exception 事件監聽器
+     */
+    private void createAppExceptionHandler() {
+        this.appExceptionHandler = new Handler(){
+            @Override
+            public void handleMessage(Message m) {
+                super.handleMessage(m);
+                String status = m.getData().getString("status");
+                if("fail".equals(status)) {
+                    JSONObject obj = new JSONObject();
+                    obj.put("status", status);
+                    obj.put("error_code", "500"); // server_side
+                    obj.put("msg_eng", m.getData().getString("msg_eng"));
+                    obj.put("msg_zht", m.getData().getString("msg_zht"));
+                    AsyncActionContext.this.printToResponse(obj.toJSONString(), new Handler(){
+                        @Override
+                        public void handleMessage(Message m) {
+                            super.handleMessage(m);
+                            AsyncActionContext.this.complete();
+                        }
+                    });
+                } else {
+                    // 基本上永遠不會到達此處
+                    System.out.println(m.getData().toString());
+                    AsyncActionContext.this.complete();
+                }
+            }
+        };
+    }
+
+    public Handler getAppExceptionHandler() {
+        return this.appExceptionHandler;
+    }
+
+    /**
+     * 自定義廣域 Exception Handler
+     */
+    public void setAppExceptionHandler(Handler handler) {
+        this.appExceptionHandler = handler;
     }
 
     /**
@@ -491,6 +520,46 @@ public class AsyncActionContext {
      */
     public String getResourceExtension() {
         return this.resourceExten;
+    }
+
+    /**
+     * 處理 URL 路徑的解析（去除協定、域名及參數）
+     */
+    private void processUrlParse() {
+        {
+            HttpServletRequest httpRequest = null;
+            try {
+                httpRequest = (HttpServletRequest) this.asyncContext.getRequest();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            try {
+                String url = httpRequest.getRequestURL().toString();
+                String[] sHttp = url.split("://");
+                String[] sLoca = sHttp[sHttp.length - 1].split("/");
+                StringBuilder sURL = new StringBuilder();
+                for(int i = 0, len = sLoca.length; i < len; i++) {
+                    String tmp = sLoca[i];
+                    if(i == 0) continue;
+                    sURL.append(tmp);
+                    if(i != sLoca.length - 1) sURL.append("/");
+                }
+                this.urlPath = sURL.toString();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            try {
+                String[] pathStrArr = this.urlPath.split("/");
+                if(pathStrArr.length <= 1) return;
+                String[] fileNameSplit = pathStrArr[pathStrArr.length - 1].split("\\.");
+                if(fileNameSplit.length <= 1) return;
+                this.resourceExten = fileNameSplit[fileNameSplit.length - 1];
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 
 }
