@@ -1,13 +1,12 @@
 package framework.web.servlet;
 
+import framework.web.http.OkHttpClientStatic;
 import framework.web.runnable.AsyncContextRunnable;
 
 import javax.servlet.AsyncContext;
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 import java.sql.Driver;
 import java.sql.DriverManager;
 import java.util.Enumeration;
@@ -22,12 +21,12 @@ public class WebAppController extends HttpServlet {
     public WebAppController() {}
 
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
         startAsync(req, resp);
     }
 
     @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) {
         startAsync(req, resp);
     }
 
@@ -68,6 +67,7 @@ public class WebAppController extends HttpServlet {
         try {
             req.setCharacterEncoding(encoding);
             resp.setCharacterEncoding(encoding);
+            System.setProperty("file.encoding", encoding);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -101,11 +101,7 @@ public class WebAppController extends HttpServlet {
             }
         }
         {
-            // OkHttpClientStatic.shutdown();
-        }
-        {
-            // SimpleDataSource.shutdown();
-            // TomcatDataSource.shutdown();
+            OkHttpClientStatic.shutdown();
         }
         unRegAppDrivers();
     }

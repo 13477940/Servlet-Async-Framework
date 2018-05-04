@@ -16,9 +16,7 @@ public class SessionCounter {
 
     public static void delCount(HttpSession session) {
         if(null == onlineCount) onlineCount = new HashMap<>();
-        if(onlineCount.containsKey(session.getId())) {
-            onlineCount.remove(session.getId());
-        }
+        onlineCount.remove(session.getId());
     }
 
     /**

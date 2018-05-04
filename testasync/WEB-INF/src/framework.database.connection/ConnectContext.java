@@ -20,6 +20,8 @@ public class ConnectContext {
     private int DB_Max_Wait = 0;
     private int DB_RemoveAbandonedTimeout = 0;
 
+    private boolean useSSL = false;
+
     public String getDB_Type() {
         return DB_Type;
     }
@@ -145,6 +147,13 @@ public class ConnectContext {
 
     public void setDB_RemoveAbandonedTimeout(int DB_RemoveAbandonedTimeout) {
         this.DB_RemoveAbandonedTimeout = DB_RemoveAbandonedTimeout;
+    }
+
+    public boolean getUseSSL() {
+        return this.useSSL;
+    }
+    public void setUseSSL(boolean useSSL) {
+        this.useSSL = useSSL;
     }
 
 }

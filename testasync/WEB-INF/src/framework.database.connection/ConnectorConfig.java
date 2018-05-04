@@ -70,7 +70,7 @@ public abstract class ConnectorConfig {
                 if(!useSecurity) {
                     sbd.append("?useSSL=false&useUnicode=true&CharacterEncoding=utf8mb4&zeroDateTimeBehavior=convertToNull");
                 } else {
-                    sbd.append("?useSSL=true&useUnicode=true&CharacterEncoding=utf8mb4&zeroDateTimeBehavior=convertToNull");
+                    sbd.append("?useSSL=true&verifyServerCertificate=false&useUnicode=true&CharacterEncoding=utf8mb4&zeroDateTimeBehavior=convertToNull");
                 }
                 break;
             case "mariadb":
@@ -84,7 +84,7 @@ public abstract class ConnectorConfig {
                 if(!useSecurity) {
                     sbd.append("?useSSL=false&useUnicode=true&CharacterEncoding=utf8mb4");
                 } else {
-                    sbd.append("?useSSL=true&useUnicode=true&CharacterEncoding=utf8mb4");
+                    sbd.append("?useSSL=true&verifyServerCertificate=false&useUnicode=true&CharacterEncoding=utf8mb4");
                 }
                 break;
         }

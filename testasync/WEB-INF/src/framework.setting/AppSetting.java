@@ -142,18 +142,27 @@ public class AppSetting {
             File targetFile = finder.find("WEB-INF");
             {
                 if(null == this.appName) {
-                    if (null == targetFile || !targetFile.exists()) {
+                    if(null == targetFile || !targetFile.exists()) {
                         try {
                             throw new Exception("在不具有 WEB-INF 的環境下需自定義 APP 名稱！");
                         } catch (Exception e) {
                             e.printStackTrace();
+                            return null;
+                        }
+                    }
+                    if(null == targetFile.getParentFile()) {
+                        try {
+                            throw new Exception("找尋不到指定的資料夾名稱父節點："+this.appName);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            return null;
                         }
                     }
                     this.appName = targetFile.getParentFile().getName();
                 }
             }
             // 檢查是否具有應用程式基本儲存的資料夾區域
-            String baseFileDirPath = null;
+            String baseFileDirPath;
             {
                 File baseFileDir = finder.find(this.baseFileDirName);
                 if(null != baseFileDir) {
@@ -163,6 +172,7 @@ public class AppSetting {
                         throw new Exception("由 AppSetting 類別路徑往上尋找並未找到 " + this.baseFileDirName + " 的資料夾！");
                     } catch (Exception e) {
                         e.printStackTrace();
+                        return null;
                     }
                 }
             }
@@ -211,13 +221,20 @@ public class AppSetting {
         } catch (Exception e) {
             e.printStackTrace();
         }
+        if(null == fr) {
+            try {
+                throw new Exception("FileInputStream 內容為空值");
+            } catch (Exception e) {
+                e.printStackTrace();
+                return null;
+            }
+        }
         try (BufferedReader br = new BufferedReader(new InputStreamReader(fr, "UTF-8"))) {
             while(br.ready()) {
                 String line = br.readLine();
                 sbd.append(line);
             }
             fr.close();
-            br.close();
         } catch (Exception e) {
             e.printStackTrace();
         }

@@ -378,7 +378,7 @@ public class AsyncActionContext {
                     // 建立緩衝機制
                     int bufferSize = 4096; // byte
                     byte[] buffer = new byte[bufferSize];
-                    int len = -1;
+                    int len;
                     // 資料流操作
                     try (FileInputStream ins = new FileInputStream(file)) {
                         while ((len = ins.read(buffer)) != -1) {
@@ -489,6 +489,7 @@ public class AsyncActionContext {
                     });
                 } else {
                     // 基本上永遠不會到達此處
+                    System.out.println("Public Exception Handler Message：");
                     System.out.println(m.getData().toString());
                     AsyncActionContext.this.complete();
                 }
@@ -535,21 +536,27 @@ public class AsyncActionContext {
             }
 
             try {
-                String url = httpRequest.getRequestURL().toString();
-                String[] sHttp = url.split("://");
-                String[] sLoca = sHttp[sHttp.length - 1].split("/");
-                StringBuilder sURL = new StringBuilder();
-                for(int i = 0, len = sLoca.length; i < len; i++) {
-                    String tmp = sLoca[i];
-                    if(i == 0) continue;
-                    sURL.append(tmp);
-                    if(i != sLoca.length - 1) sURL.append("/");
+                if(null == httpRequest || null == httpRequest.getRequestURL()) {
+                    this.urlPath = null;
+                } else {
+                    String url = httpRequest.getRequestURL().toString();
+                    String[] sHttp = url.split("://");
+                    String[] sLoca = sHttp[sHttp.length - 1].split("/");
+                    StringBuilder sURL = new StringBuilder();
+                    for (int i = 0, len = sLoca.length; i < len; i++) {
+                        String tmp = sLoca[i];
+                        if (i == 0) continue;
+                        sURL.append(tmp);
+                        if (i != sLoca.length - 1) sURL.append("/");
+                    }
+                    this.urlPath = sURL.toString();
                 }
-                this.urlPath = sURL.toString();
             } catch (Exception e) {
                 e.printStackTrace();
             }
 
+            // 取得資源連結的副檔名
+            if(null == this.urlPath) return;
             try {
                 String[] pathStrArr = this.urlPath.split("/");
                 if(pathStrArr.length <= 1) return;

@@ -113,10 +113,10 @@ public class TimeContext {
     // 更新日期內容，由於設定此時間封裝建立後不能被更動所以採用私有更新方法
     private void update() {
         Calendar _calendar = null;
-        if(null == calendar) {
+        if (null == this.calendar) {
             _calendar = Calendar.getInstance();
         } else {
-            _calendar = calendar;
+            _calendar = this.calendar;
         }
         this.sYear = String.valueOf(_calendar.get(Calendar.YEAR));
         this.sMonth = month[_calendar.get(Calendar.MONTH)];

@@ -6,6 +6,7 @@ import framework.observer.Handler;
 import framework.observer.Message;
 import framework.setting.AppSetting;
 import okhttp3.*;
+import org.apache.tomcat.util.http.fileupload.IOUtils;
 
 import javax.activation.MimetypesFileTypeMap;
 import java.io.*;
@@ -19,31 +20,37 @@ import java.util.Map;
 public class HttpClient {
 
     private String url = null;
+    private HashMap<String, String> headers = null;
     private HashMap<String, String> parameters = null;
     private ArrayList<File> files = null;
     private Boolean alwaysDownload = false; // 總是當作下載使用
 
-    public HttpClient(String url, HashMap<String, String> parameters, ArrayList<File> files, Boolean alwaysDownload) {
+    public HttpClient(String url, HashMap<String, String> headers, HashMap<String, String> parameters, ArrayList<File> files, Boolean alwaysDownload) {
         this.url = url;
+        this.headers = headers;
         this.parameters = parameters;
         this.files = files;
         this.alwaysDownload = alwaysDownload;
     }
 
     public void get(Handler handler) {
-        useGet(this.url, this.parameters, handler);
+        useGet(this.url, this.headers, this.parameters, handler);
     }
 
     public void post(Handler handler) {
-        usePostUrlEncoded(this.url, this.parameters, handler);
+        usePostUrlEncoded(this.url, this.headers, this.parameters, handler);
     }
 
     public void postFormData(Handler handler) {
-        usePost(this.url, this.parameters, this.files, handler);
+        usePost(this.url, this.headers, this.parameters, this.files, handler);
+    }
+
+    public void postJSON(JSONObject jsonObject, Handler handler) {
+        usePostJSON(this.url, this.headers, jsonObject, handler);
     }
 
     // HTTP GET - x-www-form-urlencoded
-    private void useGet(String url, HashMap<String, String> parameters, Handler handler) {
+    private void useGet(String url, HashMap<String, String> headers, HashMap<String, String> parameters, Handler handler) {
         OkHttpClient client = OkHttpClientStatic.getInstance();
         // 檢查 URL 解析
         HttpUrl httpUrl = HttpUrl.parse(url);
@@ -70,8 +77,16 @@ public class HttpClient {
         }
         String _url = urlBuilder.build().toString();
         {
-            Request req = new Request.Builder().url(_url).build();
-            client.newCall(req).enqueue(new Callback() {
+            Request.Builder requestBuilder = new Request.Builder();
+            {
+                if(null != headers) {
+                    for (Map.Entry<String, String> header : headers.entrySet()) {
+                        requestBuilder.header(header.getKey(), header.getValue());
+                    }
+                }
+            }
+            Request request = requestBuilder.url(_url).build();
+            client.newCall(request).enqueue(new Callback() {
                 @Override
                 public void onFailure(Call call, IOException e) {
                     processFailResponse(e, handler);
@@ -84,8 +99,33 @@ public class HttpClient {
         }
     }
 
+    // HTTP POST - application/json
+    private void usePostJSON(String url, HashMap<String, String> headers, JSONObject obj, Handler handler) {
+        OkHttpClient client = OkHttpClientStatic.getInstance();
+        RequestBody body = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), obj.toJSONString());
+        Request.Builder requestBuilder = new Request.Builder();
+        {
+            if(null != headers) {
+                for (Map.Entry<String, String> header : headers.entrySet()) {
+                    requestBuilder.header(header.getKey(), header.getValue());
+                }
+            }
+        }
+        Request request = requestBuilder.url(url).post(body).build();
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                processFailResponse(e, handler);
+            }
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                processResponse(response, handler);
+            }
+        });
+    }
+
     // HTTP POST - x-www-form-urlencoded
-    private void usePostUrlEncoded(String url, HashMap<String, String> parameters, Handler handler) {
+    private void usePostUrlEncoded(String url, HashMap<String, String> headers, HashMap<String, String> parameters, Handler handler) {
         OkHttpClient client = OkHttpClientStatic.getInstance();
         FormBody.Builder formBodyBuilder = new FormBody.Builder();
         {
@@ -96,7 +136,15 @@ public class HttpClient {
             }
         }
         {
-            Request request = new Request.Builder().url(url).post(formBodyBuilder.build()).build();
+            Request.Builder requestBuilder = new Request.Builder();
+            {
+                if(null != headers) {
+                    for (Map.Entry<String, String> header : headers.entrySet()) {
+                        requestBuilder.header(header.getKey(), header.getValue());
+                    }
+                }
+            }
+            Request request = requestBuilder.url(url).post(formBodyBuilder.build()).build();
             client.newCall(request).enqueue(new Callback() {
                 @Override
                 public void onFailure(Call call, IOException e) {
@@ -111,7 +159,7 @@ public class HttpClient {
     }
 
     // HTTP POST - multipart/form-data
-    private void usePost(String url, HashMap<String, String> parameters, ArrayList<File> files, Handler handler) {
+    private void usePost(String url, HashMap<String, String> headers, HashMap<String, String> parameters, ArrayList<File> files, Handler handler) {
         OkHttpClient client = OkHttpClientStatic.getInstance();
         MultipartBody.Builder fileBodyBuilder = new MultipartBody.Builder();
         {
@@ -132,7 +180,15 @@ public class HttpClient {
         }
         {
             RequestBody requestBody = fileBodyBuilder.build();
-            Request request = new Request.Builder().url(url).post(requestBody).build();
+            Request.Builder requestBuilder = new Request.Builder();
+            {
+                if(null != headers) {
+                    for (Map.Entry<String, String> header : headers.entrySet()) {
+                        requestBuilder.header(header.getKey(), header.getValue());
+                    }
+                }
+            }
+            Request request = requestBuilder.url(url).post(requestBody).build();
             client.newCall(request).enqueue(new Callback() {
                 @Override
                 public void onFailure(Call call, IOException e) {
@@ -153,6 +209,7 @@ public class HttpClient {
             MediaType mediaType = respBody.contentType();
             if(null != mediaType) {
                 String type = mediaType.toString();
+                // 如果是 txt 或 json 檔案要檢查是否仍需要當作檔案被下載成二進位內容
                 if(type.contains("text/") || type.contains("application/json")) {
                     if(alwaysDownload) {
                         processFileRespData(response, respBody, handler);
@@ -217,15 +274,13 @@ public class HttpClient {
                     outStream.write(buffer, 0, bytesRead);
                 }
                 outStream.flush();
-                // IOUtils.closeQuietly(inStream);
-                // IOUtils.closeQuietly(outStream);
-                inStream.close();
-                outStream.close();
+                IOUtils.closeQuietly(inStream);
+                IOUtils.closeQuietly(outStream);
             }
             download_status = true;
         } catch (Exception e) {
             e.printStackTrace();
-            download_status = false;
+            // download_status = false;
             // clear response
             {
                 respBody.close();
@@ -301,10 +356,8 @@ public class HttpClient {
             }
             res = outSteam.toString("UTF-8");
             outSteam.flush();
-            // IOUtils.closeQuietly(inputStream);
-            // IOUtils.closeQuietly(outSteam);
-            inputStream.close();
-            outSteam.close();
+            IOUtils.closeQuietly(inputStream);
+            IOUtils.closeQuietly(outSteam);
         } catch (Exception e) {
             e.printStackTrace();
             res = null;
@@ -315,12 +368,37 @@ public class HttpClient {
     public static class Builder {
 
         private String url = null;
+        private HashMap<String, String> headers = null;
         private HashMap<String, String> parameters = null;
         private ArrayList<File> files = null;
         private Boolean alwaysDownload = false;
 
         public HttpClient.Builder setUrl(String url) {
             this.url = url;
+            return this;
+        }
+
+        public HttpClient.Builder setHeaders(Map<String, String> headers) {
+            HashMap<String, String> map = new HashMap<>();
+            for(Map.Entry<String, String> entry : headers.entrySet()) {
+                String key = entry.getKey();
+                String value = entry.getValue();
+                if(null == value) value = "";
+                map.put(key, value);
+            }
+            if(map.size() > 0) this.headers = map;
+            return this;
+        }
+
+        public HttpClient.Builder setHeaders(JSONObject headers) {
+            HashMap<String, String> map = new HashMap<>();
+            for(Map.Entry<String, Object> entry : headers.entrySet()) {
+                String key = entry.getKey();
+                String value = entry.getValue().toString();
+                if(null == value) value = "";
+                map.put(key, value);
+            }
+            if(map.size() > 0) this.headers = map;
             return this;
         }
 
@@ -364,7 +442,7 @@ public class HttpClient {
         }
 
         public HttpClient build() {
-            return new HttpClient(this.url, this.parameters, this.files, this.alwaysDownload);
+            return new HttpClient(this.url, this.headers, this.parameters, this.files, this.alwaysDownload);
         }
 
     }

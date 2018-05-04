@@ -9,6 +9,7 @@ import framework.observer.Message;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * 每個 SQL 指令請求都代表一個獨立的 DatabaseAction
@@ -25,6 +26,7 @@ public class DatabaseAction {
                 throw new Exception("資料庫連接為空值");
             } catch (Exception e) {
                 e.printStackTrace();
+                return;
             }
         } else {
             try {
@@ -35,19 +37,9 @@ public class DatabaseAction {
                 }
             } catch (Exception e) {
                 e.printStackTrace();
+                return;
             }
         }
-        /*
-        由於 batch 操作會直接帶入 PreparedStatement 所以不能限制 SQL 為 null
-        直接讓它出錯 exception 給使用者了解即可
-        if(null == sql || sql.length() == 0) {
-            try {
-                throw new Exception("未輸入正確的 SQL 語法指令");
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-        */
         this.autoCommit = autoCommit;
         // 設定 PreparedStatement
         {
@@ -255,11 +247,7 @@ public class DatabaseAction {
                     // 欄位名稱一律轉為小寫
                     String key = String.valueOf(col).toLowerCase();
                     String value = rs.getString(col);
-                    if(null != value) {
-                        row.put(key, value);
-                    } else {
-                        row.put(key, "");
-                    }
+                    row.put(key, Objects.requireNonNullElse(value, ""));
                 }
                 {
                     // 過程中每一列的回傳

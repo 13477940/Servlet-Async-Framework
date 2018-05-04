@@ -78,7 +78,7 @@ public class TomcatDataSource extends ConnectorConfig implements ConnectionPool 
     }
 
     private void initDataSource(ConnectContext dbContext) {
-        String connectURI = getConnectURI(dbContext.getDB_Type(), dbContext.getDB_IP(), dbContext.getDB_Port(), dbContext.getDB_Name());
+        String connectURI = getConnectURI(dbContext.getDB_Type(), dbContext.getDB_IP(), dbContext.getDB_Port(), dbContext.getDB_Name(), dbContext.getUseSSL());
 
         PoolProperties poolConfig = new PoolProperties();
         poolConfig.setUrl(connectURI);
@@ -193,6 +193,11 @@ public class TomcatDataSource extends ConnectorConfig implements ConnectionPool 
 
         public TomcatDataSource.Builder setMaxWait(int maxWait) {
             this.dbContext.setDB_Max_Wait(maxWait);
+            return this;
+        }
+
+        public TomcatDataSource.Builder setUseSSL(boolean useSSL) {
+            this.dbContext.setUseSSL(useSSL);
             return this;
         }
 

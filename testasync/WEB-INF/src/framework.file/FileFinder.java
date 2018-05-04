@@ -50,8 +50,6 @@ public class FileFinder {
         } else {
             res = findFunc(this.baseFile, null, fileName);
         }
-        // if(null == res) res = findFunc(this.baseFile, null, new File(fileName).getName());
-        // if(null == res) res = new File(fileName);
         if(!res.exists()) return null;
         return res;
     }

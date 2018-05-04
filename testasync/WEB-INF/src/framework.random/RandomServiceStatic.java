@@ -6,7 +6,7 @@ public class RandomServiceStatic {
 
     static {}
 
-    public static RandomService build() {
+    public static RandomService getInstance() {
         if(null == instance) instance = new RandomServiceStatic.Instance();
         return instance;
     }

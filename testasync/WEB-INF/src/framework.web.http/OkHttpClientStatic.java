@@ -12,7 +12,7 @@ public class OkHttpClientStatic {
     static {}
 
     public static OkHttpClient getInstance() {
-        if(null == instance) {
+        if(null == instance || instance.dispatcher().executorService().isShutdown()) {
             instance = new OkHttpClient.Builder()
                     .connectTimeout(30, TimeUnit.SECONDS)
                     .readTimeout(30, TimeUnit.SECONDS)
@@ -22,22 +22,22 @@ public class OkHttpClientStatic {
         return instance;
     }
 
-    /**
-     * 關閉並回收 OkHttp 引用的 Thread Pool
-     */
     public static void shutdown() {
-        if(null == instance) return;
-        instance.connectionPool().evictAll();
-        ExecutorService es = instance.dispatcher().executorService();
-        if(null == es) return;
-        if(!es.isShutdown()) es.shutdown();
-        try {
-            if(!es.isShutdown()) es.shutdownNow();
-            if(null != instance.cache() && !instance.cache().isClosed()) {
-                instance.cache().close();
+        if(null != instance) {
+            ExecutorService threadPool = instance.dispatcher().executorService();
+            if(null != threadPool && !threadPool.isShutdown()) {
+                threadPool.shutdown();
+                instance.connectionPool().evictAll();
+                try {
+                    instance.cache().close();
+                    if(!threadPool.awaitTermination(5, TimeUnit.SECONDS)) {
+                        threadPool.shutdownNow();
+                    }
+                } catch (Exception e) {
+                    // e.printStackTrace();
+                    threadPool.shutdownNow();
+                }
             }
-        } catch (Exception e) {
-            es.shutdownNow();
         }
     }
 

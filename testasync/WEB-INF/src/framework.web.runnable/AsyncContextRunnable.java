@@ -18,10 +18,7 @@ import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * 每一個 HttpRequest 都會經過此處進行個別封裝，封裝後會得到 AsyncActionContext，
@@ -167,7 +164,10 @@ public class AsyncContextRunnable implements Runnable {
         HashMap<String, String> params = new HashMap<>();
         for (Map.Entry<String, String[]> entry : asyncContext.getRequest().getParameterMap().entrySet()) {
             try {
-                String key = java.net.URLDecoder.decode(entry.getKey(), "UTF-8");
+                String key = entry.getKey();
+                if("get".equals(requestContext.getMethod().toLowerCase())) {
+                    key = java.net.URLDecoder.decode(entry.getKey(), "UTF-8");
+                }
                 String[] values = entry.getValue();
                 if (values.length > 1) {
                     // 單一 key 具有多個參數時
@@ -175,13 +175,19 @@ public class AsyncContextRunnable implements Runnable {
                     for(String value : values) {
                         String _key = key;
                         if(iCount > 0) _key = key + "_" + iCount;
-                        String _value = java.net.URLDecoder.decode(value, "UTF-8");
+                        String _value = value;
+                        if("get".equals(requestContext.getMethod().toLowerCase())) {
+                            _value = java.net.URLDecoder.decode(value, "UTF-8");
+                        }
                         params.put(_key, _value);
                         iCount++;
                     }
                 } else {
                     // 單個參數時
-                    String value = java.net.URLDecoder.decode(values[0], "UTF-8");
+                    String value = values[0];
+                    if("get".equals(requestContext.getMethod().toLowerCase())) {
+                        value = java.net.URLDecoder.decode(values[0], "UTF-8");
+                    }
                     params.put(key, value);
                 }
             } catch (Exception e) {
