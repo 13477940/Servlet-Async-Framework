@@ -64,7 +64,7 @@ public class AppSetting {
         }
         String content = readFileText(file);
         JSONObject res = null;
-        if(content.length() > 0) {
+        if(null != content && content.length() > 0) {
             try {
                 res = JSON.parseObject(content);
             } catch (Exception e1) {
@@ -85,7 +85,7 @@ public class AppSetting {
         JSONObject res = null;
         if(null != file && file.exists()) {
             String content = readFileText(file);
-            if(content.length() > 0) {
+            if(null != content && content.length() > 0) {
                 try {
                     res = JSON.parseObject(content);
                 } catch (Exception e1) {
@@ -226,8 +226,8 @@ public class AppSetting {
                 throw new Exception("FileInputStream 內容為空值");
             } catch (Exception e) {
                 e.printStackTrace();
-                return null;
             }
+            return null;
         }
         try (BufferedReader br = new BufferedReader(new InputStreamReader(fr, "UTF-8"))) {
             while(br.ready()) {

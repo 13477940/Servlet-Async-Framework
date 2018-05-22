@@ -527,16 +527,20 @@ public class AsyncActionContext {
      * 處理 URL 路徑的解析（去除協定、域名及參數）
      */
     private void processUrlParse() {
+        // HttpServletRequest 取得
+        HttpServletRequest httpRequest = null;
         {
-            HttpServletRequest httpRequest = null;
             try {
                 httpRequest = (HttpServletRequest) this.asyncContext.getRequest();
             } catch (Exception e) {
                 e.printStackTrace();
             }
-
+        }
+        if(null == httpRequest) return;
+        // 請求路徑字串處理
+        {
             try {
-                if(null == httpRequest || null == httpRequest.getRequestURL()) {
+                if(null == httpRequest.getRequestURL()) {
                     this.urlPath = null;
                 } else {
                     String url = httpRequest.getRequestURL().toString();
@@ -554,9 +558,10 @@ public class AsyncActionContext {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-
-            // 取得資源連結的副檔名
-            if(null == this.urlPath) return;
+        }
+        if(null == this.urlPath) return;
+        // 處理資源連結副檔名
+        {
             try {
                 String[] pathStrArr = this.urlPath.split("/");
                 if(pathStrArr.length <= 1) return;

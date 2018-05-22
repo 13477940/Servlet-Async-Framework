@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSONObject;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 public class DataRow {
@@ -32,15 +33,8 @@ public class DataRow {
         this.instance = new HashMap<>();
         for(Map.Entry<String, Object> entry : obj.entrySet()) {
             String key = entry.getKey();
-            String value;
-            Object tmp = entry.getValue();
-            // 預防空值處理
-            if(null != tmp) {
-                value = tmp.toString();
-            } else {
-                value = "";
-            }
-            instance.put(key, value);
+            Object value = Objects.requireNonNullElse(entry.getValue(), "");
+            instance.put(key, value.toString());
         }
     }
 
@@ -51,7 +45,7 @@ public class DataRow {
         this.instance = new HashMap<>();
         for(DataRow row : dt.prototype()) {
             String _key = row.get(key);
-            String _value = row.get(value);
+            String _value = Objects.requireNonNullElse(value, "");
             instance.put(_key, _value);
         }
     }
@@ -87,13 +81,9 @@ public class DataRow {
         JSONObject obj = new JSONObject();
         if(null == prototype()) return null;
         for(Map.Entry<String, String> entry : prototype().entrySet()) {
-            String key = entry.getKey().toLowerCase(); // column key, always lowercase
-            String value = entry.getValue(); // column value
-            if(null != value) {
-                obj.put(key, value);
-            } else {
-                obj.put(key, ""); // 空值處理
-            }
+            String key = entry.getKey().toLowerCase(); // Key - LowerCase
+            String value = Objects.requireNonNullElse(entry.getValue(), "");
+            obj.put(key, value);
         }
         return obj;
     }

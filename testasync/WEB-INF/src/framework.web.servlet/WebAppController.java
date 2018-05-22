@@ -39,26 +39,26 @@ public class WebAppController extends HttpServlet {
             }
         }
         setEncoding(req, resp);
-        boolean canAsync = false;
-        AsyncContext asyncContext = null;
+        AsyncContext asyncContext;
         // 是否已具有非同步狀態
         if(req.isAsyncStarted()) {
             asyncContext = req.getAsyncContext();
-            canAsync = true;
         } else {
             if(req.isAsyncSupported()) { // 是否支援非同步架構
                 asyncContext = req.startAsync();
-                canAsync = true;
             } else {
-                System.err.println("Servlet 或 Fileter 等尚未全部開啟非同步支援(async-supported)");
+                try {
+                    throw new Exception("Servlet 或 Fileter 等尚未全部開啟非同步支援(async-supported)");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    return; // 無非同步架構下不接受 Http Request
+                }
             }
         }
         // 藉由執行緒池接手後續任務，確保 Tomcat 端執行緒可以持續的接收請求
         // 並且藉由個別的 Runnable 隔離每個 asyncContext 處理狀態
-        if(canAsync) {
-            asyncContext.setTimeout(0); // 設置為 0 時表示非同步處理中無逾時限制
-            worker.submit(new AsyncContextRunnable(asyncContext));
-        }
+        asyncContext.setTimeout(0); // 設置為 0 時表示非同步處理中無逾時限制
+        worker.submit(new AsyncContextRunnable(asyncContext));
     }
 
     // 內容編碼設定
@@ -67,7 +67,7 @@ public class WebAppController extends HttpServlet {
         try {
             req.setCharacterEncoding(encoding);
             resp.setCharacterEncoding(encoding);
-            System.setProperty("file.encoding", encoding);
+            // System.setProperty("file.encoding", encoding);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -89,12 +89,12 @@ public class WebAppController extends HttpServlet {
                 worker.shutdown();
                 try {
                     // 設定一個 await 時限提供 thread 完成未完畢的工作的最後期限
-                    if (!worker.awaitTermination(3000, TimeUnit.MILLISECONDS)) {
+                    if (!worker.awaitTermination(5, TimeUnit.SECONDS)) {
                         // 當回收時限到期時，強制中斷所有 Thread 執行
                         worker.shutdownNow();
                     }
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    // e.printStackTrace();
                     // 回收時發生錯誤時亦強制關閉所有 thread
                     worker.shutdownNow();
                 }

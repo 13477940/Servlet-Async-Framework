@@ -67,11 +67,18 @@ public abstract class ConnectorConfig {
                 sbd.append(dbName);
                 // MySQL 體系要採用 utf8mb4 才能正常支援所有 Unicode 字集
                 // 新增 NULL 值處理原則，zeroDateTimeBehavior=convertToNull
+                // 更新到 MySQL 8.0 以及 JDBC 版本的需求更改 zeroDateTimeBehavior=CONVERT_TO_NULL
                 if(!useSecurity) {
-                    sbd.append("?useSSL=false&useUnicode=true&CharacterEncoding=utf8mb4&zeroDateTimeBehavior=convertToNull");
+                    sbd.append("?useSSL=false");
                 } else {
-                    sbd.append("?useSSL=true&verifyServerCertificate=false&useUnicode=true&CharacterEncoding=utf8mb4&zeroDateTimeBehavior=convertToNull");
+                    sbd.append("?useSSL=true");
+                    sbd.append("&verifyServerCertificate=false");
                 }
+                sbd.append("&useUnicode=true");
+                sbd.append("&CharacterEncoding=utf8mb4");
+                // sbd.append("&zeroDateTimeBehavior=convertToNull");
+                sbd.append("&zeroDateTimeBehavior=CONVERT_TO_NULL");
+                sbd.append("&useServerPrepStmts=true");
                 break;
             case "mariadb":
                 sbd.append("jdbc:mariadb://");
@@ -82,10 +89,13 @@ public abstract class ConnectorConfig {
                 sbd.append(dbName);
                 // MySQL 體系要採用 utf8mb4 才能正常支援所有 Unicode 字集
                 if(!useSecurity) {
-                    sbd.append("?useSSL=false&useUnicode=true&CharacterEncoding=utf8mb4");
+                    sbd.append("?useSSL=false");
                 } else {
-                    sbd.append("?useSSL=true&verifyServerCertificate=false&useUnicode=true&CharacterEncoding=utf8mb4");
+                    sbd.append("?useSSL=true");
+                    sbd.append("&verifyServerCertificate=false");
                 }
+                sbd.append("&useUnicode=true");
+                sbd.append("&CharacterEncoding=utf8mb4");
                 break;
         }
         return sbd.toString();

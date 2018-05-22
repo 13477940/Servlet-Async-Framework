@@ -158,7 +158,7 @@ public class AsyncContextRunnable implements Runnable {
         return res;
     }
 
-    // URL 傳值處理，需統一將回傳值由 URLDecoder 處理，避免空格及特殊符號值傳遞的問題
+    // GET URL 傳值處理，需統一將回傳值由 URLDecoder 處理，避免空格及特殊符號值傳遞的問題
     // 要注意的是前端 AJAX 也要採用 URLEncoder 將傳值進行處理才能避免錯誤
     private void parseParams() {
         HashMap<String, String> params = new HashMap<>();

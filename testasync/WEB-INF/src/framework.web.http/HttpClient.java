@@ -19,11 +19,11 @@ import java.util.Map;
 
 public class HttpClient {
 
-    private String url = null;
-    private HashMap<String, String> headers = null;
-    private HashMap<String, String> parameters = null;
-    private ArrayList<File> files = null;
-    private Boolean alwaysDownload = false; // 總是當作下載使用
+    private String url;
+    private HashMap<String, String> headers;
+    private HashMap<String, String> parameters;
+    private ArrayList<File> files;
+    private Boolean alwaysDownload; // 確認是否總是當作下載檔案使用
 
     public HttpClient(String url, HashMap<String, String> headers, HashMap<String, String> parameters, ArrayList<File> files, Boolean alwaysDownload) {
         this.url = url;
@@ -92,7 +92,7 @@ public class HttpClient {
                     processFailResponse(e, handler);
                 }
                 @Override
-                public void onResponse(Call call, Response response) throws IOException {
+                public void onResponse(Call call, Response response) {
                     processResponse(response, handler);
                 }
             });
@@ -118,7 +118,7 @@ public class HttpClient {
                 processFailResponse(e, handler);
             }
             @Override
-            public void onResponse(Call call, Response response) throws IOException {
+            public void onResponse(Call call, Response response) {
                 processResponse(response, handler);
             }
         });
@@ -151,7 +151,7 @@ public class HttpClient {
                     processFailResponse(e, handler);
                 }
                 @Override
-                public void onResponse(Call call, Response response) throws IOException {
+                public void onResponse(Call call, Response response) {
                     processResponse(response, handler);
                 }
             });
@@ -195,7 +195,7 @@ public class HttpClient {
                     processFailResponse(e, handler);
                 }
                 @Override
-                public void onResponse(Call call, Response response) throws IOException {
+                public void onResponse(Call call, Response response) {
                     processResponse(response, handler);
                 }
             });

@@ -5,6 +5,7 @@ import com.alibaba.fastjson.JSONArray;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.util.ArrayList;
+import java.util.Objects;
 
 public class DataTable {
 
@@ -77,13 +78,9 @@ public class DataTable {
             while(rs.next()) {
                 DataRow row = new DataRow();
                 for(String col : cols) {
-                    String key = String.valueOf(col).toLowerCase(); // column key, always lowercase
-                    String value = rs.getString(col); // column value
-                    if(null != value) {
-                        row.put(key, value);
-                    } else {
-                        row.put(key, "");
-                    }
+                    String key = String.valueOf(col).toLowerCase(); // Key - LowerCase
+                    String value = rs.getString(col);
+                    row.put(key, Objects.requireNonNullElse(value, ""));
                 }
                 instance.add(row);
             }
