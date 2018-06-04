@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSONObject;
 import framework.observer.Bundle;
 import framework.observer.Handler;
 import framework.observer.Message;
+import framework.setting.AppSetting;
 import org.apache.tomcat.util.http.fileupload.FileItem;
 
 import javax.activation.MimetypesFileTypeMap;
@@ -103,12 +104,8 @@ public class AsyncActionContext {
         return map;
     }
 
-    /**
-     * 取得是否具有檔案上傳請求的狀態值
-     */
-    public boolean getIsFileAction() {
-        return this.isFileAction;
-    }
+    // 確認該請求是否需要檔案上傳
+    public boolean isFileAction() { return this.isFileAction; }
 
     public String getMethod() {
         return reqMethod;
@@ -547,9 +544,11 @@ public class AsyncActionContext {
                     String[] sHttp = url.split("://");
                     String[] sLoca = sHttp[sHttp.length - 1].split("/");
                     StringBuilder sURL = new StringBuilder();
+                    sURL.append("/"); // root path
                     for (int i = 0, len = sLoca.length; i < len; i++) {
                         String tmp = sLoca[i];
-                        if (i == 0) continue;
+                        if(i == 0) { continue; } // domain name
+                        if(i == 1 && tmp.equals(new AppSetting.Builder().build().getAppName())) { continue; } // app name
                         sURL.append(tmp);
                         if (i != sLoca.length - 1) sURL.append("/");
                     }
