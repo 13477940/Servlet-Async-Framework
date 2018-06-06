@@ -17,7 +17,7 @@ import java.util.Base64;
 public class AES_256_GCM {
 
     private SecretKey key = null;
-    private byte[] iv = null;
+    private byte[] ivSrc = null;
 
     private Cipher cipher = null;
     private GCMParameterSpec spec = null;
@@ -38,13 +38,13 @@ public class AES_256_GCM {
                     e.printStackTrace();
                 }
             }
-            this.iv = iv;
+            this.ivSrc = iv;
             if(null == iv) {
-                this.iv = getRandomString(GCM_NONCE_LENGTH).getBytes(StandardCharsets.UTF_8);
+                this.ivSrc = getRandomString(GCM_NONCE_LENGTH).getBytes(StandardCharsets.UTF_8);
             }
             {
                 this.cipher = Cipher.getInstance("AES/GCM/NoPadding", "SunJCE");
-                this.spec = new GCMParameterSpec(GCM_TAG_LENGTH * 8, this.iv);
+                this.spec = new GCMParameterSpec(GCM_TAG_LENGTH * 8, this.ivSrc);
             }
         } catch(Exception e) {
             e.printStackTrace();
@@ -65,25 +65,33 @@ public class AES_256_GCM {
     }
 
     public String getIV() {
-        return Base64.getEncoder().withoutPadding().encodeToString(this.iv);
+        return Base64.getEncoder().withoutPadding().encodeToString(this.ivSrc);
     }
 
     public void setIV(CharSequence charSequence) {
         if(null == charSequence) {
-            this.iv = null;
+            this.ivSrc = null;
             return;
         }
-        this.iv = Base64.getDecoder().decode(charSequence.toString());
+        this.ivSrc = Base64.getDecoder().decode(charSequence.toString());
+    }
+
+    public void setIVSrc(CharSequence charSequence) {
+        if(null == charSequence) {
+            this.ivSrc = null;
+            return;
+        }
+        this.ivSrc = charSequence.toString().getBytes(StandardCharsets.UTF_8);
     }
 
     public void updateIV() {
-        this.iv = getRandomString(GCM_NONCE_LENGTH).getBytes(StandardCharsets.UTF_8);
+        this.ivSrc = getRandomString(GCM_NONCE_LENGTH).getBytes(StandardCharsets.UTF_8);
     }
 
     public String encrypt(CharSequence charSequence) {
         byte[] cipherText = null;
         try {
-            this.spec = new GCMParameterSpec(GCM_TAG_LENGTH * 8, this.iv);
+            this.spec = new GCMParameterSpec(GCM_TAG_LENGTH * 8, this.ivSrc);
             this.cipher.init(Cipher.ENCRYPT_MODE, this.key, this.spec);
             cipherText = this.cipher.doFinal(charSequence.toString().getBytes(StandardCharsets.UTF_8));
         } catch(Exception e) {
@@ -98,7 +106,7 @@ public class AES_256_GCM {
         byte[] encryptBytes = Base64.getDecoder().decode(charSequence.toString());
         byte[] cipherText = null;
         try {
-            this.spec = new GCMParameterSpec(GCM_TAG_LENGTH * 8, this.iv);
+            this.spec = new GCMParameterSpec(GCM_TAG_LENGTH * 8, this.ivSrc);
             this.cipher.init(Cipher.DECRYPT_MODE, this.key, this.spec);
             cipherText = this.cipher.doFinal(encryptBytes);
         } catch(Exception e) {
@@ -135,6 +143,12 @@ public class AES_256_GCM {
         public AES_256_GCM.Builder setIV(CharSequence charSequence) {
             if(null == charSequence) return this;
             this.iv = Base64.getDecoder().decode(charSequence.toString());
+            return this;
+        }
+
+        public AES_256_GCM.Builder setIVSrc(CharSequence charSequence) {
+            if(null == charSequence) return this;
+            this.iv = charSequence.toString().getBytes(StandardCharsets.UTF_8);
             return this;
         }
 
