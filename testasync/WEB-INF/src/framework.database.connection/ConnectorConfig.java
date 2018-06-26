@@ -16,7 +16,8 @@ public abstract class ConnectorConfig {
                 res = "com.microsoft.sqlserver.jdbc.SQLServerDriver";
                 break;
             case "mysql":
-                res = "com.mysql.jdbc.Driver";
+                // res = "com.mysql.jdbc.Driver";
+                res = "com.mysql.cj.jdbc.Driver"; // mysql 8.0
                 break;
             case "mariadb":
                 res = "org.mariadb.jdbc.Driver";
@@ -78,6 +79,7 @@ public abstract class ConnectorConfig {
                 sbd.append("&CharacterEncoding=utf8mb4");
                 // sbd.append("&zeroDateTimeBehavior=convertToNull");
                 sbd.append("&zeroDateTimeBehavior=CONVERT_TO_NULL");
+                sbd.append("&serverTimezone=CST");
                 sbd.append("&useServerPrepStmts=true");
                 break;
             case "mariadb":

@@ -18,7 +18,10 @@ import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.InputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 每一個 HttpRequest 都會經過此處進行個別封裝，封裝後會得到 AsyncActionContext，
@@ -69,13 +72,13 @@ public class AsyncContextRunnable implements Runnable {
     }
 
     // 採用檔案處理方式解析 form-data 資料內容
-    // 由於使用 Session 處理上傳進度值效率較差，建議由前端處理上傳進度即可
+    // 由於使用 Session 處理上傳進度值會影響伺服器效率，僅建議由前端處理上傳進度即可
     private void parseFormData() {
         // 上傳設定初始化
         String tempFilePath = new AppSetting.Builder().build().getPathContext().getTempDirPath();
         File tempFile = new File(tempFilePath);
         DiskFileItemFactory dfac = new DiskFileItemFactory();
-        dfac.setSizeThreshold(4096);
+        dfac.setSizeThreshold(0); // 容量多少的上傳檔案可以被暫存在記憶體中
         dfac.setRepository(tempFile);
         ServletFileUpload upload = new ServletFileUpload(dfac);
 
@@ -86,13 +89,7 @@ public class AsyncContextRunnable implements Runnable {
             createFileTable(items);
         } catch(Exception e) {
             e.printStackTrace();
-
-            // 上傳檔案過程發生例外錯誤時
-            try {
-                asyncContext.complete();
-            } catch (Exception ex) {
-                // ex.printStackTrace();
-            }
+            asyncContext.complete();
         }
     }
 

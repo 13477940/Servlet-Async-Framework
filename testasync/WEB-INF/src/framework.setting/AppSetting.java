@@ -9,6 +9,11 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
 
+/**
+ * AppSetting 主要管理作業系統判斷、WebApp 名稱與統一的檔案路徑，
+ * 在運行 Tomcat 的 WebApp 中會直接藉由 WEB-INF 資料夾作為定位點，
+ * 非 Tomcat 環境中則需要由使用者自行創建一個 baseFileDir 作為定位點
+ */
 public class AppSetting {
 
     private String configDirName = null;
@@ -20,7 +25,7 @@ public class AppSetting {
     private String hostOS = null;
     private String dirSlash = null;
 
-    public AppSetting(String configDirName, String configFileName, String baseFileDirName, String appName, AppSetting.PathContext pathContext) {
+    private AppSetting(String configDirName, String configFileName, String baseFileDirName, String appName, AppSetting.PathContext pathContext) {
         {
             this.configDirName = configDirName;
             this.configFileName = configFileName;
@@ -55,49 +60,51 @@ public class AppSetting {
     public JSONObject getConfig() {
         FileFinder finder = new FileFinder();
         File file = finder.find(this.configDirName, this.configFileName);
-        if(null == file) {
-            try {
-                throw new Exception("無法取得預設的設定檔內容：" + this.configDirName + dirSlash + this.configFileName);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-        String content = readFileText(file);
-        JSONObject res = null;
-        if(null != content && content.length() > 0) {
-            try {
-                res = JSON.parseObject(content);
-            } catch (Exception e1) {
-                // e1.printStackTrace();
-                try {
-                    res = new JSONObject();
-                    res.put("config", JSON.parseArray(content));
-                } catch (Exception e2) {
-                    // e2.printStackTrace();
-                    res = null;
-                }
-            }
-        }
-        return res;
+        return getConfig(file);
     }
 
     public JSONObject getConfig(File file) {
         JSONObject res = null;
-        if(null != file && file.exists()) {
-            String content = readFileText(file);
-            if(null != content && content.length() > 0) {
-                try {
-                    res = JSON.parseObject(content);
-                } catch (Exception e1) {
-                    // e1.printStackTrace();
-                    try {
-                        res = new JSONObject();
-                        res.put("config", JSON.parseArray(content));
-                    } catch (Exception e2) {
-                        // e2.printStackTrace();
-                        res = null;
+        if(null != file) {
+            if(file.exists()) {
+                String content = readFileText(file);
+                if (null != content && content.length() > 0) {
+                    {
+                        try {
+                            res = JSON.parseObject(content);
+                        } catch (Exception e) {
+                            // e.printStackTrace();
+                        }
+                    }
+                    if (null == res) {
+                        try {
+                            res = new JSONObject();
+                            res.put("config", JSON.parseArray(content));
+                        } catch (Exception e) {
+                            // e.printStackTrace();
+                        }
+                    }
+                    // 既不是 JSONObject 也不是 JSONArray
+                    if (null == res) {
+                        try {
+                            throw new Exception(file.getName() + " 不具有 JSON 內容");
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
                     }
                 }
+            } else {
+                try {
+                    throw new Exception("getConfig() 指定的檔案不存在");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        } else {
+            try {
+                throw new Exception("請輸入指定的 File 型態物件調用方法");
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
         return res;
@@ -147,36 +154,35 @@ public class AppSetting {
                             throw new Exception("在不具有 WEB-INF 的環境下需自定義 APP 名稱！");
                         } catch (Exception e) {
                             e.printStackTrace();
-                            return null;
+                        }
+                    } else {
+                        if(null == targetFile.getParentFile()) {
+                            try {
+                                throw new Exception("找尋不到指定的資料夾名稱父節點："+this.appName);
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        } else {
+                            this.appName = targetFile.getParentFile().getName();
                         }
                     }
-                    if(null == targetFile.getParentFile()) {
-                        try {
-                            throw new Exception("找尋不到指定的資料夾名稱父節點："+this.appName);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                            return null;
-                        }
-                    }
-                    this.appName = targetFile.getParentFile().getName();
                 }
             }
             // 檢查是否具有應用程式基本儲存的資料夾區域
             String baseFileDirPath;
             {
                 File baseFileDir = finder.find(this.baseFileDirName);
-                if(null != baseFileDir) {
+                if(null != baseFileDir && baseFileDir.exists()) {
                     baseFileDirPath = baseFileDir.getPath();
+                    this.pathContext = new AppSetting.PathContext(baseFileDirPath, this.appName, System.getProperty("file.separator"));
                 } else {
                     try {
-                        throw new Exception("由 AppSetting 類別路徑往上尋找並未找到 " + this.baseFileDirName + " 的資料夾！");
+                        throw new Exception("由 AppSetting 類別路徑往上尋找並未找到名為 " + this.baseFileDirName + " 的資料夾！");
                     } catch (Exception e) {
                         e.printStackTrace();
-                        return null;
                     }
                 }
             }
-            this.pathContext = new AppSetting.PathContext(baseFileDirPath, this.appName, System.getProperty("file.separator"));
             return new AppSetting(this.configDirName, this.configFileName, this.baseFileDirName, this.appName, this.pathContext);
         }
     }
@@ -187,7 +193,7 @@ public class AppSetting {
         private String exportDirPath = null;
         private String logDirPath = null;
 
-        public PathContext(String baseFileDirPath, String webAppName, String dirSlash) {
+        private PathContext(String baseFileDirPath, String webAppName, String dirSlash) {
             String tmpPath = baseFileDirPath + dirSlash + webAppName;
             tempDirPath = new File(tmpPath + dirSlash + "temp").getPath() + dirSlash;
             uploadDirPath = new File(tmpPath + dirSlash + "uploads").getPath() + dirSlash;
