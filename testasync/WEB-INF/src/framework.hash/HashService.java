@@ -1,5 +1,6 @@
 package framework.hash;
 
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Formatter;
 
@@ -35,7 +36,7 @@ public abstract class HashService {
         try {
             MessageDigest crypt = MessageDigest.getInstance(hashType);
             crypt.reset();
-            crypt.update(content.getBytes("UTF-8"));
+            crypt.update(content.getBytes(StandardCharsets.UTF_8));
             result = byteToHex(crypt.digest());
         } catch (Exception e) {
             e.printStackTrace();

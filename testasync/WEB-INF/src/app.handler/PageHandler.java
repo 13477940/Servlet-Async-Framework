@@ -25,7 +25,7 @@ public class PageHandler extends RequestHandler {
     @Override
     protected boolean checkIsMyJob(AsyncActionContext requestContext) {
         HashMap<String, String> params = requestContext.getParameters();
-        if(requestContext.getIsFileAction() && !params.containsKey("page")) return false;
+        if(requestContext.isFileAction() && !params.containsKey("page")) return false;
         return ( null == params || params.size() == 0 || params.containsKey("page") );
     }
 

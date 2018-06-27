@@ -18,6 +18,8 @@ import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.InputStream;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -147,7 +149,7 @@ public class AsyncContextRunnable implements Runnable {
             // 回收資源與建立回傳
             bis.close();
             buf.flush();
-            res = buf.toString("UTF-8");
+            res = buf.toString(StandardCharsets.UTF_8);
             buf.close();
         } catch (Exception e) {
             e.printStackTrace();
@@ -158,12 +160,13 @@ public class AsyncContextRunnable implements Runnable {
     // GET URL 傳值處理，需統一將回傳值由 URLDecoder 處理，避免空格及特殊符號值傳遞的問題
     // 要注意的是前端 AJAX 也要採用 URLEncoder 將傳值進行處理才能避免錯誤
     private void parseParams() {
+        Charset charset = StandardCharsets.UTF_8;
         HashMap<String, String> params = new HashMap<>();
         for (Map.Entry<String, String[]> entry : asyncContext.getRequest().getParameterMap().entrySet()) {
             try {
                 String key = entry.getKey();
                 if("get".equals(requestContext.getMethod().toLowerCase())) {
-                    key = java.net.URLDecoder.decode(entry.getKey(), "UTF-8");
+                    key = java.net.URLDecoder.decode(entry.getKey(), charset);
                 }
                 String[] values = entry.getValue();
                 if (values.length > 1) {
@@ -174,7 +177,7 @@ public class AsyncContextRunnable implements Runnable {
                         if(iCount > 0) _key = key + "_" + iCount;
                         String _value = value;
                         if("get".equals(requestContext.getMethod().toLowerCase())) {
-                            _value = java.net.URLDecoder.decode(value, "UTF-8");
+                            _value = java.net.URLDecoder.decode(value, charset);
                         }
                         params.put(_key, _value);
                         iCount++;
@@ -183,7 +186,7 @@ public class AsyncContextRunnable implements Runnable {
                     // 單個參數時
                     String value = values[0];
                     if("get".equals(requestContext.getMethod().toLowerCase())) {
-                        value = java.net.URLDecoder.decode(values[0], "UTF-8");
+                        value = java.net.URLDecoder.decode(values[0], charset);
                     }
                     params.put(key, value);
                 }

@@ -16,6 +16,7 @@ import javax.servlet.http.HttpSession;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -217,7 +218,7 @@ public class AsyncActionContext {
      */
     public void printToResponse(String content, Handler handler) {
         // 輸出統一編碼
-        String charset = "UTF-8";
+        String charset = StandardCharsets.UTF_8.name();
         // 設定字串輸出為何種 HTTP Content-Type（要注意這個和 Content-Encoding 不同）
         getHttpResponse().setHeader("content-type", "text/plain;charset=" + charset.toLowerCase());
         {
@@ -312,14 +313,14 @@ public class AsyncActionContext {
         {
             try {
                 if (isIE) {
-                    sbd_encn.append(java.net.URLEncoder.encode(fileName, "UTF-8"));
+                    sbd_encn.append(java.net.URLEncoder.encode(fileName, StandardCharsets.UTF_8));
                 } else {
-                    String proto = String.valueOf(request.getProtocol()).trim().toLowerCase();
+                    String protocol = String.valueOf(request.getProtocol()).trim().toLowerCase();
                     // 於 HTTP 2.0 與 IE 體系統一採用 UTF-8
-                    if (proto.equals("http/2.0")) {
-                        sbd_encn.append(java.net.URLEncoder.encode(fileName, "UTF-8"));
+                    if (protocol.contains("http/2.0")) {
+                        sbd_encn.append(java.net.URLEncoder.encode(fileName, StandardCharsets.UTF_8));
                     } else {
-                        sbd_encn.append(new String(fileName.getBytes("UTF-8"), "ISO8859_1"));
+                        sbd_encn.append(new String(fileName.getBytes(StandardCharsets.UTF_8), StandardCharsets.ISO_8859_1));
                     }
                 }
             } catch (Exception e) {
@@ -356,9 +357,11 @@ public class AsyncActionContext {
             }
         }
 
-        // 如果指定為 isAttachment 則會被當作一般的檔案下載方式；若為 false 則會看瀏覽器能不能預覽該檔案，例如：pdf, json, html 等
+        // 如果指定為 isAttachment 則會被當作一般的檔案下載方式；
+        // 若為 false 則會依照瀏覽器能不能瀏覽該檔案類型，例如：pdf, json, html 等
         {
-            response.setContentType(fileMIME + ";charset=UTF-8");
+            String charset = StandardCharsets.UTF_8.name();
+            response.setContentType(fileMIME + ";charset="+charset);
             if (isAttachment) {
                 response.setHeader("Content-Disposition", "attachment;filename=\"" + encodeFileName + "\"");
             } else {

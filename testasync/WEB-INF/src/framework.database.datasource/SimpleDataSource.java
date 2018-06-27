@@ -2,6 +2,7 @@ package framework.database.datasource;
 
 import framework.database.connection.ConnectContext;
 import framework.database.connection.ConnectorConfig;
+import framework.database.interfaces.ConnectionPool;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -23,15 +24,16 @@ public class SimpleDataSource extends ConnectorConfig implements ConnectionPool 
     private Boolean runTag = false;
     private long maxActiveSecond = (1000*1800); // 連結最長的存活時間(ms)限制，預設值
 
-    public SimpleDataSource(ConnectContext dbContext) {
+    private SimpleDataSource(ConnectContext dbContext) {
         if(null == dbContext) {
             try {
                 throw new Exception("沒有資料庫連接定義");
             } catch(Exception e) {
                 e.printStackTrace();
             }
+        } else {
+            this.dbContext = dbContext;
         }
-        this.dbContext = dbContext;
     }
 
     @Override

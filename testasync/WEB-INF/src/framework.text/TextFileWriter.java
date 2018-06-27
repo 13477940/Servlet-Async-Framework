@@ -11,7 +11,7 @@ public class TextFileWriter {
     private BufferedWriter bufferedWriter = null;
     private FileWriter fileWriter = null;
 
-    public TextFileWriter(File targetFile, Boolean isAppend) {
+    private TextFileWriter(File targetFile, Boolean isAppend) {
         this.targetFile = targetFile;
         try {
             if(null == targetFile || !targetFile.exists()) {

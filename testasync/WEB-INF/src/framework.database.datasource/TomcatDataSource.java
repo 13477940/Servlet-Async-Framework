@@ -2,6 +2,7 @@ package framework.database.datasource;
 
 import framework.database.connection.ConnectContext;
 import framework.database.connection.ConnectorConfig;
+import framework.database.interfaces.ConnectionPool;
 import org.apache.tomcat.jdbc.pool.DataSource;
 import org.apache.tomcat.jdbc.pool.PoolProperties;
 
@@ -23,8 +24,16 @@ public class TomcatDataSource extends ConnectorConfig implements ConnectionPool 
     private final int maxErrorCount = 50; // 最大錯誤次數，防止無窮循環
     private long lastestErrorTime = 0; // 最近一次發生錯誤的時機點
 
-    public TomcatDataSource(ConnectContext dbContext) {
-        initDataSource(dbContext);
+    private TomcatDataSource(ConnectContext dbContext) {
+        if(null == dbContext) {
+            try {
+                throw new Exception("沒有資料庫連接定義");
+            } catch(Exception e) {
+                e.printStackTrace();
+            }
+        } else {
+            initDataSource(dbContext);
+        }
     }
 
     @Override

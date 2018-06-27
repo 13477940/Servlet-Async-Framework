@@ -1,4 +1,4 @@
-package framework.mail.pattern;
+package framework.mail.interfaces;
 
 import framework.mail.context.MailContext;
 import framework.observer.Handler;

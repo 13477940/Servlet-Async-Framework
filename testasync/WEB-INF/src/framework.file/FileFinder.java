@@ -50,12 +50,15 @@ public class FileFinder {
         } else {
             res = findFunc(this.baseFile, null, fileName);
         }
+        if(null == res) return null;
         if(!res.exists()) return null;
         return res;
     }
 
     public File find(String fileDirectoryName, String fileName) {
-        return findFunc(this.baseFile, fileDirectoryName, fileName);
+        File res = findFunc(this.baseFile, fileDirectoryName, fileName);
+        if(null == res) return null;
+        return res;
     }
 
     // 藉由迴圈替代遞迴實作訪問資料夾的動作

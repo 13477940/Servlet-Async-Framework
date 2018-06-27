@@ -8,6 +8,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 
 /**
  * AppSetting 主要管理作業系統判斷、WebApp 名稱與統一的檔案路徑，
@@ -57,12 +58,17 @@ public class AppSetting {
         return this.pathContext;
     }
 
+    public JSONObject getConfig(String configDirName, String configFileName) {
+        return getConfig(new FileFinder().find(configDirName, configFileName));
+    }
+
     public JSONObject getConfig() {
         FileFinder finder = new FileFinder();
         File file = finder.find(this.configDirName, this.configFileName);
         return getConfig(file);
     }
 
+    // getConfig 實作
     public JSONObject getConfig(File file) {
         JSONObject res = null;
         if(null != file) {
@@ -73,7 +79,8 @@ public class AppSetting {
                         try {
                             res = JSON.parseObject(content);
                         } catch (Exception e) {
-                            // e.printStackTrace();
+                            e.printStackTrace();
+                            res = null;
                         }
                     }
                     if (null == res) {
@@ -81,13 +88,14 @@ public class AppSetting {
                             res = new JSONObject();
                             res.put("config", JSON.parseArray(content));
                         } catch (Exception e) {
-                            // e.printStackTrace();
+                            e.printStackTrace();
+                            res = null;
                         }
                     }
                     // 既不是 JSONObject 也不是 JSONArray
                     if (null == res) {
                         try {
-                            throw new Exception(file.getName() + " 不具有 JSON 內容");
+                            throw new Exception(file.getName() + " 不是有效的 JSON 內容");
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
@@ -108,10 +116,6 @@ public class AppSetting {
             }
         }
         return res;
-    }
-
-    public JSONObject getConfig(String configDirName, String configFileName) {
-        return getConfig(new FileFinder().find(configDirName, configFileName));
     }
 
     public static class Builder {
@@ -187,6 +191,9 @@ public class AppSetting {
         }
     }
 
+    /**
+     * WebApp 資源路徑封裝
+     */
     public static class PathContext {
         private String tempDirPath = null;
         private String uploadDirPath = null;
@@ -235,7 +242,7 @@ public class AppSetting {
             }
             return null;
         }
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(fr, "UTF-8"))) {
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(fr, StandardCharsets.UTF_8))) {
             while(br.ready()) {
                 String line = br.readLine();
                 sbd.append(line);

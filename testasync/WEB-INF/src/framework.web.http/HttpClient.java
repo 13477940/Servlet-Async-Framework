@@ -10,6 +10,7 @@ import org.apache.tomcat.util.http.fileupload.IOUtils;
 
 import javax.activation.MimetypesFileTypeMap;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -102,7 +103,8 @@ public class HttpClient {
     // HTTP POST - application/json
     private void usePostJSON(String url, HashMap<String, String> headers, JSONObject obj, Handler handler) {
         OkHttpClient client = OkHttpClientStatic.getInstance();
-        RequestBody body = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), obj.toJSONString());
+        String charset = StandardCharsets.UTF_8.name();
+        RequestBody body = RequestBody.create(MediaType.parse("application/json; charset="+charset), obj.toJSONString());
         Request.Builder requestBuilder = new Request.Builder();
         {
             if(null != headers) {
@@ -354,7 +356,7 @@ public class HttpClient {
             while ((length = inputStream.read(buffer)) != -1) {
                 outSteam.write(buffer, 0, length);
             }
-            res = outSteam.toString("UTF-8");
+            res = outSteam.toString(StandardCharsets.UTF_8);
             outSteam.flush();
             IOUtils.closeQuietly(inputStream);
             IOUtils.closeQuietly(outSteam);

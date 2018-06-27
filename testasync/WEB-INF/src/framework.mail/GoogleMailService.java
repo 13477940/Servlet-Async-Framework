@@ -1,13 +1,14 @@
 package framework.mail;
 
 import framework.mail.context.MailContext;
-import framework.mail.pattern.MailService;
+import framework.mail.interfaces.MailService;
 import framework.observer.Bundle;
 import framework.observer.Handler;
 
 import javax.mail.*;
 import javax.mail.internet.*;
 import java.io.File;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.Properties;
 
@@ -87,7 +88,7 @@ public class GoogleMailService implements MailService {
 
         // 寄件主旨及時間點
         try {
-            message.setSubject(mailContext.getSubject(), "UTF-8");
+            message.setSubject(mailContext.getSubject(), StandardCharsets.UTF_8.name());
             message.setSentDate(new Date());
             // message.setHeader("X-Mailer", "");
         } catch (Exception e) {
@@ -115,9 +116,9 @@ public class GoogleMailService implements MailService {
 
                     String fileName = file.getName();
                     filePart.attachFile(file);
-                    filePart.setHeader("Content-Type", "application/octet-stream; charset=\"utf-8\"");
+                    filePart.setHeader("Content-Type", "application/octet-stream; charset="+StandardCharsets.UTF_8.name());
 
-                    filePart.setFileName(MimeUtility.encodeText(fileName, "UTF-8", "B"));
+                    filePart.setFileName(MimeUtility.encodeText(fileName, StandardCharsets.UTF_8.name(), "B"));
                     if(file.exists()) {
                         multipart.addBodyPart(filePart);
                     } else {
@@ -127,13 +128,13 @@ public class GoogleMailService implements MailService {
 
                 BodyPart msg = new MimeBodyPart();
                 // 如果要讀取 HTML 格式不能用 setText 要用此方法
-                msg.setContent(mailContext.getContent(), "text/html;charset=utf-8");
+                msg.setContent(mailContext.getContent(), "text/html;charset="+StandardCharsets.UTF_8.name());
                 multipart.addBodyPart(msg); // file content
                 // 放入信件內容
                 message.setContent(multipart);
             } else {
                 // 放入信件內容
-                message.setContent(mailContext.getContent(), "text/html;charset=utf-8");
+                message.setContent(mailContext.getContent(), "text/html;charset="+StandardCharsets.UTF_8.name());
             }
         } catch (Exception e) {
             e.printStackTrace();

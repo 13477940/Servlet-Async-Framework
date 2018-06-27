@@ -7,6 +7,7 @@ import javax.servlet.AsyncContext;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.nio.charset.StandardCharsets;
 import java.sql.Driver;
 import java.sql.DriverManager;
 import java.util.Enumeration;
@@ -63,11 +64,10 @@ public class WebAppController extends HttpServlet {
 
     // 內容編碼設定
     private void setEncoding(HttpServletRequest req, HttpServletResponse resp) {
-        String encoding = "UTF-8";
+        String charset = StandardCharsets.UTF_8.name();
         try {
-            req.setCharacterEncoding(encoding);
-            resp.setCharacterEncoding(encoding);
-            // System.setProperty("file.encoding", encoding);
+            req.setCharacterEncoding(charset);
+            resp.setCharacterEncoding(charset);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -89,7 +89,7 @@ public class WebAppController extends HttpServlet {
                 worker.shutdown();
                 try {
                     // 設定一個 await 時限提供 thread 完成未完畢的工作的最後期限
-                    if (!worker.awaitTermination(5, TimeUnit.SECONDS)) {
+                    if (!worker.awaitTermination(3, TimeUnit.SECONDS)) {
                         // 當回收時限到期時，強制中斷所有 Thread 執行
                         worker.shutdownNow();
                     }

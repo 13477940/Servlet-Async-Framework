@@ -1,4 +1,4 @@
-package framework.database.datasource;
+package framework.database.interfaces;
 
 import java.sql.Connection;
 
