@@ -20,6 +20,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 
 /**
@@ -41,6 +42,8 @@ public class AsyncActionContext {
 
     private Handler appExceptionHandler; // for public exception
     private Handler invalidRequestHandler; // for invalid request
+
+    private String tempDirID = null; // temp file dir id
 
     /**
      * 初始化 RequestContext
@@ -73,12 +76,19 @@ public class AsyncActionContext {
         this.params = params;
     }
 
-    public HttpSession getHttpSession() {
-        return this.httpSession;
-    }
-
     public HashMap<String, String> getParameters() {
         return this.params;
+    }
+
+    /**
+     * 使用 ArrayList 回傳的原因在於保存使用者 key 輸入的順序
+     */
+    public ArrayList<String> getParameterKeys() {
+        return Collections.list(this.asyncContext.getRequest().getParameterNames());
+    }
+
+    public HttpSession getHttpSession() {
+        return this.httpSession;
     }
 
     public void setFiles(ArrayList<FileItem> files) {
@@ -106,7 +116,9 @@ public class AsyncActionContext {
     }
 
     // 確認該請求是否需要檔案上傳
-    public boolean isFileAction() { return this.isFileAction; }
+    public boolean isFileAction() {
+        return this.isFileAction;
+    }
 
     public String getMethod() {
         return reqMethod;
@@ -521,6 +533,17 @@ public class AsyncActionContext {
      */
     public String getResourceExtension() {
         return this.resourceExten;
+    }
+
+    /**
+     * 設定此次檔案請求的暫存資料夾識別碼
+     */
+    public void setTempDirID(String tempDirID) {
+        this.tempDirID = tempDirID;
+    }
+
+    public String getTempDirID() {
+        return this.tempDirID;
     }
 
     /**

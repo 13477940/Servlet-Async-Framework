@@ -2,13 +2,16 @@ package framework.file;
 
 import java.io.File;
 import java.net.URL;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 
 /**
  * FileFinder 並不是萬能的，搜尋原理為每一個資料夾階層查詢一次檔案名稱，
  * 依序往上尋找父階層與其指定資料夾下一階層的內容是否具有查詢目標，
- * 要注意此處不能使用 AppSetting.java 要不然會有嵌套無窮錯誤發生，
+ * 要注意此處不能使用 AppSetting.java 要不然會有重複嵌套的邏輯錯誤發生，
  * 主要是因為 AppSetting.java 改為 new Builder() 模式，所以每次都會重新建立實例，
- * 如果在互相引用的情況下會重複的互相引用！
+ * 如果在互相引用的情況下會重複的互相引用
+ * https://stackoverflow.com/questions/37902711/getting-the-path-of-a-running-jar-file-returns-rsrc
  */
 public class FileFinder {
 
@@ -16,17 +19,13 @@ public class FileFinder {
 
     private File baseFile = null; // 搜尋起始點
 
-    public FileFinder() {
-        initFileFinder(null);
-    }
+    public FileFinder() { initFileFinder(null); }
 
-    public FileFinder(File baseFile) {
-        initFileFinder(baseFile);
-    }
+    public FileFinder(File baseFile) { initFileFinder(baseFile); }
 
     public File find(String fileName) {
         if(null == fileName || fileName.length() == 0) return null;
-        // for Windows Root
+        // for Windows directory root path
         if(System.getProperty("os.name").toLowerCase().contains("windows")) {
             if("/".equals(fileName) || "\\".equals(fileName)) {
                 URL resourceURL = this.getClass().getClassLoader().getResource("");
@@ -135,7 +134,7 @@ public class FileFinder {
         if(null == baseFile) {
             URL resourceURL = this.getClass().getClassLoader().getResource("");
             if(null != resourceURL) {
-                String classPath = resourceURL.getPath();
+                String classPath = URLDecoder.decode(resourceURL.getPath(), StandardCharsets.UTF_8);
                 this.baseFile = new File(classPath);
             } else {
                 try {

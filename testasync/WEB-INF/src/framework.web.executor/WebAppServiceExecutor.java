@@ -57,11 +57,11 @@ public class WebAppServiceExecutor {
      */
     private ArrayList<RequestHandler> getHandlerChain() {
         ArrayList<RequestHandler> handlers = WebAppServicePoolStatic.getInstance().prototype(); // 物件範本
-        ArrayList<RequestHandler> runHandlers = new ArrayList<>(); // 新實例容器
+        ArrayList<RequestHandler> runHandlers = new ArrayList<>(); // 新實例容器（實際被運作的責任鏈節點實例）
         // 建立新實例，因為是由 ArrayList 實作所以經過 foreach 取出時順序是不變的
         for (RequestHandler rawHandler : handlers) {
             try {
-                RequestHandler newHandler = rawHandler.getClass().getConstructor().newInstance(); // jdk 9 update
+                RequestHandler newHandler = rawHandler.getClass().getConstructor().newInstance(); // JDK9+
                 runHandlers.add(newHandler);
             } catch (Exception e) {
                 e.printStackTrace();
@@ -69,12 +69,11 @@ public class WebAppServiceExecutor {
         }
         // 重新建立新實例間的責任鏈關係（requestHandler 要知道是否還有下一位處理者）
         if(runHandlers.size() > 0) {
-            for(int i = 0, len = runHandlers.size(); i < len; i++) {
-                RequestHandler runHandler = runHandlers.get(i);
-                if(i < (len - 1)) {
-                    // 如果不是最後一個 requestHandler 則設定具有的下一個 requestHandler
-                    runHandler.setNextHandler(runHandlers.get(i+1));
-                }
+            // 首節點不具有前一個節點，所以可由 null 值判斷，接下來都將現有節點設定為上一個節點的 nextHandler
+            RequestHandler prevHandler = null;
+            for(RequestHandler runHandler : runHandlers) {
+                if(null != prevHandler) prevHandler.setNextHandler(runHandler);
+                prevHandler = runHandler;
             }
         }
         return runHandlers;

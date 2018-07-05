@@ -46,10 +46,9 @@ public class DatabaseAction {
             try {
                 PreparedStatement preState = conn.prepareStatement(sql);
                 if(null != parameters && parameters.size() > 0) {
-                    int i = 1; // start from 1 to n
-                    for (String value : parameters) {
+                    for(int i = 0, len = parameters.size(); i < len; i++) {
+                        String value = parameters.get(i);
                         preState.setString(i, value);
-                        i++;
                     }
                 }
                 preState.setEscapeProcessing(true);
@@ -244,8 +243,7 @@ public class DatabaseAction {
             while(rs.next()) {
                 JSONObject row = new JSONObject();
                 for (String col : columns) {
-                    // 欄位名稱一律轉為小寫
-                    String key = String.valueOf(col).toLowerCase();
+                    String key = String.valueOf(col).toLowerCase(); // Key - LowerCase
                     String value = rs.getString(col);
                     row.put(key, Objects.requireNonNullElse(value, ""));
                 }

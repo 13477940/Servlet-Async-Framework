@@ -1,5 +1,8 @@
 package framework.web.runnable;
 
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
+import framework.random.RandomServiceStatic;
 import framework.setting.AppSetting;
 import framework.web.context.AsyncActionContext;
 import framework.web.executor.WebAppServiceExecutor;
@@ -20,10 +23,7 @@ import java.io.File;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * 每一個 HttpRequest 都會經過此處進行個別封裝，封裝後會得到 AsyncActionContext，
@@ -78,7 +78,14 @@ public class AsyncContextRunnable implements Runnable {
     private void parseFormData() {
         // 上傳設定初始化
         String tempFilePath = new AppSetting.Builder().build().getPathContext().getTempDirPath();
-        File tempFile = new File(tempFilePath);
+        String tempDirID = RandomServiceStatic.getInstance().getTimeHash(6);
+        File tempFile = new File(tempFilePath + tempDirID);
+        {
+            // 藉由 tempDirID 刪除每次請求結束後殘留的暫存檔案
+            requestContext.setTempDirID(tempDirID);
+            //noinspection ResultOfMethodCallIgnored
+            tempFile.mkdirs();
+        }
         DiskFileItemFactory dfac = new DiskFileItemFactory();
         dfac.setSizeThreshold(0); // 容量多少的上傳檔案可以被暫存在記憶體中
         dfac.setRepository(tempFile);
@@ -97,6 +104,7 @@ public class AsyncContextRunnable implements Runnable {
 
     // form-data 內容處理
     private void createFileTable(List<FileItem> items) {
+        JSONObject obj_keys = new JSONObject();
         HashMap<String, String> params = new HashMap<>();
         ArrayList<FileItem> files = new ArrayList<>();
         for (FileItem fi : items) {
@@ -109,17 +117,16 @@ public class AsyncContextRunnable implements Runnable {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-                if(params.containsKey(key)) {
-                    int index = 1; // 起始 key 數
-                    while(true) {
-                        String numKey = key+"_"+index;
-                        if(params.containsKey(numKey)) { // 如果仍為重複 key 時
-                            index++;
-                        } else {
-                            params.put(numKey, value);
-                            break;
-                        }
+                {
+                    // 單一 parameter key 具有多個參數時（多參數值藉由 JSONArray 字串形式儲存）
+                    if(obj_keys.containsKey(key)) {
+                        obj_keys.getJSONArray(key).add(value);
+                    } else {
+                        obj_keys.put(key, new JSONArray().add(value));
                     }
+                }
+                if(params.containsKey(key)) {
+                    params.put(key, obj_keys.getJSONArray(key).toJSONString());
                 } else {
                     params.put(key, value);
                 }
@@ -170,20 +177,11 @@ public class AsyncContextRunnable implements Runnable {
                 }
                 String[] values = entry.getValue();
                 if (values.length > 1) {
-                    // 單一 key 具有多個參數時
-                    int iCount = 0;
-                    for(String value : values) {
-                        String _key = key;
-                        if(iCount > 0) _key = key + "_" + iCount;
-                        String _value = value;
-                        if("get".equals(requestContext.getMethod().toLowerCase())) {
-                            _value = java.net.URLDecoder.decode(value, charset);
-                        }
-                        params.put(_key, _value);
-                        iCount++;
-                    }
+                    // 單一 parameter key 具有多個參數時（多參數值藉由 JSONArray 字串形式儲存）
+                    JSONArray arr = new JSONArray();
+                    Collections.addAll(arr, values);
+                    params.put(key, arr.toJSONString());
                 } else {
-                    // 單個參數時
                     String value = values[0];
                     if("get".equals(requestContext.getMethod().toLowerCase())) {
                         value = java.net.URLDecoder.decode(values[0], charset);

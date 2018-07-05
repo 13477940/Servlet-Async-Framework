@@ -100,7 +100,7 @@ public class DataTable {
         ArrayList<String> columnNameList = new ArrayList<>();
         try {
             ResultSetMetaData metaData = rs.getMetaData();
-            for(int i = 0; i < metaData.getColumnCount(); i++) {
+            for(int i = 0, len = metaData.getColumnCount(); i < len; i++) {
                 columnNameList.add(metaData.getColumnLabel(i+1));
             }
         } catch(Exception e) {

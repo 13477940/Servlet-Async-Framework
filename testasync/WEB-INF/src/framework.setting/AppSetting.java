@@ -13,7 +13,8 @@ import java.nio.charset.StandardCharsets;
 /**
  * AppSetting 主要管理作業系統判斷、WebApp 名稱與統一的檔案路徑，
  * 在運行 Tomcat 的 WebApp 中會直接藉由 WEB-INF 資料夾作為定位點，
- * 非 Tomcat 環境中則需要由使用者自行創建一個 baseFileDir 作為定位點
+ * 非 Tomcat 環境中則需要由使用者自行創建一個 baseFileDir 作為定位點。
+ * ！當 AppSetting 於多層次的 jar 檔封裝後可能會造成路徑無法取得的問題
  */
 public class AppSetting {
 
@@ -148,7 +149,7 @@ public class AppSetting {
         }
 
         public AppSetting build() {
-            FileFinder finder = new FileFinder();
+            FileFinder finder = new FileFinder.Builder().build();
             // 檢查是否為 Tomcat 環境中
             File targetFile = finder.find("WEB-INF");
             {
