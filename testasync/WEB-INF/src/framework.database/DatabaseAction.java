@@ -48,7 +48,8 @@ public class DatabaseAction {
                 if(null != parameters && parameters.size() > 0) {
                     for(int i = 0, len = parameters.size(); i < len; i++) {
                         String value = parameters.get(i);
-                        preState.setString(i, value);
+                        // PreparedStatement is start at 1 to N
+                        preState.setString(i+1, value);
                     }
                 }
                 preState.setEscapeProcessing(true);
