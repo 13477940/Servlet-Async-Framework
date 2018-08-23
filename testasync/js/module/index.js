@@ -70,7 +70,7 @@ var testasync = {};
             fData.append("myfile", myfile);
 
             // 具有上傳進度值的 jQuery AJAX 實作
-            // jQuery 文件上传进度提示：https://segmentfault.com/a/1190000008791342
+            // https://segmentfault.com/a/1190000008791342
             (function() {
                 var ajax = $.ajax({
                     async: true,

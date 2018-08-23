@@ -9,55 +9,77 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 /**
- * UserContext 是依據 HTTP Session 存在而封裝
- * 記錄該請求的使用者資訊，使用者登入成功時建立，
- * 並於每次發起請求時由此物件進行授權，
- * 若該 Session 尚未建立 UserContext 則表示尚未登入
+ * 基於 Http Session 機制封裝使用者資訊
  */
 public class UserContext {
 
     private AsyncActionContext requestContext = null;
     private HttpSession session = null;
     private String sessionID = null;
-    private String dataID = null; // 資料表主鍵值（自定義）
-    private String account = null; // 使用者帳號（自定義）
-    private String name = null; // 使用者名稱（自定義）
-    private String nickName = null; // 使用者暱稱（自定義）
-    private String category = null; // 使用者權限（自定義）
+    private String dataID = null; // 一般操作資料庫識別用途
+    private String account = null; // 如有規定帳號為識別則使用此值操作資料庫
+    private String name = null;
+    private String nickName = null;
+    private String category = null; // 系統權限級別
     private String remoteIP = null;
-    private JSONObject extenObj = null; // 延伸資訊用（自定義）
     private String createDate = null;
     private String createTime = null;
+    private JSONObject exten_obj = null; // 延伸資訊用（自定義）
 
-    private UserContext(AsyncActionContext requestContext, String dataID, String account, String name, String nickName, String category, String remoteIP, JSONObject extenObj) {
+    /**
+     * 初始化建立使用者資訊
+     */
+    public UserContext(AsyncActionContext requestContext, String dataID, String account, String name, String nickName, String category, JSONObject exten_obj) {
         this.requestContext = requestContext;
-        initUserContext(requestContext.getHttpSession(), dataID, account, name, nickName, category, remoteIP, extenObj);
-    }
-
-    private UserContext(HttpSession session, String dataID, String account, String name, String nickName, String category, String remoteIP, JSONObject extenObj) {
-        initUserContext(session, dataID, account, name, nickName, category, remoteIP, extenObj);
-    }
-
-    private void initUserContext(HttpSession session, String dataID, String account, String name, String nickName, String category, String remoteIP, JSONObject extenObj) {
-        this.session = session;
-        this.sessionID = session.getId();
+        this.session = requestContext.getHttpSession();
+        this.sessionID = this.session.getId();
         this.dataID = dataID;
         this.account = account;
         this.name = name;
         this.nickName = nickName;
         this.category = category;
-        {
-            if(null == remoteIP) {
-                this.remoteIP = getIpFromRequest();
-            } else {
-                this.remoteIP = remoteIP;
-            }
+        this.remoteIP = getIpFromRequest();
+        this.exten_obj = exten_obj;
+        getCreateDT();
+    }
+
+    /**
+     * 讀取 UserInfo 封裝後的 JSONObject 的內容恢復物件型態，
+     * 只擷取使用者資訊內容，Session 部分覆寫為當前狀態
+     */
+    public UserContext(AsyncActionContext requestContext, JSONObject obj) {
+        this.requestContext = requestContext;
+        this.session = requestContext.getHttpSession();
+        this.sessionID = this.session.getId();
+        this.dataID = obj.getString("dataid");
+        this.account = obj.getString("account");
+        this.name = obj.getString("name");
+        this.nickName = obj.getString("nickname");
+        this.category = obj.getString("category");
+        this.remoteIP = getIpFromRequest();
+        if(obj.containsKey("exten_obj")) {
+            this.exten_obj = obj.getJSONObject("exten_obj");
         }
-        this.extenObj = extenObj;
-        {
-            LocalDateTime now = LocalDateTime.now();
-            this.createDate = now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-            this.createTime = now.format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+        getCreateDT();
+    }
+
+    /**
+     * 從 Session 取出並回復成 UserContext 型態時
+     */
+    public UserContext(HttpSession session, JSONObject obj) {
+        this.session = session;
+        this.requestContext = null;
+        this.sessionID = this.session.getId();
+        this.dataID = obj.getString("dataid");
+        this.account = obj.getString("account");
+        this.name = obj.getString("name");
+        this.nickName = obj.getString("nickname");
+        this.category = obj.getString("category");
+        this.remoteIP = obj.getString("ip");
+        this.createDate = obj.getString("create_date");
+        this.createTime = obj.getString("create_time");
+        if(obj.containsKey("exten_obj")) {
+            this.exten_obj = obj.getJSONObject("exten_obj");
         }
     }
 
@@ -67,9 +89,7 @@ public class UserContext {
     public String getSessionID() {
         return sessionID;
     }
-    public String getDataID() {
-        return dataID;
-    }
+    public String getDataID() { return dataID; }
     public String getAccount() {
         return account;
     }
@@ -92,22 +112,29 @@ public class UserContext {
         return createTime;
     }
     public JSONObject getExtenObj() {
-        return extenObj;
+        return exten_obj;
     }
 
-    public JSONObject toJSONObject() {
+    public JSONObject getJSONObject() {
         JSONObject obj = new JSONObject();
         obj.put("session_id", sessionID);
-        obj.put("data_id", dataID);
+        obj.put("dataid", dataID);
         obj.put("account", account);
         obj.put("name", name);
         obj.put("nickname", nickName);
         obj.put("category", category);
-        obj.put("remote_ip", remoteIP);
+        obj.put("ip", remoteIP);
         obj.put("create_date", createDate);
         obj.put("create_time", createTime);
-        obj.put("exten_obj", extenObj);
+        obj.put("exten_obj", exten_obj);
         return obj;
+    }
+
+    // 記錄建立時間點
+    private void getCreateDT() {
+        LocalDateTime ldt = LocalDateTime.now();
+        this.createDate = ldt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+        this.createTime = ldt.format(DateTimeFormatter.ofPattern("HH:mm:ss"));
     }
 
     // 由 HttpServletRequest 判斷遠端 IP
@@ -131,22 +158,15 @@ public class UserContext {
 
     public static class Builder {
         private AsyncActionContext requestContext = null;
-        private HttpSession session = null;
         private String dataID = null;
         private String account = null;
         private String name = null;
         private String nickName = null;
-        private String category = null;
-        private String remoteIP = null;
-        private JSONObject extenObj = null;
+        private String category = null; // 系統權限級別
+        private JSONObject exten_obj = null;
 
         public UserContext.Builder setAsyncActionContext(AsyncActionContext requestContext) {
             this.requestContext = requestContext;
-            return this;
-        }
-
-        public UserContext.Builder setHttpSession(HttpSession session) {
-            this.session = session;
             return this;
         }
 
@@ -175,30 +195,18 @@ public class UserContext {
             return this;
         }
 
-        public UserContext.Builder setRemoteIP(String remoteIP) {
-            this.remoteIP = remoteIP;
-            return this;
-        }
-
+        // 由於 UserContext 格式不一定能完全儲存資料庫所有內容，所以可藉由自定義 JSON 物件來代為儲存
         public UserContext.Builder setExtenObj(JSONObject extenObj) {
-            this.extenObj = extenObj;
+            this.exten_obj = extenObj;
             return this;
         }
 
         public UserContext build() {
-            if(null == requestContext && null == session) {
-                try {
-                    throw new Exception("建立 UserContext 時，Session 資訊為必要的參數");
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                return null;
-            }
-            if(null == requestContext) {
-                return new UserContext(session, dataID, account, name, nickName, category, remoteIP, extenObj);
-            } else {
-                return new UserContext(requestContext, dataID, account, name, nickName, category, remoteIP, extenObj);
-            }
+            return new UserContext(requestContext, dataID, account, name, nickName, category, exten_obj);
+        }
+
+        public UserContext build(JSONObject obj) {
+            return new UserContext(requestContext, obj);
         }
     }
 

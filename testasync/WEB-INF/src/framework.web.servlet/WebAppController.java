@@ -19,6 +19,8 @@ public class WebAppController extends HttpServlet {
 
     private ExecutorService worker = null; // 執行緒池
 
+    public WebAppController() {}
+
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
         startAsync(req, resp);
@@ -50,20 +52,14 @@ public class WebAppController extends HttpServlet {
                     throw new Exception("Servlet 或 Fileter 等尚未全部開啟非同步支援(async-supported)");
                 } catch (Exception e) {
                     e.printStackTrace();
-                    // 此 Framework 無法支援同步請求，所以將直接不處理 request
-                    return;
+                    return; // 無非同步架構下不接受 Http Request
                 }
             }
         }
-        // 藉由 Servlet 中的子執行緒池接手後續任務，確保 Tomcat 端執行緒可以持續的接收請求給 Servlet
-        // 並且藉由每個獨立的 Runnable 隔離每個 asyncContext 處理狀態（多執行緒安全設計）
+        // 藉由執行緒池接手後續任務，確保 Tomcat 端執行緒可以持續的接收請求
+        // 並且藉由個別的 Runnable 隔離每個 asyncContext 處理狀態
         asyncContext.setTimeout(0); // 設置為 0 時表示非同步處理中無逾時限制
-        AsyncContextRunnable asyncContextRunnable = new AsyncContextRunnable.Builder()
-                .setServletContext(getServletContext())
-                .setServletConfig(getServletConfig())
-                .setAsyncContext(asyncContext)
-                .build();
-        worker.submit(asyncContextRunnable);
+        worker.submit(new AsyncContextRunnable(asyncContext));
     }
 
     // 內容編碼設定

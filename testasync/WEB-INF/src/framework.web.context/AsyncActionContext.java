@@ -9,8 +9,6 @@ import org.apache.tomcat.util.http.fileupload.FileItem;
 
 import javax.activation.MimetypesFileTypeMap;
 import javax.servlet.AsyncContext;
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletContext;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -33,41 +31,35 @@ import java.util.HashMap;
  */
 public class AsyncActionContext {
 
-    private ServletContext servletContext;
-    private ServletConfig servletConfig;
     private AsyncContext asyncContext;
-
     private HttpSession httpSession;
     private String reqMethod;
     private boolean isFileAction = false; // 該請求是否具有上傳檔案的需求
     private HashMap<String, String> params;
-    private ArrayList<FileItem> files; // 已被暫存的檔案（不包含文字表單內容）
-    private String urlPath = null;
+    private ArrayList<FileItem> files; // 需要被操作的檔案（已不包含文字表單內容）
+    private String urlPath = null; // 儲存此次請求路徑（不包含 domain）
     private String resourceExten = null; // 請求路徑資源的副檔名，若不具有副檔名則回傳 null
 
-    private Handler appExceptionHandler; // for request all exception
-    private Handler invalidRequestHandler; // for invalid request(no handler processed)
+    private Handler appExceptionHandler; // for public exception
+    private Handler invalidRequestHandler; // for invalid request
 
-    private AsyncActionContext(ServletContext servletContext, ServletConfig servletConfig, AsyncContext asyncContext) {
-        this.servletContext = servletContext;
-        this.servletConfig = servletConfig;
+    private String tempDirID = null; // temp file dir id
+
+    /**
+     * 初始化 RequestContext
+     */
+    public AsyncActionContext(AsyncContext asyncContext) {
         this.asyncContext = asyncContext;
         if (null == asyncContext) {
-            try {
-                throw new Exception("AsyncContext 為空值，無法正常執行服務");
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            System.err.println("AsyncContext 為空值，無法正常執行服務");
         } else {
             try {
                 this.httpSession = ((HttpServletRequest) asyncContext.getRequest()).getSession(true);
                 this.reqMethod = ((HttpServletRequest) asyncContext.getRequest()).getMethod();
+                // 初始化
                 {
-                    // 任一個請求在尚未完畢時出現例外錯誤時的監聽器
-                    createAppExceptionHandler();
-                    // 請求沒有被任一個責任節點處理時的監聽器
-                    createInvalidRequestHandler();
-                    // 處理 URL 路徑的解析（去除協定、域名及參數）
+                    createAppExceptionHandler(); // 任一個請求在尚未完畢時出現例外錯誤時的監聽器
+                    createInvalidRequestHandler(); // 請求沒有被任一個責任節點處理時的監聽器
                     processUrlParse();
                 }
             } catch (Exception e) {
@@ -136,14 +128,6 @@ public class AsyncActionContext {
         return this.asyncContext;
     }
 
-    public ServletConfig getServletConfig() {
-        return this.servletConfig;
-    }
-
-    public ServletContext getServletContext() {
-        return this.servletContext;
-    }
-
     public HttpServletRequest getHttpRequest() {
         HttpServletRequest httpRequest = null;
         try {
@@ -174,7 +158,7 @@ public class AsyncActionContext {
     /**
      * 屬於檔案類型的 form-data 寫入硬碟中儲存實作，
      * 如果於檔案上傳後沒有調用此方法，該檔案將會被放置在暫存資料夾中
-     * 必須具有暫存資料夾路徑：TomcatAppFiles/[WebAppName]/temp
+     * 暫存資料夾路徑：TomcatAppFiles/[WebAppName]/temp
      */
     public void writeFile(FileItem fileItem, String path, String fileName, Handler handler) {
         if(null == fileItem) {
@@ -213,25 +197,6 @@ public class AsyncActionContext {
             m.sendToTarget();
             return;
         }
-        {
-            File test = new File(path);
-            if(!test.exists()) {
-                try {
-                    throw new Exception(path + " 路徑並不存在");
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                return;
-            }
-            if(!test.isDirectory()) {
-                try {
-                    throw new Exception(path + " 並不是資料夾");
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                return;
-            }
-        }
         // 寫入檔案至該資料夾中
         File file = new File(path, fileName);
         {
@@ -246,7 +211,7 @@ public class AsyncActionContext {
                     m.sendToTarget();
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                // e.printStackTrace();
                 {
                     Bundle b = new Bundle();
                     b.putString("status", "fail");
@@ -385,9 +350,10 @@ public class AsyncActionContext {
         {
             if (null == mimeType) {
                 try {
+                    // fileMIME = URLConnection.guessContentTypeFromName(file.getName());
                     // JDK 7+
                     fileMIME = Files.probeContentType(Paths.get(file.getPath()));
-                    // javax.activation.jar
+                    // MimetypesFileTypeMap need javax.activation.jar
                     if (null == fileMIME) fileMIME = new MimetypesFileTypeMap().getContentType(file);
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -398,11 +364,7 @@ public class AsyncActionContext {
 
             // 檢查 MIME 是否判斷正確
             if (null == fileMIME) {
-                try {
-                    throw new Exception("MIME 為空值，匯出檔案判斷 MIME 類型時出錯");
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+                System.err.println("匯出檔案判斷 MIME 類型時出錯");
                 return;
             }
         }
@@ -574,6 +536,17 @@ public class AsyncActionContext {
     }
 
     /**
+     * 設定此次檔案請求的暫存資料夾識別碼
+     */
+    public void setTempDirID(String tempDirID) {
+        this.tempDirID = tempDirID;
+    }
+
+    public String getTempDirID() {
+        return this.tempDirID;
+    }
+
+    /**
      * 處理 URL 路徑的解析（去除協定、域名及參數）
      */
     private void processUrlParse() {
@@ -602,8 +575,6 @@ public class AsyncActionContext {
                         String tmp = sLoca[i];
                         if(i == 0) { continue; } // domain name
                         if(i == 1 && tmp.equals(new AppSetting.Builder().build().getAppName())) { continue; } // app name
-                        // 網址處理後除了 domain name 及 app name 之外都會被當作 URI 字串內容
-                        // example > http://localhost/webappname/a/index 處理後會變成 /a/index 字串
                         sURL.append(tmp);
                         if (i != sLoca.length - 1) sURL.append("/");
                     }
@@ -626,33 +597,6 @@ public class AsyncActionContext {
                 e.printStackTrace();
             }
         }
-    }
-
-    public static class Builder {
-
-        private ServletContext servletContext;
-        private ServletConfig servletConfig;
-        private AsyncContext asyncContext;
-
-        public AsyncActionContext.Builder setServletContext(ServletContext servletContext) {
-            this.servletContext = servletContext;
-            return this;
-        }
-
-        public AsyncActionContext.Builder setServletConfig(ServletConfig servletConfig) {
-            this.servletConfig = servletConfig;
-            return this;
-        }
-
-        public AsyncActionContext.Builder setAsyncContext(AsyncContext asyncContext) {
-            this.asyncContext = asyncContext;
-            return this;
-        }
-
-        public AsyncActionContext build() {
-            return new AsyncActionContext(this.servletContext, this.servletConfig, this.asyncContext);
-        }
-
     }
 
 }

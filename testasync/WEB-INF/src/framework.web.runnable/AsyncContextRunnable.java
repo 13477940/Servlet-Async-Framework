@@ -2,6 +2,8 @@ package framework.web.runnable;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import framework.random.RandomServiceStatic;
+import framework.setting.AppSetting;
 import framework.web.context.AsyncActionContext;
 import framework.web.executor.WebAppServiceExecutor;
 import framework.web.session.context.UserContext;
@@ -13,8 +15,6 @@ import org.apache.tomcat.util.http.fileupload.servlet.ServletFileUpload;
 import org.apache.tomcat.util.http.fileupload.servlet.ServletRequestContext;
 
 import javax.servlet.AsyncContext;
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.io.BufferedInputStream;
@@ -31,27 +31,16 @@ import java.util.*;
  */
 public class AsyncContextRunnable implements Runnable {
 
-    private ServletContext servletContext;
-    private ServletConfig servletConfig;
     private AsyncContext asyncContext;
-
     private AsyncActionContext requestContext;
 
     /**
      * 每個非同步請求實例派發給個別的 AsyncContextRunnable 隔離執行
      */
-    private AsyncContextRunnable(ServletContext servletContext, ServletConfig servletConfig, AsyncContext asyncContext) {
-        this.servletContext = servletContext;
-        this.servletConfig = servletConfig;
+    public AsyncContextRunnable(AsyncContext asyncContext) {
         this.asyncContext = asyncContext;
-        {
-            this.requestContext = new AsyncActionContext.Builder()
-                    .setServletContext(servletContext)
-                    .setServletConfig(servletConfig)
-                    .setAsyncContext(asyncContext)
-                    .build();
-            checkSessionLoginInfo(requestContext.getHttpSession());
-        }
+        this.requestContext = new AsyncActionContext(asyncContext);
+        checkSessionLoginInfo(requestContext.getHttpSession());
     }
 
     @Override
@@ -85,18 +74,21 @@ public class AsyncContextRunnable implements Runnable {
     }
 
     // 採用檔案處理方式解析 form-data 資料內容
-    // 由於 Session 處理上傳進度值會影響伺服器效率，僅建議由前端處理上傳進度即可
-    // jQuery 文件上传进度提示：https://segmentfault.com/a/1190000008791342
+    // 由於使用 Session 處理上傳進度值會影響伺服器效率，僅建議由前端處理上傳進度即可
     private void parseFormData() {
-        DiskFileItemFactory dfac = new DiskFileItemFactory();
+        // 上傳設定初始化
+        String tempFilePath = new AppSetting.Builder().build().getPathContext().getTempDirPath();
+        String tempDirID = RandomServiceStatic.getInstance().getTimeHash(6);
+        File tempFile = new File(tempFilePath + tempDirID);
         {
-            // Sets the default charset for use when no explicit charset parameter is provided by the sender.
-            dfac.setDefaultCharset(StandardCharsets.UTF_8.name());
-            // Sets the size threshold beyond which files are written directly to disk.(bytes), default: 10k
-            dfac.setSizeThreshold(DiskFileItemFactory.DEFAULT_SIZE_THRESHOLD);
-            // Sets the directory used to temporarily store files that are larger than the configured size threshold.
-            dfac.setRepository(new File(servletContext.getAttribute(ServletContext.TEMPDIR).toString()));
+            // 藉由 tempDirID 刪除每次請求結束後殘留的暫存檔案
+            requestContext.setTempDirID(tempDirID);
+            //noinspection ResultOfMethodCallIgnored
+            tempFile.mkdirs();
         }
+        DiskFileItemFactory dfac = new DiskFileItemFactory();
+        dfac.setSizeThreshold(0); // 容量多少的上傳檔案可以被暫存在記憶體中
+        dfac.setRepository(tempFile);
         ServletFileUpload upload = new ServletFileUpload(dfac);
 
         // 上傳表單列表內容處理
@@ -104,7 +96,7 @@ public class AsyncContextRunnable implements Runnable {
         try {
             items = upload.parseRequest(new ServletRequestContext((HttpServletRequest) asyncContext.getRequest()));
             createFileTable(items);
-        } catch (Exception e) {
+        } catch(Exception e) {
             e.printStackTrace();
             asyncContext.complete();
         }
@@ -150,7 +142,7 @@ public class AsyncContextRunnable implements Runnable {
         }
     }
 
-    // 因為取得 form-data 的內容會造成中文亂碼，所以採用 UTF-8 的解決方式取值
+    // 因為取得 form-data 的內容會造成中文亂碼，所以採用 Unicode 的解決方式取值
     private String readFormDataTextContent(InputStream ins) {
         BufferedInputStream bis = new BufferedInputStream(ins);
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
@@ -218,33 +210,6 @@ public class AsyncContextRunnable implements Runnable {
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
-
-    public static class Builder {
-
-        private ServletContext servletContext;
-        private ServletConfig servletConfig;
-        private AsyncContext asyncContext;
-
-        public AsyncContextRunnable.Builder setServletContext(ServletContext servletContext) {
-            this.servletContext = servletContext;
-            return this;
-        }
-
-        public AsyncContextRunnable.Builder setServletConfig(ServletConfig servletConfig) {
-            this.servletConfig = servletConfig;
-            return this;
-        }
-
-        public AsyncContextRunnable.Builder setAsyncContext(AsyncContext asyncContext) {
-            this.asyncContext = asyncContext;
-            return this;
-        }
-
-        public AsyncContextRunnable build() {
-            return new AsyncContextRunnable(this.servletContext, this.servletConfig, this.asyncContext);
-        }
-
     }
 
 }
