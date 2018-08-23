@@ -193,7 +193,7 @@ public class AppSetting {
     }
 
     /**
-     * WebApp 資源路徑封裝
+     * WebApp 預設資源路徑封裝
      */
     public static class PathContext {
         private String tempDirPath = null;
@@ -210,19 +210,39 @@ public class AppSetting {
         }
 
         public String getTempDirPath() {
+            processPreMKDIR(tempDirPath);
             return tempDirPath;
         }
 
         public String getUploadDirPath() {
+            processPreMKDIR(uploadDirPath);
             return uploadDirPath;
         }
 
         public String getExportDirPath() {
+            processPreMKDIR(exportDirPath);
             return exportDirPath;
         }
 
         public String getLogDirPath() {
+            processPreMKDIR(logDirPath);
             return logDirPath;
+        }
+
+        private void processPreMKDIR(String path) {
+            File tmp = new File(path);
+            if(!tmp.exists() || !tmp.isDirectory()) {
+                boolean isDirCreated = tmp.mkdirs();
+                if(isDirCreated) {
+                    System.out.println("自動建立預設資料夾："+tmp.getPath());
+                } else {
+                    try {
+                        throw new Exception("無法正常建立上傳暫存資料夾");
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
         }
     }
 
