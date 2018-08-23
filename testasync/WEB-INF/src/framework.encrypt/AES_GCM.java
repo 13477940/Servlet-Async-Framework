@@ -13,8 +13,12 @@ import java.util.Base64;
  * from https://gist.github.com/praseodym/f2499b3e14d872fe5b4a
  * https://crypto.stackexchange.com/questions/35727/does-aad-make-gcm-encryption-more-secure
  * https://blog.csdn.net/Vieri_32/article/details/48345023
+ *
+ * AES_GCM 不是密碼式加密所以 key 是一組 byte 內容，需自行持久化保存，
+ * 並且藉由 Builder.setKey 重新建立相同 key 的 AES 實例內容，
+ * 並且每次不同的加密 IV 值是不能相同的（1 組 IV 只可進行加密 1 次）
  */
-public class AES_256_GCM {
+public class AES_GCM {
 
     private SecretKey key = null;
     private byte[] ivSrc = null;
@@ -25,14 +29,14 @@ public class AES_256_GCM {
     private final int GCM_NONCE_LENGTH = 12; // in bytes
     private final int GCM_TAG_LENGTH = 16; // in bytes
 
-    public AES_256_GCM(SecretKey key, byte[] iv) {
+    public AES_GCM(SecretKey key, byte[] iv) {
         try {
             this.key = key;
             if(null == key) {
                 try {
                     SecureRandom random = SecureRandom.getInstanceStrong();
                     KeyGenerator keyGen = KeyGenerator.getInstance("AES");
-                    keyGen.init(256, random); // key size
+                    keyGen.init(256, random); // default key size
                     this.key = keyGen.generateKey();
                 } catch(Exception e) {
                     e.printStackTrace();
@@ -133,27 +137,27 @@ public class AES_256_GCM {
         private SecretKey key = null;
         private byte[] iv = null;
 
-        public AES_256_GCM.Builder setKey(CharSequence charSequence) {
+        public AES_GCM.Builder setKey(CharSequence charSequence) {
             if(null == charSequence) return this;
             byte[] tmp = Base64.getDecoder().decode(charSequence.toString());
             this.key = new SecretKeySpec(tmp, 0, tmp.length, "AES");
             return this;
         }
 
-        public AES_256_GCM.Builder setIV(CharSequence charSequence) {
+        public AES_GCM.Builder setIV(CharSequence charSequence) {
             if(null == charSequence) return this;
             this.iv = Base64.getDecoder().decode(charSequence.toString());
             return this;
         }
 
-        public AES_256_GCM.Builder setIVSrc(CharSequence charSequence) {
+        public AES_GCM.Builder setIVSrc(CharSequence charSequence) {
             if(null == charSequence) return this;
             this.iv = charSequence.toString().getBytes(StandardCharsets.UTF_8);
             return this;
         }
 
-        public AES_256_GCM build() {
-            return new AES_256_GCM(this.key, this.iv);
+        public AES_GCM build() {
+            return new AES_GCM(this.key, this.iv);
         }
 
     }

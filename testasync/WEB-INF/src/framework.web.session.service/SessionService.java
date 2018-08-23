@@ -60,7 +60,7 @@ public abstract class SessionService {
 
     public void setUserContext(HttpSession session, UserContext userContext) {
         if(null == userContext) return;
-        session.setAttribute(userContextTag, userContext.getJSONObject().toJSONString());
+        session.setAttribute(userContextTag, userContext.toJSONObject().toJSONString());
     }
 
     public UserContext getUserContext(HttpSession session) {
@@ -68,7 +68,16 @@ public abstract class SessionService {
         String tmp = session.getAttribute(userContextTag).toString();
         if(null == tmp || tmp.length() == 0) return null;
         JSONObject obj = JSON.parseObject(tmp);
-        return new UserContext(session, obj);
+        return new UserContext.Builder()
+                .setHttpSession(session)
+                .setDataID(obj.getString("data_id"))
+                .setAccount(obj.getString("account"))
+                .setName(obj.getString("name"))
+                .setNickName(obj.getString("nickname"))
+                .setCategory(obj.getString("category"))
+                .setRemoteIP(obj.getString("remote_ip"))
+                .setExtenObj(obj.getJSONObject("exten_obj"))
+                .build();
     }
 
     /**

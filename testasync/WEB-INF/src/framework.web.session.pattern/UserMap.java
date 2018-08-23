@@ -51,7 +51,7 @@ public class UserMap {
     public JSONArray toJSONArray() {
         JSONArray arr = new JSONArray();
         for (Entry<String, UserContext> entry : map.entrySet()) {
-            JSONObject obj = entry.getValue().getJSONObject();
+            JSONObject obj = entry.getValue().toJSONObject();
             arr.add(obj);
         }
         return arr;
