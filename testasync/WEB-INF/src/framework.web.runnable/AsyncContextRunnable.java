@@ -21,7 +21,6 @@ import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.InputStream;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
@@ -175,14 +174,10 @@ public class AsyncContextRunnable implements Runnable {
     // GET URL 傳值處理，需統一將回傳值由 URLDecoder 處理，避免空格及特殊符號值傳遞的問題
     // 要注意的是前端 AJAX 也要採用 URLEncoder 將傳值進行處理才能避免錯誤
     private void parseParams() {
-        Charset charset = StandardCharsets.UTF_8;
         HashMap<String, String> params = new HashMap<>();
         for (Map.Entry<String, String[]> entry : asyncContext.getRequest().getParameterMap().entrySet()) {
             try {
                 String key = entry.getKey();
-                if("get".equals(requestContext.getMethod().toLowerCase())) {
-                    key = java.net.URLDecoder.decode(entry.getKey(), charset);
-                }
                 String[] values = entry.getValue();
                 if (values.length > 1) {
                     // 單一 parameter key 具有多個參數時（多參數值藉由 JSONArray 字串形式儲存）
@@ -191,9 +186,6 @@ public class AsyncContextRunnable implements Runnable {
                     params.put(key, arr.toJSONString());
                 } else {
                     String value = values[0];
-                    if("get".equals(requestContext.getMethod().toLowerCase())) {
-                        value = java.net.URLDecoder.decode(values[0], charset);
-                    }
                     params.put(key, value);
                 }
             } catch (Exception e) {
