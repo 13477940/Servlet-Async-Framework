@@ -17,7 +17,7 @@ public abstract class ConnectorConfig {
                 break;
             case "mysql":
                 // res = "com.mysql.jdbc.Driver";
-                res = "com.mysql.cj.jdbc.Driver"; // mysql 8.0
+                res = "com.mysql.cj.jdbc.Driver"; // mysql 8.0+
                 break;
             case "mariadb":
                 res = "org.mariadb.jdbc.Driver";

@@ -2,6 +2,7 @@ package framework.web.http;
 
 import okhttp3.OkHttpClient;
 
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -29,8 +30,8 @@ public class OkHttpClientStatic {
                 threadPool.shutdown();
                 instance.connectionPool().evictAll();
                 try {
-                    instance.cache().close();
-                    if(!threadPool.awaitTermination(5, TimeUnit.SECONDS)) {
+                    Objects.requireNonNull(instance.cache()).close();
+                    if(!threadPool.awaitTermination(3, TimeUnit.SECONDS)) {
                         threadPool.shutdownNow();
                     }
                 } catch (Exception e) {

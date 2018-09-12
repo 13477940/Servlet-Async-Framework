@@ -7,7 +7,7 @@ public class Handler {
     private ArrayList<Message> msgList;
 
     /**
-     * 非同步回傳處理方案，藉由觀察者模式（Observer Pattern）實作，
+     * 非同步回傳處理方案之一，藉由觀察者模式（Observer Pattern）實作，
      * 核心概念模擬來自 Android Handler 實作原始碼，
      * 觀察者模式階層關係：Handler > Message > Bundle
      */

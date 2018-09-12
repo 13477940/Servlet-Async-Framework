@@ -7,11 +7,13 @@ import org.apache.tomcat.jdbc.pool.DataSource;
 import org.apache.tomcat.jdbc.pool.PoolProperties;
 
 import java.sql.Connection;
+import java.time.LocalDateTime;
 
 /**
  * base Tomcat JDBC Connection Pool
- * https://tomcat.apache.org/tomcat-8.5-doc/jdbc-pool.html
+ * https://tomcat.apache.org/tomcat-9.0-doc/jdbc-pool.html
  * 版本會跟著 Apache Tomcat 步進，相容性 JDK 則依照其需求即可
+ * --- required jar file ---
  * tomcat/bin/tomcat-juli.jar
  * tomcat/lib/tomcat-jdbc.jar
  */
@@ -22,7 +24,7 @@ public class TomcatDataSource extends ConnectorConfig implements ConnectionPool 
 
     private int errorCount = 0; // 累計錯誤次數
     private final int maxErrorCount = 50; // 最大錯誤次數，防止無窮循環
-    private long lastestErrorTime = 0; // 最近一次發生錯誤的時機點
+    private LocalDateTime lastestErrorTime = null; // 最新的連接錯誤時間點
 
     private TomcatDataSource(ConnectContext dbContext) {
         if(null == dbContext) {
@@ -46,20 +48,24 @@ public class TomcatDataSource extends ConnectorConfig implements ConnectionPool 
             conn = dataSource.getConnection();
             if(!conn.isValid(3000)) {
                 // 持久型服務重置處理判斷，當時間計數器超過指定時間後，將觸發流程執行重置
-                long currentErrorTime = System.currentTimeMillis();
+                LocalDateTime currentErrorTime = LocalDateTime.now();
                 // 開啟伺服器後第一次發生時
-                if(lastestErrorTime == 0) {
+                if(null == lastestErrorTime) {
                     resetDataSource(false, dbContext);
                     return getConnection();
                 } else {
                     // 超過指定時間未重置時，執行重置計數器流程
-                    if(currentErrorTime - lastestErrorTime > 3600000) {
-                        resetDataSource(false, dbContext);
+                    if(lastestErrorTime.plusHours(2).isBefore(currentErrorTime)) {
+                        resetDataSource(true, dbContext);
                         return getConnection();
                     } else {
                         // 未超過指定時間，但錯誤計數器已到達最大數目時（可能為無法修復的情況時）
                         if(errorCount >= maxErrorCount) {
-                            System.err.println("Connection Pool 短時間內嚴重錯誤次數過多，已介入防止無窮初始化，請檢查資料庫操作程式碼中是否具有尚未正確關閉連結的部分。");
+                            try {
+                                throw new Exception("Connection Pool setting has fatal error.");
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
                             return null;
                         } else {
                             // 未超過指定時間，且錯誤次數未超過時
@@ -106,8 +112,8 @@ public class TomcatDataSource extends ConnectorConfig implements ConnectionPool 
         poolConfig.setInitialSize(dbContext.getDB_InitialSize()); // 初始連接池大小（整數）
         poolConfig.setMinIdle(dbContext.getDB_Min_Idle()); // 最小預備連接數量，與 InitialSize 相同即可（整數）
         poolConfig.setMaxWait(dbContext.getDB_Max_Wait()); // 連接池滿載時等候時間限制（ms）
-        poolConfig.setTimeBetweenEvictionRunsMillis(10000); // 檢查空閑或廢棄的連接頻率（ms），不可小於 1 秒
-        poolConfig.setMinEvictableIdleTimeMillis(20000); // 空閒連接在池中保留最短的時間（ms）
+        poolConfig.setTimeBetweenEvictionRunsMillis(20000); // 檢查空閑或廢棄的連接頻率（ms），不可小於 1 秒
+        poolConfig.setMinEvictableIdleTimeMillis(30000); // 空閒連接在池中保留最短的時間（ms）
 
         // 測試連接是否持續為可使用的
         poolConfig.setTestWhileIdle(true); // 空閒時週期性驗證連接
@@ -115,16 +121,17 @@ public class TomcatDataSource extends ConnectorConfig implements ConnectionPool 
         poolConfig.setTestOnReturn(false); // 連接回收時是否執行驗證
         poolConfig.setValidationQuery("SELECT 1;"); // 驗證連接 SQL 語法
         poolConfig.setValidationQueryTimeout(10); // 單位為秒數，零或負值表示無限大（second）
-        poolConfig.setValidationInterval(20000); // 驗證連接指令頻率，過度密集會造成資源都花在驗證上面（ms）
+        poolConfig.setValidationInterval(30000); // 驗證連接指令頻率，過度密集會造成資源都花在驗證上面（ms）
 
         poolConfig.setRemoveAbandoned(true); // 連接時間大於 RemoveAbandonedTimeout 是否當作可廢棄的連接
         poolConfig.setRemoveAbandonedTimeout(dbContext.getDB_RemoveAbandonedTimeout()); // 應該設定成資料庫最長操作的時間限制（second）
         poolConfig.setLogAbandoned(false); // 如果逐筆記錄連接消滅的訊息會造成資源浪費
 
-        StringBuilder sbd;
-        sbd = new StringBuilder();
-        sbd.append("org.apache.tomcat.jdbc.pool.interceptor.ConnectionState;");
-        sbd.append("org.apache.tomcat.jdbc.pool.interceptor.StatementFinalizer");
+        StringBuilder sbd = new StringBuilder();
+        {
+            sbd.append("org.apache.tomcat.jdbc.pool.interceptor.ConnectionState;");
+            sbd.append("org.apache.tomcat.jdbc.pool.interceptor.StatementFinalizer");
+        }
         poolConfig.setJdbcInterceptors(sbd.toString());
         dataSource = new DataSource();
         dataSource.setPoolProperties(poolConfig);
@@ -134,7 +141,7 @@ public class TomcatDataSource extends ConnectorConfig implements ConnectionPool 
     private void resetDataSource(boolean timerReset, ConnectContext dbContext) {
         this.dataSource.close(true);
         initDataSource(dbContext);
-        lastestErrorTime = System.currentTimeMillis();
+        lastestErrorTime = LocalDateTime.now();
         if(timerReset) {
             errorCount = 0;
         } else {

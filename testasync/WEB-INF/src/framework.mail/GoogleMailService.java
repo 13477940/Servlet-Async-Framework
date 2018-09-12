@@ -175,6 +175,7 @@ public class GoogleMailService implements MailService {
         if(null == handler) {
             // 如果沒有指定 handler 接收則直接列印至 log
             System.out.println(b.prototype());
+            return;
         }
         framework.observer.Message m = handler.obtainMessage();
         m.setData(b);

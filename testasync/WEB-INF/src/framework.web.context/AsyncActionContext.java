@@ -5,22 +5,23 @@ import framework.observer.Bundle;
 import framework.observer.Handler;
 import framework.observer.Message;
 import framework.setting.AppSetting;
+import framework.web.niolistener.AsyncWriteListener;
 import org.apache.tomcat.util.http.fileupload.FileItem;
+import org.apache.tomcat.util.http.fileupload.IOUtils;
 
 import javax.activation.MimetypesFileTypeMap;
 import javax.servlet.AsyncContext;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
-import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileInputStream;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -28,8 +29,9 @@ import java.util.HashMap;
 /**
  * HttpRequest 通過了 Controller Servlet 後統一採用此規格作為 Request Context
  * 藉此降低重複操作原生 HttpContext 的麻煩，簡化處理複雜度及程式碼離散度，
- * 當偵測到最終沒有任何一個責任鏈的節點進行請求處理時，
- * 會調用 Invalid Request Handler 進行無效請求回覆
+ * 當偵測到最終沒有任何一個責任鏈節點處理請求時，
+ * 會調用 Invalid Request Handler 進行無效請求回覆，
+ * 大部分的 Response 內容將由 AsyncActionContext 處理輸出
  */
 public class AsyncActionContext {
 
@@ -236,7 +238,10 @@ public class AsyncActionContext {
         File file = new File(path, fileName);
         {
             try {
-                fileItem.write(file);
+                // JDK 8+ NIO copy
+                InputStream tmpInputStream = fileItem.getInputStream();
+                Files.copy(tmpInputStream, file.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                IOUtils.closeQuietly(tmpInputStream);
                 {
                     Bundle b = new Bundle();
                     b.putString("status", "done");
@@ -269,42 +274,13 @@ public class AsyncActionContext {
         // 設定字串輸出為何種 HTTP Content-Type（要注意這個和 Content-Encoding 不同）
         getHttpResponse().setHeader("content-type", "text/plain;charset=" + charset.toLowerCase());
         {
+            AsyncWriteListener asyncWriteListener = new AsyncWriteListener.Builder()
+                    .setAsyncContext(asyncContext)
+                    .setCharSequence(content)
+                    .setHandler(handler)
+                    .build();
             try {
-                // ServletOutputStream
-                ServletOutputStream out = asyncContext.getResponse().getOutputStream();
-                // 建立緩衝機制
-                int bufferSize = 4096; // byte
-                byte[] buffer = new byte[bufferSize];
-                int len;
-                {
-                    // 資料流操作
-                    try (ByteArrayInputStream bis = new ByteArrayInputStream(content.getBytes(charset))) {
-                        while ((len = bis.read(buffer)) != -1) {
-                            out.write(buffer, 0, len);
-                        }
-                        out.flush();
-                        {
-                            Bundle b = new Bundle();
-                            b.putString("status", "done");
-                            b.putString("msg_zht", "輸出字串內容成功");
-                            Message m = handler.obtainMessage();
-                            m.setData(b);
-                            m.sendToTarget();
-                        }
-                    } catch (Exception e) {
-                        // e.printStackTrace();
-                        out.flush();
-                        {
-                            Bundle b = new Bundle();
-                            b.putString("status", "fail");
-                            b.putString("msg_zht", "輸出字串內容失敗");
-                            b.put("exception", e);
-                            Message m = handler.obtainMessage();
-                            m.setData(b);
-                            m.sendToTarget();
-                        }
-                    }
-                }
+                asyncContext.getResponse().getOutputStream().setWriteListener(asyncWriteListener);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -341,11 +317,11 @@ public class AsyncActionContext {
         HttpServletRequest request = ((HttpServletRequest) asyncContext.getRequest());
         HttpServletResponse response = ((HttpServletResponse) asyncContext.getResponse());
 
-        // 檢查 Internet Explorer，如果是 MS-IE 體系的話要另外處理才不會中文亂碼
+        // 檢查瀏覽器是否為 Internet Explorer，如果是 MS-IE 體系的話要另外處理才不會中文亂碼
         boolean isIE = false;
         {
             String userAgent = request.getHeader("user-agent");
-            if(!(null == userAgent || userAgent.length() == 0)) {
+            if(null != userAgent && userAgent.length() > 0) {
                 try {
                     if (userAgent.contains("Windows") && userAgent.contains("Edge")) isIE = true;
                     if (userAgent.contains("Windows") && userAgent.contains("Trident")) isIE = true;
@@ -355,30 +331,27 @@ public class AsyncActionContext {
             }
         }
 
-        // 解決中文檔案編碼
-        StringBuilder sbd_encn = new StringBuilder();
+        // 解決下載檔案時 Unicode 檔案名稱編碼
+        String encodeFileName = null;
         {
             try {
                 if (isIE) {
-                    sbd_encn.append(java.net.URLEncoder.encode(fileName, StandardCharsets.UTF_8));
+                    encodeFileName = java.net.URLEncoder.encode(fileName, StandardCharsets.UTF_8);
                 } else {
                     String protocol = String.valueOf(request.getProtocol()).trim().toLowerCase();
-                    // 於 HTTP 2.0 與 IE 體系統一採用 UTF-8
                     if (protocol.contains("http/2.0")) {
-                        sbd_encn.append(java.net.URLEncoder.encode(fileName, StandardCharsets.UTF_8));
+                        encodeFileName = java.net.URLEncoder.encode(fileName, StandardCharsets.UTF_8);
                     } else {
-                        sbd_encn.append(new String(fileName.getBytes(StandardCharsets.UTF_8), StandardCharsets.ISO_8859_1));
+                        encodeFileName = new String(fileName.getBytes(StandardCharsets.UTF_8), StandardCharsets.ISO_8859_1);
                     }
                 }
             } catch (Exception e) {
                 e.printStackTrace();
-                sbd_encn.append("undefined");
             }
         }
 
         // 如果沒有取得檔案名稱
-        if(sbd_encn.toString().length() == 0) sbd_encn.append(file.getName());
-        String encodeFileName = sbd_encn.toString();
+        if(null == encodeFileName) encodeFileName = file.getName();
 
         // 本地檔案 MIME 解析處理
         String fileMIME = null;
@@ -407,57 +380,31 @@ public class AsyncActionContext {
             }
         }
 
-        // 如果指定為 isAttachment 則會被當作一般的檔案下載方式；
-        // 若為 false 則會依照瀏覽器能不能瀏覽該檔案類型，例如：pdf, json, html 等
+        // 如果指定為 isAttachment 則不管 MIME 是什麼都會被當作一般的檔案下載；
+        // 若為 false 則會依照瀏覽器自身決定能不能瀏覽該檔案類型，例如：pdf, json, html 等
         {
-            String charset = StandardCharsets.UTF_8.name();
-            response.setContentType(fileMIME + ";charset="+charset);
+            response.setContentType( fileMIME + ";charset=" + StandardCharsets.UTF_8.name() );
+            StringBuilder sbd = new StringBuilder();
             if (isAttachment) {
-                response.setHeader("Content-Disposition", "attachment;filename=\"" + encodeFileName + "\"");
+                sbd.append("attachment;filename=\"");
             } else {
-                response.setHeader("Content-Disposition", "inline;filename=\"" + encodeFileName + "\"");
+                sbd.append("inline;filename=\"");
             }
+            sbd.append(encodeFileName);
+            sbd.append("\"");
+            response.setHeader("Content-Disposition", sbd.toString());
             response.setHeader("Content-Length", String.valueOf(file.length()));
         }
 
         // 匯出檔案實作
         {
+            AsyncWriteListener asyncWriteListener = new AsyncWriteListener.Builder()
+                    .setAsyncContext(asyncContext)
+                    .setFile(file)
+                    .setHandler(handler)
+                    .build();
             try {
-                ServletOutputStream out = response.getOutputStream();
-                {
-                    // 建立緩衝機制
-                    int bufferSize = 4096; // byte
-                    byte[] buffer = new byte[bufferSize];
-                    int len;
-                    // 資料流操作
-                    try (FileInputStream ins = new FileInputStream(file)) {
-                        while ((len = ins.read(buffer)) != -1) {
-                            out.write(buffer, 0, len);
-                        }
-                        out.flush();
-                        {
-                            // 成功下載完畢時
-                            Bundle b = new Bundle();
-                            b.putString("status", "done");
-                            Message m = handler.obtainMessage();
-                            m.setData(b);
-                            m.sendToTarget();
-                        }
-                    } catch (Exception e) {
-                        // e.printStackTrace();
-                        out.flush();
-                        {
-                            // 未成功下載完時
-                            Bundle b = new Bundle();
-                            b.putString("status", "fail");
-                            b.putString("msg", e.getMessage());
-                            b.put("exception", e);
-                            Message m = handler.obtainMessage();
-                            m.setData(b);
-                            m.sendToTarget();
-                        }
-                    }
-                }
+                asyncContext.getResponse().getOutputStream().setWriteListener(asyncWriteListener);
             } catch (Exception e) {
                 e.printStackTrace();
             }

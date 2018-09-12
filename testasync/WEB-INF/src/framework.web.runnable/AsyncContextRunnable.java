@@ -160,27 +160,26 @@ public class AsyncContextRunnable implements Runnable {
                 buf.write((byte) result);
                 result = bis.read();
             }
-            // 回收資源與建立回傳
-            bis.close();
-            buf.flush();
-            res = buf.toString(StandardCharsets.UTF_8);
-            buf.close();
+            {
+                bis.close();
+                buf.flush();
+                res = buf.toString(StandardCharsets.UTF_8);
+                buf.close();
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
         return res;
     }
 
-    // GET URL 傳值處理，需統一將回傳值由 URLDecoder 處理，避免空格及特殊符號值傳遞的問題
-    // 要注意的是前端 AJAX 也要採用 URLEncoder 將傳值進行處理才能避免錯誤
     private void parseParams() {
         HashMap<String, String> params = new HashMap<>();
         for (Map.Entry<String, String[]> entry : asyncContext.getRequest().getParameterMap().entrySet()) {
             try {
                 String key = entry.getKey();
                 String[] values = entry.getValue();
+                // if single key has more than one value, they will be add in JSONArray String.
                 if (values.length > 1) {
-                    // 單一 parameter key 具有多個參數時（多參數值藉由 JSONArray 字串形式儲存）
                     JSONArray arr = new JSONArray();
                     Collections.addAll(arr, values);
                     params.put(key, arr.toJSONString());

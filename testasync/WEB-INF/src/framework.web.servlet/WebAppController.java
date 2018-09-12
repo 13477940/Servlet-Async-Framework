@@ -63,7 +63,7 @@ public class WebAppController extends HttpServlet {
                 .setServletConfig(getServletConfig())
                 .setAsyncContext(asyncContext)
                 .build();
-        worker.submit(asyncContextRunnable);
+        worker.execute(asyncContextRunnable);
     }
 
     // 內容編碼設定

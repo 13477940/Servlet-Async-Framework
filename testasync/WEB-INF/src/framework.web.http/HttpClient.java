@@ -7,6 +7,7 @@ import framework.observer.Message;
 import framework.setting.AppSetting;
 import okhttp3.*;
 import org.apache.tomcat.util.http.fileupload.IOUtils;
+import org.apache.tomcat.util.http.fileupload.disk.DiskFileItemFactory;
 
 import javax.activation.MimetypesFileTypeMap;
 import java.io.*;
@@ -26,7 +27,7 @@ public class HttpClient {
     private ArrayList<File> files;
     private Boolean alwaysDownload; // 確認是否總是當作下載檔案使用
 
-    public HttpClient(String url, HashMap<String, String> headers, HashMap<String, String> parameters, ArrayList<File> files, Boolean alwaysDownload) {
+    private HttpClient(String url, HashMap<String, String> headers, HashMap<String, String> parameters, ArrayList<File> files, Boolean alwaysDownload) {
         this.url = url;
         this.headers = headers;
         this.parameters = parameters;
@@ -349,7 +350,7 @@ public class HttpClient {
 
     private String inputSteamToString(InputStream inputStream) {
         ByteArrayOutputStream outSteam = new ByteArrayOutputStream();
-        byte[] buffer = new byte[1024];
+        byte[] buffer = new byte[DiskFileItemFactory.DEFAULT_SIZE_THRESHOLD];
         int length;
         String res;
         try {
