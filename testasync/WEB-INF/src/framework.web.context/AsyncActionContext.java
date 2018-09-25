@@ -13,6 +13,7 @@ import javax.activation.MimetypesFileTypeMap;
 import javax.servlet.AsyncContext;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
+import javax.servlet.WriteListener;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -269,12 +270,20 @@ public class AsyncActionContext {
      * 列印字串至 response 緩存中
      */
     public void printToResponse(String content, Handler handler) {
-        // 輸出統一編碼
-        String charset = StandardCharsets.UTF_8.name();
-        // 設定字串輸出為何種 HTTP Content-Type（要注意這個和 Content-Encoding 不同）
-        getHttpResponse().setHeader("content-type", "text/plain;charset=" + charset.toLowerCase());
+        HttpServletResponse response = ((HttpServletResponse) asyncContext.getResponse());
         {
-            AsyncWriteListener asyncWriteListener = new AsyncWriteListener.Builder()
+            response.setContentType("text/plain;charset=" + StandardCharsets.UTF_8.name());
+            StringBuilder sbd = new StringBuilder();
+            {
+                sbd.append("inline;filename=\"");
+                sbd.append(encodeOutputFileName(String.valueOf(System.currentTimeMillis())+".txt"));
+                sbd.append("\"");
+            }
+            response.setHeader("Content-Disposition", sbd.toString());
+            response.setHeader("Content-Length", String.valueOf(content.getBytes(StandardCharsets.UTF_8).length));
+        }
+        {
+            WriteListener asyncWriteListener = new AsyncWriteListener.Builder()
                     .setAsyncContext(asyncContext)
                     .setCharSequence(content)
                     .setHandler(handler)
@@ -314,43 +323,8 @@ public class AsyncActionContext {
      * isAttachment 影響到瀏覽器是否能預覽（true 時會被當作一般檔案來下載）
      */
     public void outputFileToResponse(File file, String fileName, String mimeType, boolean isAttachment, Handler handler) {
-        HttpServletRequest request = ((HttpServletRequest) asyncContext.getRequest());
-        HttpServletResponse response = ((HttpServletResponse) asyncContext.getResponse());
-
-        // 檢查瀏覽器是否為 Internet Explorer，如果是 MS-IE 體系的話要另外處理才不會中文亂碼
-        boolean isIE = false;
-        {
-            String userAgent = request.getHeader("user-agent");
-            if(null != userAgent && userAgent.length() > 0) {
-                try {
-                    if (userAgent.contains("Windows") && userAgent.contains("Edge")) isIE = true;
-                    if (userAgent.contains("Windows") && userAgent.contains("Trident")) isIE = true;
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-
-        // 解決下載檔案時 Unicode 檔案名稱編碼
-        String encodeFileName = null;
-        {
-            try {
-                if (isIE) {
-                    encodeFileName = java.net.URLEncoder.encode(fileName, StandardCharsets.UTF_8);
-                } else {
-                    String protocol = String.valueOf(request.getProtocol()).trim().toLowerCase();
-                    if (protocol.contains("http/2.0")) {
-                        encodeFileName = java.net.URLEncoder.encode(fileName, StandardCharsets.UTF_8);
-                    } else {
-                        encodeFileName = new String(fileName.getBytes(StandardCharsets.UTF_8), StandardCharsets.ISO_8859_1);
-                    }
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-
         // 如果沒有取得檔案名稱
+        String encodeFileName = encodeOutputFileName(fileName);
         if(null == encodeFileName) encodeFileName = file.getName();
 
         // 本地檔案 MIME 解析處理
@@ -368,7 +342,6 @@ public class AsyncActionContext {
             } else {
                 fileMIME = mimeType;
             }
-
             // 檢查 MIME 是否判斷正確
             if (null == fileMIME) {
                 try {
@@ -382,6 +355,7 @@ public class AsyncActionContext {
 
         // 如果指定為 isAttachment 則不管 MIME 是什麼都會被當作一般的檔案下載；
         // 若為 false 則會依照瀏覽器自身決定能不能瀏覽該檔案類型，例如：pdf, json, html 等
+        HttpServletResponse response = ((HttpServletResponse) asyncContext.getResponse());
         {
             response.setContentType( fileMIME + ";charset=" + StandardCharsets.UTF_8.name() );
             StringBuilder sbd = new StringBuilder();
@@ -398,7 +372,7 @@ public class AsyncActionContext {
 
         // 匯出檔案實作
         {
-            AsyncWriteListener asyncWriteListener = new AsyncWriteListener.Builder()
+            WriteListener asyncWriteListener = new AsyncWriteListener.Builder()
                     .setAsyncContext(asyncContext)
                     .setFile(file)
                     .setHandler(handler)
@@ -573,6 +547,44 @@ public class AsyncActionContext {
                 e.printStackTrace();
             }
         }
+    }
+
+    /**
+     * 解決下載檔案時 Unicode 檔案名稱編碼
+     */
+    private String encodeOutputFileName(String fileName) {
+        HttpServletRequest request = ((HttpServletRequest) asyncContext.getRequest());
+        // 檢查瀏覽器是否為 Internet Explorer，如果是 MS-IE 體系的話要另外處理才不會中文亂碼
+        boolean isIE = false;
+        {
+            String userAgent = request.getHeader("user-agent");
+            if(null != userAgent && userAgent.length() > 0) {
+                try {
+                    if (userAgent.contains("Windows") && userAgent.contains("Edge")) isIE = true;
+                    if (userAgent.contains("Windows") && userAgent.contains("Trident")) isIE = true;
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        String encodeFileName = null;
+        {
+            try {
+                if (isIE) {
+                    encodeFileName = java.net.URLEncoder.encode(fileName, StandardCharsets.UTF_8);
+                } else {
+                    String protocol = String.valueOf(request.getProtocol()).trim().toLowerCase();
+                    if (protocol.contains("http/2.0")) {
+                        encodeFileName = java.net.URLEncoder.encode(fileName, StandardCharsets.UTF_8);
+                    } else {
+                        encodeFileName = new String(fileName.getBytes(StandardCharsets.UTF_8), StandardCharsets.ISO_8859_1);
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return encodeFileName;
     }
 
     public static class Builder {

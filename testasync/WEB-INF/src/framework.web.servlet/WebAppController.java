@@ -39,7 +39,7 @@ public class WebAppController extends HttpServlet {
         }
         setEncoding(req, resp);
         AsyncContext asyncContext;
-        // 是否已具有非同步狀態
+        // Start Async 檢查是否已具有非同步狀態
         if(req.isAsyncStarted()) {
             asyncContext = req.getAsyncContext();
         } else {

@@ -69,8 +69,8 @@ public class AsyncWriteListener implements WriteListener {
                     out.write(buffer, 0, len);
                 } else {
                     // all byte process done
-                    out.flush();
                     closeFileInputSteam();
+                    out.flush();
                     {
                         Bundle b = new Bundle();
                         b.putString("status", "done");
