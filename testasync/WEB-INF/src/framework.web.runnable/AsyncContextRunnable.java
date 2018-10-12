@@ -1,16 +1,14 @@
 package framework.web.runnable;
 
 import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONObject;
+import framework.observer.Handler;
+import framework.observer.Message;
 import framework.web.context.AsyncActionContext;
 import framework.web.executor.WebAppServiceExecutor;
+import framework.web.niolistener.AsyncReadListener;
 import framework.web.session.context.UserContext;
 import framework.web.session.pattern.UserMap;
 import framework.web.session.service.SessionServiceStatic;
-import org.apache.tomcat.util.http.fileupload.FileItem;
-import org.apache.tomcat.util.http.fileupload.disk.DiskFileItemFactory;
-import org.apache.tomcat.util.http.fileupload.servlet.ServletFileUpload;
-import org.apache.tomcat.util.http.fileupload.servlet.ServletRequestContext;
 
 import javax.servlet.AsyncContext;
 import javax.servlet.ServletConfig;
@@ -19,10 +17,12 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * 每一個 HttpRequest 都會經過此處進行個別封裝，封裝後會得到 AsyncActionContext，
@@ -69,25 +69,70 @@ public class AsyncContextRunnable implements Runnable {
     }
 
     // 請求封裝處理完成，由此開始自定義的 Server 服務內容，並統一使用 requestContext 格式
+    /*
     private void webAppStartup(HashMap<String, String> params, ArrayList<FileItem> files) {
-        requestContext.setParameters(params);
-        if(null == files || files.size() == 0) {
-            requestContext.setIsFileAction(false); // 不具有檔案上傳請求
-            requestContext.setFiles(null);
-        } else {
-            requestContext.setIsFileAction(true); // 具有檔案上傳請求
-            requestContext.setFiles(files);
+        // HTTP Header 處理
+        {
+            HttpServletRequest req = (HttpServletRequest) asyncContext.getRequest();
+            ArrayList<String> names = Collections.list(req.getHeaderNames());
+            HashMap<String, String> headers = new HashMap<>();
+            for(String key : names) {
+                String value = req.getHeader(key);
+                headers.put(key, value);
+            }
+            requestContext.setHeaders(headers);
+        }
+        // 處理參數內容及上傳檔案
+        {
+            requestContext.setParameters(params);
+            if (null == files || files.size() == 0) {
+                requestContext.setIsFileAction(false); // 不具有檔案上傳請求
+                requestContext.setFiles(null);
+            } else {
+                requestContext.setIsFileAction(true); // 具有檔案上傳請求
+                requestContext.setFiles(files);
+            }
+        }
+        // 每個 WebAppServiceExecutor 獨立處理完一個 AsyncActionContext 的 Task 內容
+        WebAppServiceExecutor executor = new WebAppServiceExecutor(requestContext);
+        executor.startup();
+    }
+    */
+
+    private void webAppStartup(HashMap<String, String> params, ArrayList<framework.web.multipart.FileItem> files) {
+        // HTTP Header 處理
+        {
+            HttpServletRequest req = (HttpServletRequest) asyncContext.getRequest();
+            ArrayList<String> names = Collections.list(req.getHeaderNames());
+            HashMap<String, String> headers = new HashMap<>();
+            for(String key : names) {
+                String value = req.getHeader(key);
+                headers.put(key, value);
+            }
+            requestContext.setHeaders(headers);
+        }
+        // 處理參數內容及上傳檔案
+        {
+            requestContext.setParameters(params);
+            if (null == files || files.size() == 0) {
+                requestContext.setIsFileAction(false); // 不具有檔案上傳請求
+                requestContext.setFiles(null);
+            } else {
+                requestContext.setIsFileAction(true); // 具有檔案上傳請求
+                requestContext.setFiles(files);
+            }
         }
         // 每個 WebAppServiceExecutor 獨立處理完一個 AsyncActionContext 的 Task 內容
         WebAppServiceExecutor executor = new WebAppServiceExecutor(requestContext);
         executor.startup();
     }
 
-    // TODO 僅剩此處為同步狀態
+    // TODO [BETA TEST] AsyncReadListener
     // 採用檔案處理方式解析 form-data 資料內容
     // 由於 Session 處理上傳進度值會影響伺服器效率，僅建議由前端處理上傳進度即可
     // jQuery 文件上传进度提示：https://segmentfault.com/a/1190000008791342
     private void parseFormData() {
+        /*
         DiskFileItemFactory dfac = new DiskFileItemFactory();
         {
             // Sets the default charset for use when no explicit charset parameter is provided by the sender.
@@ -108,9 +153,46 @@ public class AsyncContextRunnable implements Runnable {
             e.printStackTrace();
             asyncContext.complete();
         }
+        */
+        AsyncReadListener asyncReadListener = new AsyncReadListener.Builder()
+                .setServletContext(servletContext)
+                .setAsyncContext(asyncContext)
+                .setHandler(new Handler(){
+                    @Override
+                    public void handleMessage(Message m) {
+                        super.handleMessage(m);
+                        ArrayList<framework.web.multipart.FileItem> files = new ArrayList<>();
+                        HashMap<String, String> params = new HashMap<>();
+                        {
+                            String key = m.getData().getString("key");
+                            if(null != m.getData().get(key)) {
+                                ArrayList<framework.web.multipart.FileItem> fileItems = (ArrayList<framework.web.multipart.FileItem>) m.getData().get(key);
+                                for (framework.web.multipart.FileItem item : fileItems) {
+                                    if (item.isFormField()) {
+                                        params.put(item.getFieldName(), item.getContent());
+                                    } else {
+                                        files.add(item);
+                                    }
+                                }
+                            }
+                        }
+                        if(files.size() == 0) {
+                            webAppStartup(params, null);
+                        } else {
+                            webAppStartup(params, files);
+                        }
+                    }
+                })
+                .build();
+        try {
+            asyncContext.getRequest().getInputStream().setReadListener(asyncReadListener);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     // form-data 內容處理
+    /*
     private void createFileTable(List<FileItem> items) {
         JSONObject obj_keys = new JSONObject();
         HashMap<String, String> params = new HashMap<>();
@@ -149,6 +231,7 @@ public class AsyncContextRunnable implements Runnable {
             webAppStartup(params, files);
         }
     }
+    */
 
     // 因為取得 form-data 的內容會造成中文亂碼，所以採用 UTF-8 的解決方式取值
     private String readFormDataTextContent(InputStream ins) {

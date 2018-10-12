@@ -6,7 +6,7 @@ import framework.observer.Message;
 import framework.setting.AppSetting;
 import framework.web.context.AsyncActionContext;
 import framework.web.handler.RequestHandler;
-import org.apache.tomcat.util.http.fileupload.FileItem;
+import framework.web.multipart.FileItem;
 
 import java.util.ArrayList;
 

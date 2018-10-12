@@ -9,8 +9,10 @@ import org.apache.tomcat.util.http.fileupload.disk.DiskFileItemFactory;
 import javax.servlet.AsyncContext;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.WriteListener;
-import javax.servlet.http.HttpServletResponse;
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
 /**
@@ -53,15 +55,14 @@ public class AsyncWriteListener implements WriteListener {
 
     @Override
     public void onWritePossible() {
-        HttpServletResponse resp = (HttpServletResponse) asyncContext.getResponse();
         ServletOutputStream out = null;
         try {
-            out = resp.getOutputStream();
-        } catch (IOException e) {
+            out = asyncContext.getResponse().getOutputStream();
+        } catch (Exception e) {
             e.printStackTrace();
         }
+        if(null == out) return;
         byte[] buffer = new byte[DiskFileItemFactory.DEFAULT_SIZE_THRESHOLD];
-        assert out != null;
         while (out.isReady()) {
             try {
                 int len = inputStream.read(buffer);
@@ -83,7 +84,7 @@ public class AsyncWriteListener implements WriteListener {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            Thread.onSpinWait(); // wait if cpu idle
+            Thread.onSpinWait();
         }
     }
 

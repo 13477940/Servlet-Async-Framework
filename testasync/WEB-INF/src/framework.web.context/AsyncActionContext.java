@@ -1,9 +1,11 @@
 package framework.web.context;
 
 import com.alibaba.fastjson.JSONObject;
+import framework.hash.HashServiceStatic;
 import framework.observer.Bundle;
 import framework.observer.Handler;
 import framework.observer.Message;
+import framework.random.RandomServiceStatic;
 import framework.setting.AppSetting;
 import framework.web.niolistener.AsyncWriteListener;
 import org.apache.tomcat.util.http.fileupload.FileItem;
@@ -43,8 +45,9 @@ public class AsyncActionContext {
     private HttpSession httpSession;
     private String reqMethod;
     private boolean isFileAction = false; // 該請求是否具有上傳檔案的需求
+    private HashMap<String, String> headers;
     private HashMap<String, String> params;
-    private ArrayList<FileItem> files; // 已被暫存的檔案（不包含文字表單內容）
+    private ArrayList<framework.web.multipart.FileItem> files; // 已被暫存的檔案（不包含文字表單內容）
     private String urlPath = null;
     private String resourceExten = null; // 請求路徑資源的副檔名，若不具有副檔名則回傳 null
 
@@ -83,6 +86,14 @@ public class AsyncActionContext {
         this.isFileAction = isFileAction;
     }
 
+    public void setHeaders(HashMap<String, String> headers) {
+        this.headers = headers;
+    }
+
+    public HashMap<String, String> getHeaders() {
+        return this.headers;
+    }
+
     public void setParameters(HashMap<String, String> params) {
         this.params = params;
     }
@@ -102,24 +113,24 @@ public class AsyncActionContext {
         return this.httpSession;
     }
 
-    public void setFiles(ArrayList<FileItem> files) {
+    public void setFiles(ArrayList<framework.web.multipart.FileItem> files) {
         this.files = files;
     }
 
     /**
      * List 型態的 HTTP Request 上傳檔案內容
      */
-    public ArrayList<FileItem> getFiles() {
+    public ArrayList<framework.web.multipart.FileItem> getFiles() {
         return this.files;
     }
 
     /**
      * Map 型態的 HTTP Request 上傳檔案內容
      */
-    public HashMap<String, FileItem> getFilesMap() {
+    public HashMap<String, framework.web.multipart.FileItem> getFilesMap() {
         if(null == this.files || this.files.size() == 0) return null;
-        HashMap<String, FileItem> map = new HashMap<>();
-        for(FileItem fileItem : this.files) {
+        HashMap<String, framework.web.multipart.FileItem> map = new HashMap<>();
+        for(framework.web.multipart.FileItem fileItem : this.files) {
             String key = fileItem.getFieldName(); // html form input name
             map.put(key, fileItem);
         }
@@ -266,22 +277,112 @@ public class AsyncActionContext {
         }
     }
 
+    public void writeFile(framework.web.multipart.FileItem fileItem, String path, String fileName, Handler handler) {
+        if(null == fileItem) {
+            Bundle b = new Bundle();
+            b.putString("status", "fail");
+            b.putString("msg_zht", "必須設定一個可用的 FileItem 物件");
+            Message m = handler.obtainMessage();
+            m.setData(b);
+            m.sendToTarget();
+            return;
+        }
+        if(fileItem.isFormField()) {
+            Bundle b = new Bundle();
+            b.putString("status", "fail");
+            b.putString("msg_zht", fileItem.getFieldName() + " 是個請求參數，必須是二進位檔案格式才能進行寫入檔案的動作");
+            Message m = handler.obtainMessage();
+            m.setData(b);
+            m.sendToTarget();
+            return;
+        }
+        if(null == path || path.length() == 0) {
+            Bundle b = new Bundle();
+            b.putString("status", "fail");
+            b.putString("msg_zht", "必須設定一個可用的資料夾路徑");
+            Message m = handler.obtainMessage();
+            m.setData(b);
+            m.sendToTarget();
+            return;
+        }
+        if(null == fileName || fileName.length() == 0) {
+            Bundle b = new Bundle();
+            b.putString("status", "fail");
+            b.putString("msg_zht", "必須設定一個可用的檔案名稱");
+            Message m = handler.obtainMessage();
+            m.setData(b);
+            m.sendToTarget();
+            return;
+        }
+        {
+            File test = new File(path);
+            if(!test.exists()) {
+                try {
+                    throw new Exception(path + " 路徑並不存在");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                return;
+            }
+            if(!test.isDirectory()) {
+                try {
+                    throw new Exception(path + " 並不是資料夾");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                return;
+            }
+        }
+        // 寫入檔案至該資料夾中
+        File file = new File(path, fileName);
+        {
+            try {
+                // JDK 8+ NIO copy
+                InputStream tmpInputStream = fileItem.getInputStream();
+                Files.copy(tmpInputStream, file.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                IOUtils.closeQuietly(tmpInputStream);
+                {
+                    Bundle b = new Bundle();
+                    b.putString("status", "done");
+                    b.putString("msg_zht", "上傳檔案寫入成功");
+                    Message m = handler.obtainMessage();
+                    m.setData(b);
+                    m.sendToTarget();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                {
+                    Bundle b = new Bundle();
+                    b.putString("status", "fail");
+                    b.putString("msg_zht", String.valueOf(fileItem.getName()) + " 該上傳檔案於建立檔案時發生錯誤");
+                    b.put("exception", e);
+                    Message m = handler.obtainMessage();
+                    m.setData(b);
+                    m.sendToTarget();
+                }
+            }
+        }
+    }
+
     /**
      * 列印字串至 response 緩存中
      */
     public void printToResponse(String content, Handler handler) {
         HttpServletResponse response = ((HttpServletResponse) asyncContext.getResponse());
+        // 因為採用 byte 輸出，如果沒有 Response Header 容易在瀏覽器端發生錯誤
         {
             response.setContentType("text/plain;charset=" + StandardCharsets.UTF_8.name());
             StringBuilder sbd = new StringBuilder();
             {
                 sbd.append("inline;filename=\"");
-                sbd.append(encodeOutputFileName(String.valueOf(System.currentTimeMillis())+".txt"));
+                String tmpRespName = HashServiceStatic.getInstance().stringToSHA256(RandomServiceStatic.getInstance().getTimeHash(6));
+                sbd.append(encodeOutputFileName(tmpRespName)).append(".txt");
                 sbd.append("\"");
             }
             response.setHeader("Content-Disposition", sbd.toString());
             response.setHeader("Content-Length", String.valueOf(content.getBytes(StandardCharsets.UTF_8).length));
         }
+        // 使用 WriteListener 非同步輸出
         {
             WriteListener asyncWriteListener = new AsyncWriteListener.Builder()
                     .setAsyncContext(asyncContext)
@@ -354,7 +455,8 @@ public class AsyncActionContext {
         }
 
         // 如果指定為 isAttachment 則不管 MIME 是什麼都會被當作一般的檔案下載；
-        // 若為 false 則會依照瀏覽器自身決定能不能瀏覽該檔案類型，例如：pdf, json, html 等
+        // 若 isAttachment 為 false 則會依照瀏覽器自身決定能不能瀏覽該檔案類型，例如：pdf, json, html 等
+        // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Disposition
         HttpServletResponse response = ((HttpServletResponse) asyncContext.getResponse());
         {
             response.setContentType( fileMIME + ";charset=" + StandardCharsets.UTF_8.name() );
@@ -370,7 +472,7 @@ public class AsyncActionContext {
             response.setHeader("Content-Length", String.valueOf(file.length()));
         }
 
-        // 匯出檔案實作
+        // 使用 WriteListener 非同步輸出
         {
             WriteListener asyncWriteListener = new AsyncWriteListener.Builder()
                     .setAsyncContext(asyncContext)

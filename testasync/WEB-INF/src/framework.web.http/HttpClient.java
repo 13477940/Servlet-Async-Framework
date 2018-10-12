@@ -349,22 +349,21 @@ public class HttpClient {
     }
 
     private String inputSteamToString(InputStream inputStream) {
-        ByteArrayOutputStream outSteam = new ByteArrayOutputStream();
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
         byte[] buffer = new byte[DiskFileItemFactory.DEFAULT_SIZE_THRESHOLD];
         int length;
-        String res;
+        String res = null;
         try {
             while ((length = inputStream.read(buffer)) != -1) {
-                outSteam.write(buffer, 0, length);
+                out.write(buffer, 0 , length);
             }
-            res = outSteam.toString(StandardCharsets.UTF_8);
-            outSteam.flush();
-            IOUtils.closeQuietly(inputStream);
-            IOUtils.closeQuietly(outSteam);
+            out.flush();
+            res = out.toString(StandardCharsets.UTF_8);
         } catch (Exception e) {
             e.printStackTrace();
-            res = null;
         }
+        IOUtils.closeQuietly(inputStream);
+        IOUtils.closeQuietly(out);
         return res;
     }
 
