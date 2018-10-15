@@ -7,6 +7,7 @@ import framework.observer.Handler;
 import framework.observer.Message;
 import framework.random.RandomServiceStatic;
 import framework.setting.AppSetting;
+import framework.web.multipart.FileItemList;
 import framework.web.niolistener.AsyncWriteListener;
 import org.apache.tomcat.util.http.fileupload.FileItem;
 import org.apache.tomcat.util.http.fileupload.IOUtils;
@@ -19,6 +20,7 @@ import javax.servlet.WriteListener;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -47,7 +49,7 @@ public class AsyncActionContext {
     private boolean isFileAction = false; // 該請求是否具有上傳檔案的需求
     private HashMap<String, String> headers;
     private HashMap<String, String> params;
-    private ArrayList<framework.web.multipart.FileItem> files; // 已被暫存的檔案（不包含文字表單內容）
+    private FileItemList files; // 已被暫存的檔案（不包含文字表單內容）
     private String urlPath = null;
     private String resourceExten = null; // 請求路徑資源的副檔名，若不具有副檔名則回傳 null
 
@@ -113,14 +115,14 @@ public class AsyncActionContext {
         return this.httpSession;
     }
 
-    public void setFiles(ArrayList<framework.web.multipart.FileItem> files) {
+    public void setFiles(FileItemList files) {
         this.files = files;
     }
 
     /**
      * List 型態的 HTTP Request 上傳檔案內容
      */
-    public ArrayList<framework.web.multipart.FileItem> getFiles() {
+    public FileItemList getFiles() {
         return this.files;
     }
 
@@ -130,7 +132,7 @@ public class AsyncActionContext {
     public HashMap<String, framework.web.multipart.FileItem> getFilesMap() {
         if(null == this.files || this.files.size() == 0) return null;
         HashMap<String, framework.web.multipart.FileItem> map = new HashMap<>();
-        for(framework.web.multipart.FileItem fileItem : this.files) {
+        for(framework.web.multipart.FileItem fileItem : this.files.prototype()) {
             String key = fileItem.getFieldName(); // html form input name
             map.put(key, fileItem);
         }
@@ -179,7 +181,7 @@ public class AsyncActionContext {
     }
 
     /**
-     * 於此次非同步請求處理完畢時呼叫，調用後會回傳 Response
+     * 於此次非同步請求處理完畢時呼叫，調用後會立即回傳 Response
      */
     public void complete() {
         this.asyncContext.complete();
@@ -188,7 +190,7 @@ public class AsyncActionContext {
     /**
      * 屬於檔案類型的 form-data 寫入硬碟中儲存實作，
      * 如果於檔案上傳後沒有調用此方法，該檔案將會被放置在暫存資料夾中
-     * 必須具有暫存資料夾路徑：TomcatAppFiles/[WebAppName]/temp
+     * Tomcat/work/[host_name]/[app_name]
      */
     public void writeFile(FileItem fileItem, String path, String fileName, Handler handler) {
         if(null == fileItem) {
@@ -277,6 +279,10 @@ public class AsyncActionContext {
         }
     }
 
+    /**
+     * 針對 framework.web.multipart.FileItem 格式進行檔案寫入
+     * 屬於檔案類型的 form-data 寫入硬碟中儲存實作
+     */
     public void writeFile(framework.web.multipart.FileItem fileItem, String path, String fileName, Handler handler) {
         if(null == fileItem) {
             Bundle b = new Bundle();
@@ -594,6 +600,41 @@ public class AsyncActionContext {
      */
     public String getResourceExtension() {
         return this.resourceExten;
+    }
+
+    /**
+     * 若是 Request 為 text/plain, application/json 等上傳格式，
+     * 可由此方法將 InputStream 內容轉換為 String 的型態
+     */
+    public String getRequestTextContent() {
+        String res = null;
+        try {
+            BufferedInputStream bis = new BufferedInputStream(asyncContext.getRequest().getInputStream());
+            res = new String(bis.readAllBytes(), StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return res;
+    }
+
+    /**
+     * 若是 Request 為純檔案傳輸（image/jpeg, image/png...），
+     * 可由此方法將 InputStream 內容轉換為 File 的型態，
+     * 這個檔案會被暫存至 Tomcat 被關閉為止（deleteOnExit）
+     */
+    public File getRequestByteContent() {
+        File tomcat_temp = new File(servletContext.getAttribute(ServletContext.TEMPDIR).toString());
+        String dirSlash = System.getProperty("file.separator");
+        File tempFile;
+        try {
+            tempFile = File.createTempFile(RandomServiceStatic.getInstance().getTimeHash(3), null, new File(tomcat_temp.getPath() + dirSlash));
+            tempFile.deleteOnExit();
+            Files.copy(asyncContext.getRequest().getInputStream(), tempFile.toPath());
+        } catch (Exception e) {
+            e.printStackTrace();
+            tempFile = null;
+        }
+        return tempFile;
     }
 
     /**

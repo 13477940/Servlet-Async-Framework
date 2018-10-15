@@ -5,6 +5,8 @@ import framework.observer.Handler;
 import framework.observer.Message;
 import framework.web.context.AsyncActionContext;
 import framework.web.executor.WebAppServiceExecutor;
+import framework.web.multipart.FileItem;
+import framework.web.multipart.FileItemList;
 import framework.web.niolistener.AsyncReadListener;
 import framework.web.session.context.UserContext;
 import framework.web.session.pattern.UserMap;
@@ -99,7 +101,7 @@ public class AsyncContextRunnable implements Runnable {
     }
     */
 
-    private void webAppStartup(HashMap<String, String> params, ArrayList<framework.web.multipart.FileItem> files) {
+    private void webAppStartup(HashMap<String, String> params, FileItemList files) {
         // HTTP Header 處理
         {
             HttpServletRequest req = (HttpServletRequest) asyncContext.getRequest();
@@ -161,13 +163,13 @@ public class AsyncContextRunnable implements Runnable {
                     @Override
                     public void handleMessage(Message m) {
                         super.handleMessage(m);
-                        ArrayList<framework.web.multipart.FileItem> files = new ArrayList<>();
+                        FileItemList files = new FileItemList();
                         HashMap<String, String> params = new HashMap<>();
                         {
                             String key = m.getData().getString("key");
                             if(null != m.getData().get(key)) {
-                                ArrayList<framework.web.multipart.FileItem> fileItems = (ArrayList<framework.web.multipart.FileItem>) m.getData().get(key);
-                                for (framework.web.multipart.FileItem item : fileItems) {
+                                FileItemList fileItems = (FileItemList) m.getData().get(key);
+                                for (FileItem item : fileItems.prototype()) {
                                     if (item.isFormField()) {
                                         params.put(item.getFieldName(), item.getContent());
                                     } else {

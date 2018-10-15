@@ -4,7 +4,7 @@ import framework.observer.Bundle;
 import framework.observer.Handler;
 import framework.observer.Message;
 import framework.random.RandomServiceStatic;
-import framework.web.multipart.FileItem;
+import framework.web.multipart.FileItemList;
 import framework.web.multipart.MultiPartParser;
 import org.apache.tomcat.util.http.fileupload.IOUtils;
 import org.apache.tomcat.util.http.fileupload.disk.DiskFileItemFactory;
@@ -16,7 +16,6 @@ import javax.servlet.ServletInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.util.ArrayList;
 
 /**
  * 當每個獨立的上傳請求希望被非同步處理時，要採用 ReadListener，
@@ -85,7 +84,7 @@ public class AsyncReadListener implements ReadListener {
     @Override
     public void onAllDataRead() {
         IOUtils.closeQuietly(outputStream);
-        ArrayList<FileItem> fileItems = null;
+        FileItemList fileItems = null;
         {
             if(null != targetFile && targetFile.exists()) {
                 fileItems = new MultiPartParser.Builder()

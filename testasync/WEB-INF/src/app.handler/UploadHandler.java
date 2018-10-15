@@ -7,8 +7,7 @@ import framework.setting.AppSetting;
 import framework.web.context.AsyncActionContext;
 import framework.web.handler.RequestHandler;
 import framework.web.multipart.FileItem;
-
-import java.util.ArrayList;
+import framework.web.multipart.FileItemList;
 
 public class UploadHandler extends RequestHandler {
 
@@ -31,8 +30,8 @@ public class UploadHandler extends RequestHandler {
 
     private void processRequest() {
         String uploadPath = new AppSetting.Builder().build().getPathContext().getUploadDirPath();
-        ArrayList<FileItem> files = requestContext.getFiles();
-        for (FileItem fi : files) {
+        FileItemList files = requestContext.getFiles();
+        for (FileItem fi : files.prototype()) {
             requestContext.writeFile(fi, uploadPath, String.valueOf(System.currentTimeMillis()), new Handler(){
                 @Override
                 public void handleMessage(Message m) {

@@ -32,7 +32,7 @@ public class MultiPartParser {
      * Like Apache FileItem Parser For Async Implement
      * https://www.ibm.com/developerworks/cn/java/fileup/index.html
      */
-    public ArrayList<FileItem> parse() {
+    public FileItemList parse() {
         if(null == file || !file.exists()) return null;
         byte[] byte_boundary;
         {
@@ -71,7 +71,7 @@ public class MultiPartParser {
                 e.printStackTrace();
             }
         }
-        ArrayList<FileItem> fileItems = new ArrayList<>();
+        FileItemList fileItems = new FileItemList();
         {
             // 藉由 boundary 起始及結束位置分割出每個檔案範圍中的內容 byte
             try {
