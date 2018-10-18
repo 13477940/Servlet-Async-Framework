@@ -130,7 +130,7 @@ public class AsyncContextRunnable implements Runnable {
     }
 
     // TODO [BETA TEST] AsyncReadListener
-    // 採用檔案處理方式解析 form-data 資料內容
+    // 採用檔案處理方式解析 multipart/form-data 資料內容
     // 由於 Session 處理上傳進度值會影響伺服器效率，僅建議由前端處理上傳進度即可
     // jQuery 文件上传进度提示：https://segmentfault.com/a/1190000008791342
     private void parseFormData() {

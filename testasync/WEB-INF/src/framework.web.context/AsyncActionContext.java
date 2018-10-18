@@ -12,7 +12,6 @@ import framework.web.niolistener.AsyncWriteListener;
 import org.apache.tomcat.util.http.fileupload.FileItem;
 import org.apache.tomcat.util.http.fileupload.IOUtils;
 
-import javax.activation.MimetypesFileTypeMap;
 import javax.servlet.AsyncContext;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
@@ -371,7 +370,7 @@ public class AsyncActionContext {
     }
 
     /**
-     * 列印字串至 response 緩存中
+     * 輸出純文本內容至 Response
      */
     public void printToResponse(String content, Handler handler) {
         HttpServletResponse response = ((HttpServletResponse) asyncContext.getResponse());
@@ -404,6 +403,39 @@ public class AsyncActionContext {
     }
 
     /**
+     * 輸出 JSON 格式的字串至 Response
+     */
+    public void outputJSONToResponse(JSONObject obj, Handler handler) {
+        HttpServletResponse response = ((HttpServletResponse) asyncContext.getResponse());
+        // 因為採用 byte 輸出，如果沒有 Response Header 容易在瀏覽器端發生錯誤
+        {
+            response.setContentType("application/json;charset="+StandardCharsets.UTF_8.name());
+            StringBuilder sbd = new StringBuilder();
+            {
+                sbd.append("inline;filename=\"");
+                String tmpRespName = HashServiceStatic.getInstance().stringToSHA256(RandomServiceStatic.getInstance().getTimeHash(6));
+                sbd.append(encodeOutputFileName(tmpRespName)).append(".json");
+                sbd.append("\"");
+            }
+            response.setHeader("Content-Disposition", sbd.toString());
+            response.setHeader("Content-Length", String.valueOf(obj.toJSONString().getBytes(StandardCharsets.UTF_8).length));
+        }
+        // 使用 WriteListener 非同步輸出
+        {
+            WriteListener asyncWriteListener = new AsyncWriteListener.Builder()
+                    .setAsyncContext(asyncContext)
+                    .setCharSequence(obj.toJSONString())
+                    .setHandler(handler)
+                    .build();
+            try {
+                asyncContext.getResponse().getOutputStream().setWriteListener(asyncWriteListener);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    /**
      * by FilePath
      * 輸出檔案至瀏覽器端；
      * isAttachment 影響到瀏覽器是否能預覽（true 時會被當作一般檔案來下載）
@@ -413,7 +445,7 @@ public class AsyncActionContext {
             {
                 Bundle b = new Bundle();
                 b.putString("status", "fail");
-                b.putString("msg_zht", "不能輸出無效的路徑檔案");
+                b.putString("msg_zht", "指定的檔案是無效的");
                 Message m = handler.obtainMessage();
                 m.setData(b);
                 m.sendToTarget();
@@ -430,6 +462,19 @@ public class AsyncActionContext {
      * isAttachment 影響到瀏覽器是否能預覽（true 時會被當作一般檔案來下載）
      */
     public void outputFileToResponse(File file, String fileName, String mimeType, boolean isAttachment, Handler handler) {
+        // 檢查檔案是否正常
+        if(null == file || file.length() == 0 || !file.exists()) {
+            {
+                Bundle b = new Bundle();
+                b.putString("status", "fail");
+                b.putString("msg_zht", "指定的檔案是無效的");
+                Message m = handler.obtainMessage();
+                m.setData(b);
+                m.sendToTarget();
+            }
+            return;
+        }
+
         // 如果沒有取得檔案名稱
         String encodeFileName = encodeOutputFileName(fileName);
         if(null == encodeFileName) encodeFileName = file.getName();
@@ -437,26 +482,18 @@ public class AsyncActionContext {
         // 本地檔案 MIME 解析處理
         String fileMIME = null;
         {
-            if (null == mimeType) {
+            if (null == mimeType || mimeType.length() == 0) {
                 try {
-                    // JDK 7+
                     fileMIME = Files.probeContentType(Paths.get(file.getPath()));
-                    // javax.activation.jar
-                    if (null == fileMIME) fileMIME = new MimetypesFileTypeMap().getContentType(file);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             } else {
                 fileMIME = mimeType;
             }
-            // 檢查 MIME 是否判斷正確
+            // https://developer.mozilla.org/zh-TW/docs/Web/HTTP/Basics_of_HTTP/MIME_types
             if (null == fileMIME) {
-                try {
-                    throw new Exception("MIME 為空值，匯出檔案判斷 MIME 類型時出錯");
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                return;
+                fileMIME = "application/octet-stream";
             }
         }
 

@@ -1,6 +1,5 @@
 package framework.web.servlet;
 
-import framework.web.http.OkHttpClientStatic;
 import framework.web.runnable.AsyncContextRunnable;
 
 import javax.servlet.AsyncContext;
@@ -103,9 +102,6 @@ public class WebAppController extends HttpServlet {
                     worker.shutdownNow();
                 }
             }
-        }
-        {
-            OkHttpClientStatic.shutdown();
         }
         unRegAppDrivers();
     }

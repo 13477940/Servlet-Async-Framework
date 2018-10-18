@@ -1,7 +1,6 @@
 package framework.web.multipart;
 
 import framework.random.RandomServiceStatic;
-import org.apache.tomcat.util.http.fileupload.IOUtils;
 
 import javax.servlet.AsyncContext;
 import javax.servlet.ServletContext;
@@ -10,6 +9,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+/**
+ * implement by UrielTech.com TomLi.
+ */
 public class MultiPartParser {
 
     private AsyncContext asyncContext;
@@ -28,7 +30,6 @@ public class MultiPartParser {
     }
 
     /**
-     * implement by UrielTech TomLi.
      * Like Apache FileItem Parser For Async Implement
      * https://www.ibm.com/developerworks/cn/java/fileup/index.html
      */
@@ -72,6 +73,9 @@ public class MultiPartParser {
             }
         }
         FileItemList fileItems = new FileItemList();
+        // 空的 POST MultiPart 時
+        if(boundary_start.size() == 1 && boundary_end.size() == 1) return fileItems;
+        // TODO 逐個 byte 檢查內容，這將會是效能瓶頸的區域 bigO(n)，檔案越大會跑越久
         {
             // 藉由 boundary 起始及結束位置分割出每個檔案範圍中的內容 byte
             try {
@@ -97,7 +101,6 @@ public class MultiPartParser {
                 File tmpFile = null; // 初始為空值防止第一個檔案為空內容
                 BufferedOutputStream fOut = null;
                 while(inputStream.read(buffer) != -1) {
-                    // 介於 boundary 之間的 byte
                     if(index >= boundary_end.get(tailIndx) && index < boundary_start.get(headIndx)) {
                         String tmp = String.valueOf(buffer[0]);
                         String check = chk[nowMatchCount];
@@ -120,6 +123,7 @@ public class MultiPartParser {
                             }
                         }
                     }
+                    // header index 會提前 +1 所以要注意取用範圍值
                     if(index > boundary_start.get(headIndx)) {
                         if(headIndx >= boundary_start.size() -1) break;
                         headIndx++;
@@ -162,7 +166,7 @@ public class MultiPartParser {
                                 {
                                     if(prevIndex != headIndx) {
                                         prevIndex = headIndx;
-                                        IOUtils.closeQuietly(fOut);
+                                        if(null != fOut) fOut.close();
                                         tmpFile = File.createTempFile(RandomServiceStatic.getInstance().getTimeHash(4), null, new File(this.repository.getPath() + dirSlash));
                                         tmpFile.deleteOnExit();
                                         fOut = new BufferedOutputStream(new FileOutputStream(tmpFile));
@@ -230,7 +234,7 @@ public class MultiPartParser {
                     }
                 } // while end.
                 list_ctx.clear();
-                IOUtils.closeQuietly(fOut);
+                if(null != fOut) fOut.close();
             } catch (Exception e) {
                 e.printStackTrace();
             }

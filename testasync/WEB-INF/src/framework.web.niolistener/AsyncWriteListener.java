@@ -3,16 +3,12 @@ package framework.web.niolistener;
 import framework.observer.Bundle;
 import framework.observer.Handler;
 import framework.observer.Message;
-import org.apache.tomcat.util.http.fileupload.IOUtils;
 import org.apache.tomcat.util.http.fileupload.disk.DiskFileItemFactory;
 
 import javax.servlet.AsyncContext;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.WriteListener;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 
 /**
@@ -26,14 +22,14 @@ import java.nio.charset.StandardCharsets;
 public class AsyncWriteListener implements WriteListener {
 
     private AsyncContext asyncContext;
-    private InputStream inputStream;
+    private BufferedInputStream inputStream;
     private Handler handler;
 
-    private AsyncWriteListener(AsyncContext asyncContext, File file, Handler handler) {
+    private AsyncWriteListener(AsyncContext asyncContext, CharSequence charSequence, Handler handler) {
         this.asyncContext = asyncContext;
         {
             try {
-                inputStream = new FileInputStream(file);
+                this.inputStream = new BufferedInputStream(new ByteArrayInputStream(charSequence.toString().getBytes(StandardCharsets.UTF_8)));
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -41,11 +37,11 @@ public class AsyncWriteListener implements WriteListener {
         this.handler = handler;
     }
 
-    private AsyncWriteListener(AsyncContext asyncContext, CharSequence charSequence, Handler handler) {
+    private AsyncWriteListener(AsyncContext asyncContext, File file, Handler handler) {
         this.asyncContext = asyncContext;
         {
             try {
-                inputStream = new ByteArrayInputStream(charSequence.toString().getBytes(StandardCharsets.UTF_8));
+                this.inputStream = new BufferedInputStream(new FileInputStream(file));
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -61,7 +57,7 @@ public class AsyncWriteListener implements WriteListener {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        if(null == out) return;
+        assert null != out;
         byte[] buffer = new byte[DiskFileItemFactory.DEFAULT_SIZE_THRESHOLD];
         while (out.isReady()) {
             try {
@@ -70,7 +66,7 @@ public class AsyncWriteListener implements WriteListener {
                     out.write(buffer, 0, len);
                 } else {
                     // all byte process done
-                    closeFileInputSteam();
+                    closeInputSteam();
                     out.flush();
                     {
                         Bundle b = new Bundle();
@@ -91,7 +87,7 @@ public class AsyncWriteListener implements WriteListener {
     @Override
     public void onError(Throwable throwable) {
         throwable.printStackTrace();
-        closeFileInputSteam();
+        closeInputSteam();
         {
             Bundle b = new Bundle();
             b.putString("status", "fail");
@@ -102,17 +98,21 @@ public class AsyncWriteListener implements WriteListener {
         }
     }
 
-    private void closeFileInputSteam() {
-        if(null != inputStream) {
-            IOUtils.closeQuietly(inputStream);
+    private void closeInputSteam() {
+        try {
+            if(null != inputStream) {
+                inputStream.close();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
     public static class Builder {
 
         private AsyncContext asyncContext = null;
-        private File file = null;
         private CharSequence charSequence = null;
+        private File file = null;
         private Handler handler = null;
 
         public AsyncWriteListener.Builder setAsyncContext(AsyncContext asyncContext) {
@@ -120,13 +120,13 @@ public class AsyncWriteListener implements WriteListener {
             return this;
         }
 
-        public AsyncWriteListener.Builder setFile(File file) {
-            this.file = file;
+        public AsyncWriteListener.Builder setCharSequence(CharSequence charSequence) {
+            this.charSequence = charSequence;
             return this;
         }
 
-        public AsyncWriteListener.Builder setCharSequence(CharSequence charSequence) {
-            this.charSequence = charSequence;
+        public AsyncWriteListener.Builder setFile(File file) {
+            this.file = file;
             return this;
         }
 
