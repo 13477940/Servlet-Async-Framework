@@ -75,6 +75,7 @@ public class AsyncReadListener implements ReadListener {
             // onAllDataRead 需要由 inputStream.read 所有 byte 之後才會被觸發
             while (inputStream.isReady() && (length = inputStream.read(buffer)) != -1) {
                 outputStream.write(buffer, 0, length);
+                Thread.onSpinWait();
             }
         } catch (Exception e) {
             e.printStackTrace();

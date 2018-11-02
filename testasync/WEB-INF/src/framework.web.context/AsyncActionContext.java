@@ -133,7 +133,17 @@ public class AsyncActionContext {
         HashMap<String, framework.web.multipart.FileItem> map = new HashMap<>();
         for(framework.web.multipart.FileItem fileItem : this.files.prototype()) {
             String key = fileItem.getFieldName(); // html form input name
-            map.put(key, fileItem);
+            if(map.containsKey(key)) {
+                StringBuilder sbd = new StringBuilder();
+                {
+                    sbd.append(key);
+                    sbd.append("_");
+                    sbd.append(RandomServiceStatic.getInstance().getRandomString(6));
+                }
+                map.put(sbd.toString(), fileItem);
+            } else {
+                map.put(key, fileItem);
+            }
         }
         return map;
     }
