@@ -3,12 +3,15 @@ package framework.web.niolistener;
 import framework.observer.Bundle;
 import framework.observer.Handler;
 import framework.observer.Message;
+import framework.web.context.AsyncActionContext;
 import org.apache.tomcat.util.http.fileupload.disk.DiskFileItemFactory;
 
-import javax.servlet.AsyncContext;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.WriteListener;
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.nio.charset.StandardCharsets;
 
 /**
@@ -21,12 +24,12 @@ import java.nio.charset.StandardCharsets;
  */
 public class AsyncWriteListener implements WriteListener {
 
-    private AsyncContext asyncContext;
+    private AsyncActionContext requestContext;
     private BufferedInputStream inputStream;
     private Handler handler;
 
-    private AsyncWriteListener(AsyncContext asyncContext, CharSequence charSequence, Handler handler) {
-        this.asyncContext = asyncContext;
+    private AsyncWriteListener(AsyncActionContext asyncActionContext, CharSequence charSequence, Handler handler) {
+        this.requestContext = asyncActionContext;
         {
             try {
                 this.inputStream = new BufferedInputStream(new ByteArrayInputStream(charSequence.toString().getBytes(StandardCharsets.UTF_8)));
@@ -37,8 +40,8 @@ public class AsyncWriteListener implements WriteListener {
         this.handler = handler;
     }
 
-    private AsyncWriteListener(AsyncContext asyncContext, File file, Handler handler) {
-        this.asyncContext = asyncContext;
+    private AsyncWriteListener(AsyncActionContext asyncActionContext, File file, Handler handler) {
+        this.requestContext = asyncActionContext;
         {
             try {
                 this.inputStream = new BufferedInputStream(new FileInputStream(file));
@@ -51,9 +54,25 @@ public class AsyncWriteListener implements WriteListener {
 
     @Override
     public void onWritePossible() {
+        if(requestContext.isComplete()) {
+            Bundle b = new Bundle();
+            b.putString("status", "fail");
+            b.putString("msg", "can't output with completed async context");
+            Message m = handler.obtainMessage();
+            m.setData(b);
+            m.sendToTarget();
+            {
+                try {
+                    throw new Exception("can't output with completed async context");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            return;
+        }
         ServletOutputStream out = null;
         try {
-            out = asyncContext.getResponse().getOutputStream();
+            out = requestContext.getAsyncContext().getResponse().getOutputStream();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -110,13 +129,13 @@ public class AsyncWriteListener implements WriteListener {
 
     public static class Builder {
 
-        private AsyncContext asyncContext = null;
+        private AsyncActionContext requestContext = null;
         private CharSequence charSequence = null;
         private File file = null;
         private Handler handler = null;
 
-        public AsyncWriteListener.Builder setAsyncContext(AsyncContext asyncContext) {
-            this.asyncContext = asyncContext;
+        public AsyncWriteListener.Builder setAsyncActionContext(AsyncActionContext asyncActionContext) {
+            this.requestContext = asyncActionContext;
             return this;
         }
 
@@ -136,8 +155,8 @@ public class AsyncWriteListener implements WriteListener {
         }
 
         public AsyncWriteListener build() {
-            if(null == file) { return new AsyncWriteListener(asyncContext, charSequence, handler); }
-            return new AsyncWriteListener(asyncContext, file, handler);
+            if(null == file) { return new AsyncWriteListener(requestContext, charSequence, handler); }
+            return new AsyncWriteListener(requestContext, file, handler);
         }
 
     }

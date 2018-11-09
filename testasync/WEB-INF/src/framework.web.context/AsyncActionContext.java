@@ -12,10 +12,7 @@ import framework.web.niolistener.AsyncWriteListener;
 import org.apache.tomcat.util.http.fileupload.FileItem;
 import org.apache.tomcat.util.http.fileupload.IOUtils;
 
-import javax.servlet.AsyncContext;
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletContext;
-import javax.servlet.WriteListener;
+import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -55,6 +52,10 @@ public class AsyncActionContext {
     private Handler appExceptionHandler; // for request all exception
     private Handler invalidRequestHandler; // for invalid request(no handler processed)
 
+    private String asyncStatus = "onProcess"; // 該請求的 AsyncContext 狀態目前為何
+    private boolean isComplete = false; // 這個 AsyncContext 是否已被 complete
+    private boolean isOutputted = false; // 是否已是被輸出過的 requestContext
+
     private AsyncActionContext(ServletContext servletContext, ServletConfig servletConfig, AsyncContext asyncContext) {
         this.servletContext = servletContext;
         this.servletConfig = servletConfig;
@@ -66,6 +67,33 @@ public class AsyncActionContext {
                 e.printStackTrace();
             }
         } else {
+            // Servlet Async Listener
+            {
+                this.asyncContext.addListener(new AsyncListener() {
+                    @Override
+                    public void onComplete(AsyncEvent asyncEvent) {
+                        asyncStatus = "onComplete";
+                        isComplete = true;
+                    }
+
+                    @Override
+                    public void onTimeout(AsyncEvent asyncEvent) {
+                        asyncStatus = "onTimeout";
+                    }
+
+                    @Override
+                    public void onError(AsyncEvent asyncEvent) {
+                        asyncStatus = "onError";
+                    }
+
+                    @Override
+                    public void onStartAsync(AsyncEvent asyncEvent) {
+                        // 若 Listener 位於此處理論上沒辦法監聽到這個，因為 StartAsync 在 WebAppController 時已經發生
+                        asyncStatus = "onStartAsync";
+                    }
+                });
+            }
+            // 初始化 request context
             try {
                 this.httpSession = ((HttpServletRequest) asyncContext.getRequest()).getSession(true);
                 this.reqMethod = ((HttpServletRequest) asyncContext.getRequest()).getMethod();
@@ -193,7 +221,29 @@ public class AsyncActionContext {
      * 於此次非同步請求處理完畢時呼叫，調用後會立即回傳 Response
      */
     public void complete() {
-        this.asyncContext.complete();
+        if(!isComplete) {
+            try {
+                this.asyncContext.complete();
+                this.isComplete = true;
+                this.asyncStatus = "onComplete";
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    /**
+     * 回傳目前的 AsyncContext 是否已被 complete
+     */
+    public boolean isComplete() {
+        return this.isComplete;
+    }
+
+    /**
+     * 這將會取得目前 Servlet Async Status
+     */
+    public String getAsyncStatus() {
+        return this.asyncStatus;
     }
 
     /**
@@ -383,6 +433,26 @@ public class AsyncActionContext {
      * 輸出純文本內容至 Response
      */
     public void printToResponse(String content, Handler handler) {
+        // 因為非同步架構的關係將限制單一個 request 只能有單一個輸出
+        {
+            if (isOutputted) {
+                Bundle b = new Bundle();
+                b.putString("status", "fail");
+                b.putString("msg", "a request only have one output to response");
+                Message m = handler.obtainMessage();
+                m.setData(b);
+                m.sendToTarget();
+                {
+                    try {
+                        throw new Exception("a request only have one output to response");
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+                return;
+            }
+        }
+
         HttpServletResponse response = ((HttpServletResponse) asyncContext.getResponse());
         // 因為採用 byte 輸出，如果沒有 Response Header 容易在瀏覽器端發生錯誤
         {
@@ -399,16 +469,12 @@ public class AsyncActionContext {
         }
         // 使用 WriteListener 非同步輸出
         {
-            WriteListener asyncWriteListener = new AsyncWriteListener.Builder()
-                    .setAsyncContext(asyncContext)
+            AsyncWriteListener asyncWriteListener = new AsyncWriteListener.Builder()
+                    .setAsyncActionContext(this)
                     .setCharSequence(content)
                     .setHandler(handler)
                     .build();
-            try {
-                asyncContext.getResponse().getOutputStream().setWriteListener(asyncWriteListener);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            setOutputWriteListener(asyncWriteListener);
         }
     }
 
@@ -416,6 +482,26 @@ public class AsyncActionContext {
      * 輸出 JSON 格式的字串至 Response
      */
     public void outputJSONToResponse(JSONObject obj, Handler handler) {
+        // 因為非同步架構的關係將限制單一個 request 只能有單一個輸出
+        {
+            if (isOutputted) {
+                Bundle b = new Bundle();
+                b.putString("status", "fail");
+                b.putString("msg", "a request only have one output to response");
+                Message m = handler.obtainMessage();
+                m.setData(b);
+                m.sendToTarget();
+                {
+                    try {
+                        throw new Exception("a request only have one output to response");
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+                return;
+            }
+        }
+
         HttpServletResponse response = ((HttpServletResponse) asyncContext.getResponse());
         // 因為採用 byte 輸出，如果沒有 Response Header 容易在瀏覽器端發生錯誤
         {
@@ -432,16 +518,12 @@ public class AsyncActionContext {
         }
         // 使用 WriteListener 非同步輸出
         {
-            WriteListener asyncWriteListener = new AsyncWriteListener.Builder()
-                    .setAsyncContext(asyncContext)
+            AsyncWriteListener asyncWriteListener = new AsyncWriteListener.Builder()
+                    .setAsyncActionContext(this)
                     .setCharSequence(obj.toJSONString())
                     .setHandler(handler)
                     .build();
-            try {
-                asyncContext.getResponse().getOutputStream().setWriteListener(asyncWriteListener);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            setOutputWriteListener(asyncWriteListener);
         }
     }
 
@@ -472,6 +554,26 @@ public class AsyncActionContext {
      * isAttachment 影響到瀏覽器是否能預覽（true 時會被當作一般檔案來下載）
      */
     public void outputFileToResponse(File file, String fileName, String mimeType, boolean isAttachment, Handler handler) {
+        // 因為非同步架構的關係將限制單一個 request 只能有單一個輸出
+        {
+            if (isOutputted) {
+                Bundle b = new Bundle();
+                b.putString("status", "fail");
+                b.putString("msg", "a request only have one output to response");
+                Message m = handler.obtainMessage();
+                m.setData(b);
+                m.sendToTarget();
+                {
+                    try {
+                        throw new Exception("a request only have one output to response");
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+                return;
+            }
+        }
+
         // 檢查檔案是否正常
         if(null == file || file.length() == 0 || !file.exists()) {
             {
@@ -527,16 +629,12 @@ public class AsyncActionContext {
 
         // 使用 WriteListener 非同步輸出
         {
-            WriteListener asyncWriteListener = new AsyncWriteListener.Builder()
-                    .setAsyncContext(asyncContext)
+            AsyncWriteListener asyncWriteListener = new AsyncWriteListener.Builder()
+                    .setAsyncActionContext(this)
                     .setFile(file)
                     .setHandler(handler)
                     .build();
-            try {
-                asyncContext.getResponse().getOutputStream().setWriteListener(asyncWriteListener);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            setOutputWriteListener(asyncWriteListener);
         }
     }
 
@@ -775,6 +873,18 @@ public class AsyncActionContext {
             }
         }
         return encodeFileName;
+    }
+
+    /**
+     * 統一檢查與設定 AsyncWriteListener，以此管控每個請求只能輸出一次的機制
+     */
+    private void setOutputWriteListener(AsyncWriteListener asyncWriteListener) {
+        isOutputted = true;
+        try {
+            asyncContext.getResponse().getOutputStream().setWriteListener(asyncWriteListener);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public static class Builder {
