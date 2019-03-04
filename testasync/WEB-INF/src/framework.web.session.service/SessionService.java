@@ -18,7 +18,7 @@ public abstract class SessionService {
      * 也有可能只是查詢 userMap 的內容為起點
      */
     SessionService() {
-        this.userMap = new UserMap();
+        this.userMap = new SessionService.UserMapInstance();
     }
 
     public void addUser(UserContext userContext) {
@@ -102,5 +102,7 @@ public abstract class SessionService {
         }
         clearUserMap();
     }
+
+    class UserMapInstance extends UserMap {}
 
 }

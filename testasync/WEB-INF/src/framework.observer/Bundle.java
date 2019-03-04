@@ -6,7 +6,7 @@ import java.util.Set;
 
 public class Bundle {
 
-    private HashMap<String, Object> map;
+    protected HashMap<String, Object> map;
 
     public Bundle() {
         this.map = new HashMap<>();

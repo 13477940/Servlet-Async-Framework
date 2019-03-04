@@ -19,10 +19,9 @@ public class FileFinder {
 
     private File baseFile = null; // 搜尋起始點
 
-    public FileFinder() { initFileFinder(null); }
+    private FileFinder(File baseFile) { initFileFinder(baseFile); }
 
-    public FileFinder(File baseFile) { initFileFinder(baseFile); }
-
+    // 該階層與往上查找的階層內的：資料夾名稱 or 檔案名稱
     public File find(String fileName) {
         if(null == fileName || fileName.length() == 0) return null;
         // for Windows directory root path
@@ -54,6 +53,7 @@ public class FileFinder {
         return res;
     }
 
+    // 該階層與往上查找的階層內的：子資料夾路徑 + 資料夾名稱 or 檔案名稱
     public File find(String fileDirectoryName, String fileName) {
         File res = findFunc(this.baseFile, fileDirectoryName, fileName);
         if(null == res) return null;

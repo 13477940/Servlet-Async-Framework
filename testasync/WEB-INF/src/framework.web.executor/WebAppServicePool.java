@@ -6,11 +6,9 @@ import java.util.ArrayList;
 
 public abstract class WebAppServicePool {
 
-    private ArrayList<RequestHandler> handlers;
+    private ArrayList<RequestHandler> handlers = new ArrayList<>();
 
-    public WebAppServicePool() {
-        handlers = new ArrayList<>();
-    }
+    WebAppServicePool() {}
 
     public void addHandler(RequestHandler handler) {
         handlers.add(handler);

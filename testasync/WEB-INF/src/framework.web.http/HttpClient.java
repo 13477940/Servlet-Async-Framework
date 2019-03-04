@@ -16,7 +16,9 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -208,7 +210,8 @@ public class HttpClient {
                     requestBuilder.setHeader(header.getKey(), header.getValue());
                 }
             }
-            // 採用 post 預設方法必須是 application/x-www-form-urlencoded 的方式夾帶參數
+            // 如果採用 post 預設方法必須是 application/x-www-form-urlencoded 的方式夾帶參數
+            // 此方法則採用 raw 內容方式夾帶 JSON 字串
             requestBuilder.setHeader("Content-Type","application/json;charset=utf-8");
             // 設定 request parameters
             if (null != obj) {
@@ -297,6 +300,7 @@ public class HttpClient {
                             outputStream.write(eol_byte);
                         }
                     }
+                    // multipart 結尾符號
                     outputStream.write(("--" + boundary + "--").getBytes(StandardCharsets.UTF_8));
                     outputStream.close();
                 } catch (Exception e) {
@@ -438,7 +442,7 @@ public class HttpClient {
             b.put("name", tmpFile.getName());
             b.put("size", tmpFile.length());
             b.put("path", tmpFile.getPath());
-            b.put("download_status", download_status);
+            b.put("download_status", "true");
             Message m = handler.obtainMessage();
             m.setData(b);
             m.sendToTarget();
@@ -446,7 +450,7 @@ public class HttpClient {
             Bundle b = new Bundle();
             b.put("status", "fail");
             b.put("resp_type", "file");
-            b.put("download_status", download_status);
+            b.put("download_status", "false");
             Message m = handler.obtainMessage();
             m.setData(b);
             m.sendToTarget();

@@ -8,13 +8,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
-public class UserMap {
+public abstract class UserMap {
 
-    private HashMap<String, UserContext> map = null;
+    private HashMap<String, UserContext> map = new HashMap<>();
 
-    public UserMap() {
-        map = new HashMap<>();
-    }
+    public UserMap() {}
 
     /**
      * 由 sessionID 增加使用者記錄

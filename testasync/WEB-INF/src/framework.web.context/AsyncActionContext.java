@@ -218,14 +218,17 @@ public class AsyncActionContext {
     }
 
     /**
-     * 於此次非同步請求處理完畢時呼叫，調用後會立即回傳 Response
+     * 當一個 AsyncContext 被 complete 時，將會立刻回傳 response 給使用者
+     * 若沒有經過 output 就 complete 可能會造成 response Content-Length 出錯
      */
     public void complete() {
         if(!isComplete) {
+            this.isComplete = true;
+            this.asyncStatus = "onComplete";
+            this.asyncContext.complete();
+        } else {
             try {
-                this.asyncContext.complete();
-                this.isComplete = true;
-                this.asyncStatus = "onComplete";
+                throw new Exception("async context has been set complete status");
             } catch (Exception e) {
                 e.printStackTrace();
             }

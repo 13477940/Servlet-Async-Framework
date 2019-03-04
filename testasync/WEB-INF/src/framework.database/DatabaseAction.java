@@ -12,7 +12,7 @@ import java.util.Arrays;
 import java.util.Objects;
 
 /**
- * 每個 SQL 指令請求都代表一個獨立的 DatabaseAction
+ * 此 Framework 概念中每一次的 SQL 指令請求都代表一個獨立的 DatabaseAction
  */
 public class DatabaseAction {
 
@@ -114,6 +114,9 @@ public class DatabaseAction {
         }
     }
 
+    /**
+     * INSERT, UPDATE AND DELETE
+     */
     public Integer update() {
         Integer res = null;
         Savepoint savepoint = null;

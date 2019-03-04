@@ -40,7 +40,7 @@ public class AppSetting {
     }
 
     public File getBaseFileDir() {
-        return new FileFinder().find(baseFileDirName);
+        return new FileFinder.Builder().build().find(baseFileDirName);
     }
 
     public String getDirSlash() {
@@ -60,11 +60,11 @@ public class AppSetting {
     }
 
     public JSONObject getConfig(String configDirName, String configFileName) {
-        return getConfig(new FileFinder().find(configDirName, configFileName));
+        return getConfig(new FileFinder.Builder().build().find(configDirName, configFileName));
     }
 
     public JSONObject getConfig() {
-        FileFinder finder = new FileFinder();
+        FileFinder finder = new FileFinder.Builder().build();
         File file = finder.find(this.configDirName, this.configFileName);
         return getConfig(file);
     }

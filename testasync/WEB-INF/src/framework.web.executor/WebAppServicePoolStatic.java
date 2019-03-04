@@ -2,13 +2,14 @@ package framework.web.executor;
 
 public class WebAppServicePoolStatic {
 
-    private static WebAppServicePool instance = null;
-
     static {}
 
     public static WebAppServicePool getInstance() {
-        if(null == instance) instance = new WebAppServicePoolStatic.Instance();
-        return instance;
+        return InstanceHolder.instance;
+    }
+
+    static class InstanceHolder {
+        static WebAppServicePool instance = new WebAppServicePoolStatic.Instance();
     }
 
     private static class Instance extends WebAppServicePool {}

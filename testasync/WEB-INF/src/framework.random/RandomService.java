@@ -5,7 +5,9 @@ import java.util.concurrent.ThreadLocalRandom;
 public abstract class RandomService {
 
     private final String ranStr = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    private final int defaultSize = 10; // default random string length
+    private final int defaultSize = 8; // default random string length
+
+    RandomService() {}
 
     /**
      * 藉由時間戳記與亂數字串生成一筆雜湊字串，亦可以藉由增加亂數字串長度減少重複機率

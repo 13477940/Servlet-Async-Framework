@@ -6,7 +6,7 @@ import java.util.Formatter;
 
 public abstract class HashService {
 
-    public HashService() {}
+    HashService() {}
 
     public String stringToSHA512(String content) {
         return stringToHash("SHA-512", content);
