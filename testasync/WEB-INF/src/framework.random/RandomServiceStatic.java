@@ -2,6 +2,8 @@ package framework.random;
 
 public class RandomServiceStatic {
 
+    private RandomServiceStatic() {}
+
     static {}
 
     public static RandomService getInstance() {

@@ -69,6 +69,20 @@ public class AppSetting {
         return getConfig(file);
     }
 
+    public JSONObject getConfig(String filePath) {
+        File file = new File(filePath);
+        if(file.exists()) {
+            return getConfig(file);
+        } else {
+            try {
+                throw new Exception(filePath + " 該檔案不存在");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return null;
+    }
+
     // getConfig 實作
     public JSONObject getConfig(File file) {
         JSONObject res = null;
@@ -125,6 +139,7 @@ public class AppSetting {
         private String baseFileDirName = "TomcatAppFiles";
         private String appName = null;
         private AppSetting.PathContext pathContext = null;
+        private String baseFileDirPath = null;
 
         public Builder() {}
 
@@ -145,6 +160,11 @@ public class AppSetting {
 
         public AppSetting.Builder setAppName(String appName) {
             this.appName = appName;
+            return this;
+        }
+
+        public AppSetting.Builder setBaseFileDirPath(String baseFileDirPath) {
+            this.baseFileDirPath = baseFileDirPath;
             return this;
         }
 
@@ -174,17 +194,21 @@ public class AppSetting {
                 }
             }
             // 檢查是否具有應用程式基本儲存的資料夾區域
-            String baseFileDirPath;
             {
                 File baseFileDir = finder.find(this.baseFileDirName);
                 if(null != baseFileDir && baseFileDir.exists()) {
                     baseFileDirPath = baseFileDir.getPath();
                     this.pathContext = new AppSetting.PathContext(baseFileDirPath, this.appName, System.getProperty("file.separator"));
                 } else {
-                    try {
-                        throw new Exception("由 AppSetting 類別路徑往上尋找並未找到名為 " + this.baseFileDirName + " 的資料夾！");
-                    } catch (Exception e) {
-                        e.printStackTrace();
+                    File tmpBaseFileDir = new File(this.baseFileDirPath);
+                    if(tmpBaseFileDir.exists()) {
+                        this.pathContext = new AppSetting.PathContext(baseFileDirPath, this.appName, System.getProperty("file.separator"));
+                    } else {
+                        try {
+                            throw new Exception("由 AppSetting 類別路徑往上尋找並未找到名為 " + this.baseFileDirName + " 的資料夾！");
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
                     }
                 }
             }
@@ -268,9 +292,14 @@ public class AppSetting {
                 String line = br.readLine();
                 sbd.append(line);
             }
-            fr.close();
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            try {
+                fr.close();
+            } catch (Exception e) {
+                // e.printStackTrace();
+            }
         }
         return sbd.toString();
     }

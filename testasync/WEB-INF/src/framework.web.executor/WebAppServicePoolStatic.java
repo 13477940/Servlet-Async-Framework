@@ -2,6 +2,8 @@ package framework.web.executor;
 
 public class WebAppServicePoolStatic {
 
+    private WebAppServicePoolStatic() {}
+
     static {}
 
     public static WebAppServicePool getInstance() {

@@ -14,7 +14,7 @@ import java.util.concurrent.Executors;
 
 /**
  * 基礎資料庫連線方式，此類別為無 Connection Pool 技術可採用時才選擇的方案
- * 因其連接效率的問題，不建議將此功能使用於生產環境中
+ * 因為不具有 ConnectionPool 管理會造成整體效率較差，不建議直接將此功能使用於生產環境中
  */
 public class SimpleDataSource extends ConnectorConfig implements ConnectionPool {
 
@@ -139,7 +139,7 @@ public class SimpleDataSource extends ConnectorConfig implements ConnectionPool 
      * 可以減少使用者學習 ConnectContext 所有內容的成本
      */
     public static class Builder {
-        private ConnectContext dbContext = new ConnectContext();
+        private ConnectContext dbContext = new SimpleConnContext();
 
         public SimpleDataSource.Builder setAccount(String account) {
             this.dbContext.setDB_ACC(account);
@@ -175,5 +175,7 @@ public class SimpleDataSource extends ConnectorConfig implements ConnectionPool 
             return new SimpleDataSource(this.dbContext);
         }
     }
+
+    private static class SimpleConnContext extends ConnectContext {}
 
 }

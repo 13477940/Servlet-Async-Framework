@@ -76,6 +76,8 @@ public class MultiPartParser {
         // 空的 POST MultiPart 時
         if(boundary_start.size() == 1 && boundary_end.size() == 1) return fileItems;
         // TODO 逐個 byte 檢查內容，這將會是效能瓶頸的區域 bigO(n)，檔案越大會跑越久
+        BufferedInputStream inputStream = null;
+        BufferedOutputStream fOut = null;
         {
             // 藉由 boundary 起始及結束位置分割出每個檔案範圍中的內容 byte
             try {
@@ -84,7 +86,7 @@ public class MultiPartParser {
                     for(int tmp : boundary_start) boundary_index.put(tmp, tmp);
                     for(int tmp : boundary_end) boundary_index.put(tmp, tmp);
                 }
-                BufferedInputStream inputStream = new BufferedInputStream(new FileInputStream(this.file));
+                inputStream = new BufferedInputStream(new FileInputStream(this.file));
                 byte[] buffer = new byte[1];
                 int index = 0;
                 int headIndx = 1;
@@ -99,7 +101,6 @@ public class MultiPartParser {
                 ArrayList<Byte> list_ctx = new ArrayList<>(); // file context byte temp
                 FileItem.Builder fileItemBuilder = new FileItem.Builder();
                 File tmpFile = null; // 初始為空值防止第一個檔案為空內容
-                BufferedOutputStream fOut = null;
                 while(inputStream.read(buffer) != -1) {
                     if(index >= boundary_end.get(tailIndx) && index < boundary_start.get(headIndx)) {
                         String tmp = String.valueOf(buffer[0]);
@@ -234,9 +235,15 @@ public class MultiPartParser {
                     }
                 } // while end.
                 list_ctx.clear();
-                if(null != fOut) fOut.close();
             } catch (Exception e) {
                 e.printStackTrace();
+            } finally {
+                try {
+                    if(null != inputStream) inputStream.close();
+                    if(null != fOut) fOut.close();
+                } catch (Exception e) {
+                    // e.printStackTrace();
+                }
             }
         }
         return fileItems;

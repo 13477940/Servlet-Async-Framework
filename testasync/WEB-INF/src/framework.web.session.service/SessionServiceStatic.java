@@ -2,6 +2,8 @@ package framework.web.session.service;
 
 public class SessionServiceStatic {
 
+    private SessionServiceStatic () {}
+
     static {}
 
     public static SessionService getInstance() {

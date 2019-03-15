@@ -2,6 +2,8 @@ package framework.hash;
 
 public class HashServiceStatic {
 
+    private HashServiceStatic() {}
+
     static {}
 
     public static HashService getInstance() {

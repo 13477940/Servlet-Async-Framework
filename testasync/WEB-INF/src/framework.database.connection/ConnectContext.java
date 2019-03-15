@@ -3,7 +3,7 @@ package framework.database.connection;
 /**
  * 關於 Connection Pool 基礎設定及預設值封裝
  */
-public class ConnectContext {
+public abstract class ConnectContext {
 
     private String DB_Type = null;
     private String DB_IP = null;

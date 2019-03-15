@@ -1,12 +1,12 @@
 package framework.web.session.context;
 
 import com.alibaba.fastjson.JSONObject;
+import framework.time.TimeService;
 import framework.web.context.AsyncActionContext;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
 /**
  * UserContext 是依據 HTTP Session 存在而封裝
@@ -55,9 +55,9 @@ public class UserContext {
         }
         this.extenObj = extenObj;
         {
-            LocalDateTime now = LocalDateTime.now();
-            this.createDate = now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-            this.createTime = now.format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+            TimeService now = new TimeService.Builder().setLocalDateTime(LocalDateTime.now()).build();
+            this.createDate = now.getDate();
+            this.createTime = now.getTime();
         }
     }
 

@@ -150,7 +150,7 @@ public class TomcatDataSource extends ConnectorConfig implements ConnectionPool 
     }
 
     public static class Builder {
-        private ConnectContext dbContext = new ConnectContext();
+        private ConnectContext dbContext = new TomcatPoolContext();
 
         public TomcatDataSource.Builder setAccount(String account) {
             this.dbContext.setDB_ACC(account);
@@ -221,5 +221,7 @@ public class TomcatDataSource extends ConnectorConfig implements ConnectionPool 
             return new TomcatDataSource(this.dbContext);
         }
     }
+
+    private static class TomcatPoolContext extends ConnectContext {}
 
 }
