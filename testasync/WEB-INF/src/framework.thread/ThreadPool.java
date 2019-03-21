@@ -1,0 +1,140 @@
+package framework.thread;
+
+import java.util.concurrent.*;
+
+/**
+ * 一般不建議直接使用 Executors.newCachedThreadPool(); 因為容易超過硬體效能限制，
+ * 其他預設的 Executors 彈性也不好控制，所以建議直接採用 ThreadPoolExecutor 建立
+ * https://docs.oracle.com/javase/7/docs/api/java/util/concurrent/ThreadPoolExecutor.html
+ * https://juejin.im/post/5c90698ef265da611d7423ae
+ * http://givemepass-blog.logdown.com/posts/296960-how-to-use-the-threadpool
+ * https://blog.csdn.net/zxysshgood/article/details/80499034
+ */
+public class ThreadPool {
+
+    private ExecutorService worker = null;
+
+    private ThreadPool(Integer corePoolSize, Integer maximumPoolSize, Integer keepAliveTime, TimeUnit timeUnit, Integer blockingQueueSize) {
+        initExecutorService(corePoolSize, maximumPoolSize, keepAliveTime, timeUnit, blockingQueueSize);
+    }
+
+    public ExecutorService getInstance() {
+        return this.worker;
+    }
+
+    public void shutdown() {
+        {
+            // 實作完整回收 ExecutorService 方式
+            // http://blog.csdn.net/xueyepiaoling/article/details/61200270
+            if (null != worker && !worker.isShutdown()) {
+                // 設定 worker 已不能再接收新的請求
+                worker.shutdown();
+                try {
+                    // 設定一個 await 時限提供 thread 完成未完畢的工作的最後期限
+                    if (!worker.awaitTermination(3, TimeUnit.SECONDS)) {
+                        // 當回收時限到期時，強制中斷所有 Thread 執行
+                        worker.shutdownNow();
+                    }
+                } catch (Exception e) {
+                    // e.printStackTrace();
+                    // 回收時發生錯誤時亦強制關閉所有 thread
+                    worker.shutdownNow();
+                }
+            }
+        }
+    }
+
+    private void initExecutorService(Integer corePoolSize, Integer maximumPoolSize, Integer keepAliveTime, TimeUnit timeUnit, Integer blockingQueueSize) {
+        if(null == corePoolSize && null == maximumPoolSize && null == keepAliveTime && null == timeUnit && null == blockingQueueSize) {
+            this.worker = Executors.newCachedThreadPool();
+        } else {
+            if(null == corePoolSize) {
+                try {
+                    throw new Exception("請設定 CorePoolSize，基礎 Thread 數量");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                return;
+            }
+            if(null == maximumPoolSize) {
+                try {
+                    throw new Exception("請設定 MaximumPoolSize，總 Thread 數量限制");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                return;
+            }
+            if(null == keepAliveTime) {
+                try {
+                    throw new Exception("請設定 KeepAliveTime，最大閒置時間，系統會回收超過 CorePoolSize 的 Thread 數量");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                return;
+            }
+            if(null == blockingQueueSize) {
+                try {
+                    throw new Exception("請設定 BlockingQueueSize，Thread Pool 滿載時的佇列大小");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                return;
+            }
+            // https://stackoverflow.com/questions/17674931/arraydeque-and-linkedblockingdeque
+            this.worker = new ThreadPoolExecutor(corePoolSize, maximumPoolSize, keepAliveTime, timeUnit, new ArrayBlockingQueue<>(blockingQueueSize));
+        }
+    }
+
+    public static class Builder {
+
+        private Integer corePoolSize;
+        private Integer maximumPoolSize;
+        private Integer keepAliveTime;
+        private TimeUnit timeUnit = TimeUnit.MILLISECONDS; // default
+        private Integer blockingQueueSize;
+
+        /**
+         * 閒置時因該保持的待命 Thread 數量
+         */
+        public ThreadPool.Builder setCorePoolSize(int corePoolSize) {
+            this.corePoolSize = corePoolSize;
+            return this;
+        }
+
+        /**
+         * 完全運作時限制的有效 Thread 數量
+         */
+        public ThreadPool.Builder setMaximumPoolSize(int maximumPoolSize) {
+            this.maximumPoolSize = maximumPoolSize;
+            return this;
+        }
+
+        /**
+         * 超過閒置的 Thread 可以待命多久後被回收
+         */
+        public ThreadPool.Builder setKeepAliveTime(int keepAliveTime) {
+            this.keepAliveTime = keepAliveTime;
+            return this;
+        }
+
+        public ThreadPool.Builder setTimeUnit(TimeUnit timeUnit) {
+            this.timeUnit = timeUnit;
+            return this;
+        }
+
+        /**
+         * 通常會設定一個幾倍於 MaximumPoolSize 的數目，確保所有事件可以進入佇列
+         * 但是若設定很大的數目仍出現 rejectedExecution 因該要思考是否程式碼有濫用 Thread 的情況
+         */
+        public ThreadPool.Builder setBlockingQueueSize(int blockingQueueSize) {
+            this.blockingQueueSize = blockingQueueSize;
+            return this;
+        }
+
+        public ThreadPool build() {
+            return new ThreadPool(corePoolSize, maximumPoolSize, keepAliveTime, timeUnit, blockingQueueSize);
+        }
+
+    }
+
+}

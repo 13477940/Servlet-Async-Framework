@@ -1,5 +1,6 @@
 package framework.web.servlet;
 
+import framework.thread.ThreadPoolStatic;
 import framework.web.runnable.AsyncContextRunnable;
 
 import javax.servlet.AsyncContext;
@@ -11,8 +12,6 @@ import java.sql.Driver;
 import java.sql.DriverManager;
 import java.util.Enumeration;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 public class WebAppController extends HttpServlet {
 
@@ -33,7 +32,7 @@ public class WebAppController extends HttpServlet {
         {
             // 直到被進行實例化後呼叫功能才建立執行緒池
             if(null == worker || worker.isTerminated() || worker.isShutdown()) {
-                worker = Executors.newCachedThreadPool();
+                worker = ThreadPoolStatic.getInstance();
             }
         }
         setEncoding(req, resp);
@@ -84,25 +83,7 @@ public class WebAppController extends HttpServlet {
     @Override
     public void destroy() {
         super.destroy();
-        {
-            // 實作完整回收 ExecutorService 方式
-            // http://blog.csdn.net/xueyepiaoling/article/details/61200270
-            if (null != worker && !worker.isShutdown()) {
-                // 設定 worker 已不能再接收新的請求
-                worker.shutdown();
-                try {
-                    // 設定一個 await 時限提供 thread 完成未完畢的工作的最後期限
-                    if (!worker.awaitTermination(3, TimeUnit.SECONDS)) {
-                        // 當回收時限到期時，強制中斷所有 Thread 執行
-                        worker.shutdownNow();
-                    }
-                } catch (Exception e) {
-                    // e.printStackTrace();
-                    // 回收時發生錯誤時亦強制關閉所有 thread
-                    worker.shutdownNow();
-                }
-            }
-        }
+        ThreadPoolStatic.shutdown();
         unRegAppDrivers();
     }
 
