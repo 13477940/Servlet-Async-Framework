@@ -9,7 +9,7 @@ import java.util.Set;
 
 public class DataRow {
 
-    private HashMap<String, String> instance = null;
+    private HashMap<String, String> instance;
 
     /**
      * 建立一個空的 DataRow

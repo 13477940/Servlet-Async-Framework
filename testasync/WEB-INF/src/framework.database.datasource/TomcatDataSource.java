@@ -6,6 +6,7 @@ import framework.database.interfaces.ConnectionPool;
 import org.apache.tomcat.jdbc.pool.DataSource;
 import org.apache.tomcat.jdbc.pool.PoolProperties;
 
+import java.lang.ref.WeakReference;
 import java.sql.Connection;
 import java.time.LocalDateTime;
 
@@ -78,7 +79,7 @@ public class TomcatDataSource extends ConnectorConfig implements ConnectionPool 
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return conn;
+        return new WeakReference<>(conn).get();
     }
 
     @Override

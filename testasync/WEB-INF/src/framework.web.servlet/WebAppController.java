@@ -7,6 +7,7 @@ import javax.servlet.AsyncContext;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.lang.ref.WeakReference;
 import java.nio.charset.StandardCharsets;
 import java.sql.Driver;
 import java.sql.DriverManager;
@@ -57,9 +58,9 @@ public class WebAppController extends HttpServlet {
         // 並且藉由每個獨立的 Runnable 隔離每個 asyncContext 處理狀態（多執行緒安全設計）
         asyncContext.setTimeout(0); // 設置為 0 時表示非同步處理中無逾時限制
         AsyncContextRunnable asyncContextRunnable = new AsyncContextRunnable.Builder()
-                .setServletContext(getServletContext())
-                .setServletConfig(getServletConfig())
-                .setAsyncContext(asyncContext)
+                .setServletContext(new WeakReference<>(getServletContext()).get())
+                .setServletConfig(new WeakReference<>(getServletConfig()).get())
+                .setAsyncContext(new WeakReference<>(asyncContext).get())
                 .build();
         worker.execute(asyncContextRunnable);
     }

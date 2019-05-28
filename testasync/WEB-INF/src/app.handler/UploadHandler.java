@@ -31,24 +31,29 @@ public class UploadHandler extends RequestHandler {
     private void processRequest() {
         String uploadPath = new AppSetting.Builder().build().getPathContext().getUploadDirPath();
         FileItemList files = requestContext.getFiles();
+        int index = 0;
         for (FileItem fi : files.prototype()) {
             requestContext.writeFile(fi, uploadPath, String.valueOf(System.currentTimeMillis()), new Handler(){
                 @Override
                 public void handleMessage(Message m) {
                     super.handleMessage(m);
-                    JSONObject obj = new JSONObject();
-                    obj.put("status", "upload_done");
-                    obj.put("msg_zht", "上傳成功");
-                    obj.put("params", requestContext.getParameters());
-                    requestContext.printToResponse(obj.toJSONString(), new Handler(){
-                        @Override
-                        public void handleMessage(Message m) {
-                            super.handleMessage(m);
-                            requestContext.complete();
-                        }
-                    });
                 }
             });
+            if(index == files.size() - 1) {
+                JSONObject obj = new JSONObject();
+                obj.put("status", "upload_done");
+                obj.put("msg_zht", "上傳成功");
+                obj.put("params", requestContext.getParameters());
+                requestContext.printToResponse(obj.toJSONString(), new Handler(){
+                    @Override
+                    public void handleMessage(Message m) {
+                        super.handleMessage(m);
+                        requestContext.complete();
+                    }
+                });
+            } else {
+                index++;
+            }
         }
     }
 

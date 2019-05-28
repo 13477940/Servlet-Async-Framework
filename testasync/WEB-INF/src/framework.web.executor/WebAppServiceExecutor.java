@@ -5,6 +5,7 @@ import framework.observer.Message;
 import framework.web.context.AsyncActionContext;
 import framework.web.handler.RequestHandler;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 
 public class WebAppServiceExecutor {
@@ -61,7 +62,7 @@ public class WebAppServiceExecutor {
         // 建立新實例，因為是由 ArrayList 實作所以經過 foreach 取出時順序是不變的
         for (RequestHandler rawHandler : handlers) {
             try {
-                RequestHandler newHandler = rawHandler.getClass().getConstructor().newInstance(); // JDK9+
+                RequestHandler newHandler = new WeakReference<>(rawHandler.getClass().getConstructor().newInstance()).get(); // JDK9+
                 runHandlers.add(newHandler);
             } catch (Exception e) {
                 e.printStackTrace();

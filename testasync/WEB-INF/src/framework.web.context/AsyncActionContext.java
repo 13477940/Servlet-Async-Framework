@@ -606,6 +606,7 @@ public class AsyncActionContext {
             } else {
                 fileMIME = mimeType;
             }
+            // MIME types (IANA media types)
             // https://developer.mozilla.org/zh-TW/docs/Web/HTTP/Basics_of_HTTP/MIME_types
             if (null == fileMIME) {
                 fileMIME = "application/octet-stream";

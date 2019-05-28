@@ -2,6 +2,7 @@ package framework.database.pattern;
 
 import com.alibaba.fastjson.JSONArray;
 
+import java.lang.ref.WeakReference;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.util.ArrayList;
@@ -72,25 +73,21 @@ public class DataTable {
 
     // 由 ResultSet 格式轉換為 Data Object
     private void ResultSetToDatainstance(ResultSet rs) {
+        ResultSet _rs = new WeakReference<>(rs).get();
+        assert null != _rs;
         instance = new ArrayList<>();
-        ArrayList<String> cols = getAllColumnName(rs);
-        try {
-            while(rs.next()) {
+        ArrayList<String> cols = getAllColumnName(_rs);
+        try(_rs) {
+            while(_rs.next()) {
                 DataRow row = new DataRow();
                 for(String col : cols) {
                     String key = String.valueOf(col).toLowerCase(); // Key - LowerCase
-                    String value = rs.getString(col);
+                    String value = _rs.getString(col);
                     row.put(key, Objects.requireNonNullElse(value, ""));
                 }
                 instance.add(row);
             }
         } catch(Exception e) {
-            e.printStackTrace();
-        }
-        // 回收 ResultSet 資源
-        try {
-            if(null != rs && !rs.isClosed()) rs.close();
-        } catch (Exception e) {
             e.printStackTrace();
         }
     }

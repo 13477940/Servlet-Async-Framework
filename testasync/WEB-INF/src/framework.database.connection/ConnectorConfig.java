@@ -16,7 +16,7 @@ public abstract class ConnectorConfig {
                 res = "com.microsoft.sqlserver.jdbc.SQLServerDriver";
                 break;
             case "mysql":
-                // res = "com.mysql.jdbc.Driver";
+                // res = "com.mysql.jdbc.Driver"; // old version
                 res = "com.mysql.cj.jdbc.Driver"; // mysql 8.0+
                 break;
             case "mariadb":
@@ -66,7 +66,7 @@ public abstract class ConnectorConfig {
                 sbd.append(port);
                 sbd.append("/");
                 sbd.append(dbName);
-                // MySQL 體系要採用 utf8mb4 才能正常支援所有 Unicode 字集
+                // MySQL 體系要採用 utf8mb4/utf8mb4_0900_ai_ci 才能正常支援所有 Unicode 字集
                 // 新增 NULL 值處理原則，zeroDateTimeBehavior=convertToNull
                 // 更新到 MySQL 8.0 以及 JDBC 版本的需求更改 zeroDateTimeBehavior=CONVERT_TO_NULL
                 if(!useSecurity) {
@@ -89,7 +89,6 @@ public abstract class ConnectorConfig {
                 sbd.append(port);
                 sbd.append("/");
                 sbd.append(dbName);
-                // MySQL 體系要採用 utf8mb4 才能正常支援所有 Unicode 字集
                 if(!useSecurity) {
                     sbd.append("?useSSL=false");
                 } else {

@@ -3,8 +3,8 @@ package framework.thread;
 import java.util.concurrent.*;
 
 /**
- * 一般不建議直接使用 Executors.newCachedThreadPool(); 因為容易超過硬體效能限制，
- * 其他預設的 Executors 彈性也不好控制，所以建議直接採用 ThreadPoolExecutor 建立
+ * 不建議直接使用 Executors.newCachedThreadPool(); 因為其並未針對使用資源最大值設定限制，
+ * 其他預設的 Executors 模式彈性也不好控制，所以建議直接採用 ThreadPoolExecutor 建立去制定。
  * https://docs.oracle.com/javase/7/docs/api/java/util/concurrent/ThreadPoolExecutor.html
  * https://juejin.im/post/5c90698ef265da611d7423ae
  * http://givemepass-blog.logdown.com/posts/296960-how-to-use-the-threadpool

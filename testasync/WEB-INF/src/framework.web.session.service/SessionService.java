@@ -10,7 +10,7 @@ import java.util.Map;
 
 public abstract class SessionService {
 
-    private UserMap userMap = null;
+    private UserMap userMap;
     private final String userContextTag = "user_context";
 
     /**

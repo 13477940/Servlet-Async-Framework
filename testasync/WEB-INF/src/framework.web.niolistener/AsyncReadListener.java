@@ -6,7 +6,6 @@ import framework.observer.Message;
 import framework.random.RandomServiceStatic;
 import framework.web.multipart.FileItemList;
 import framework.web.multipart.MultiPartParser;
-import org.apache.tomcat.util.http.fileupload.IOUtils;
 import org.apache.tomcat.util.http.fileupload.disk.DiskFileItemFactory;
 
 import javax.servlet.AsyncContext;
@@ -16,6 +15,7 @@ import javax.servlet.ServletInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.lang.ref.WeakReference;
 
 /**
  * 當每個獨立的上傳請求希望被非同步處理時，要採用 ReadListener，
@@ -25,6 +25,8 @@ import java.io.FileOutputStream;
  * https://openhome.cc/Gossip/ServletJSP/ReadListener.html
  */
 public class AsyncReadListener implements ReadListener {
+
+    private final boolean devMode = false;
 
     private ServletContext servletContext;
     private AsyncContext asyncContext;
@@ -45,20 +47,20 @@ public class AsyncReadListener implements ReadListener {
                 this.targetFile = File.createTempFile(fileName, null, new File(servletContext.getAttribute(ServletContext.TEMPDIR).toString() + dirSlash));
                 this.targetFile.deleteOnExit();
             } catch (Exception e) {
-                e.printStackTrace();
+                if(devMode) { e.printStackTrace(); }
             }
         }
         {
             try {
-                inputStream = asyncContext.getRequest().getInputStream();
+                inputStream = new WeakReference<>( asyncContext.getRequest().getInputStream() ).get();
             } catch (Exception e) {
-                e.printStackTrace();
+                if(devMode) { e.printStackTrace(); }
             }
             try {
                 assert null != this.targetFile;
-                outputStream = new BufferedOutputStream(new FileOutputStream(targetFile));
+                outputStream = new WeakReference<>( new BufferedOutputStream(new FileOutputStream(targetFile)) ).get();
             } catch (Exception e) {
-                e.printStackTrace();
+                if(devMode) { e.printStackTrace(); }
             }
         }
     }
@@ -78,13 +80,13 @@ public class AsyncReadListener implements ReadListener {
                 Thread.onSpinWait();
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            if(devMode) { e.printStackTrace(); }
         }
     }
 
     @Override
     public void onAllDataRead() {
-        IOUtils.closeQuietly(outputStream);
+        closeStream();
         FileItemList fileItems = null;
         {
             if(null != targetFile && targetFile.exists()) {
@@ -119,7 +121,8 @@ public class AsyncReadListener implements ReadListener {
 
     @Override
     public void onError(Throwable throwable) {
-        throwable.printStackTrace();
+        closeStream();
+        if(devMode) { throwable.printStackTrace(); }
         {
             Bundle b = new Bundle();
             b.putString("status", "fail");
@@ -127,6 +130,15 @@ public class AsyncReadListener implements ReadListener {
             Message m = handler.obtainMessage();
             m.setData(b);
             m.sendToTarget();
+        }
+    }
+
+    private void closeStream() {
+        try {
+            inputStream.close();
+            outputStream.close();
+        } catch (Exception e) {
+            // e.printStackTrace();
         }
     }
 

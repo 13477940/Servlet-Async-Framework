@@ -20,6 +20,7 @@ import javax.servlet.http.HttpSession;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.lang.ref.WeakReference;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -46,11 +47,14 @@ public class AsyncContextRunnable implements Runnable {
         this.servletConfig = servletConfig;
         this.asyncContext = asyncContext;
         {
-            this.requestContext = new AsyncActionContext.Builder()
-                    .setServletContext(servletContext)
-                    .setServletConfig(servletConfig)
-                    .setAsyncContext(asyncContext)
-                    .build();
+            AsyncActionContext.Builder contextBuilder = new AsyncActionContext.Builder();
+            {
+                contextBuilder.setServletContext(servletContext);
+                contextBuilder.setServletConfig(servletConfig);
+                contextBuilder.setAsyncContext(asyncContext);
+            }
+            this.requestContext = new WeakReference<>(contextBuilder.build()).get();
+            assert null != this.requestContext;
             checkSessionLoginInfo(requestContext.getHttpSession());
         }
     }

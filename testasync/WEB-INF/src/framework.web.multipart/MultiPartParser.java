@@ -38,6 +38,7 @@ public class MultiPartParser {
         byte[] byte_boundary;
         {
             String contentType = asyncContext.getRequest().getContentType();
+            // contentType.startsWith("multipart/form-data");
             int start = contentType.indexOf("boundary=");
             int boundaryLen = "boundary=".length();
             String boundary = contentType.substring(start + boundaryLen);

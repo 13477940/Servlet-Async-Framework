@@ -4,6 +4,7 @@ import framework.database.connection.ConnectContext;
 import framework.database.connection.ConnectorConfig;
 import framework.database.interfaces.ConnectionPool;
 
+import java.lang.ref.WeakReference;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -58,7 +59,7 @@ public class SimpleDataSource extends ConnectorConfig implements ConnectionPool 
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return conn;
+        return new WeakReference<>(conn).get();
     }
 
     @Override

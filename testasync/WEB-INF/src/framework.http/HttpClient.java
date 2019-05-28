@@ -1,4 +1,4 @@
-package framework.web.http;
+package framework.http;
 
 import com.alibaba.fastjson.JSONObject;
 import framework.hash.HashServiceStatic;
@@ -9,6 +9,7 @@ import framework.random.RandomServiceStatic;
 import framework.setting.AppSetting;
 
 import java.io.*;
+import java.lang.ref.WeakReference;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpRequest;
@@ -22,6 +23,8 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 /**
+ * https://docs.oracle.com/en/java/javase/11/docs/api/java.net.http/java/net/http/HttpClient.html
+ * http://openjdk.java.net/groups/net/httpclient/intro.html
  * implement by UrielTech.com TomLi.
  * 基於 java.net.http.HttpClient 的功能實作封裝
  * 並模擬類似 OkHttp 方式處理
@@ -36,6 +39,9 @@ public class HttpClient {
     private HashMap<String, File> files;
     private boolean alwaysDownload;
     private final String tempDirName = "[temp]";
+
+    private java.net.http.HttpClient.Version httpVersion = java.net.http.HttpClient.Version.HTTP_2; // default
+    private java.net.http.HttpClient.Redirect httpRedirect = java.net.http.HttpClient.Redirect.NORMAL; // default
 
     private HttpClient(String url, HashMap<String, String> headers, HashMap<String, String> parameters, HashMap<String, File> files, Boolean alwaysDownload) {
         this.url = null;
@@ -151,11 +157,14 @@ public class HttpClient {
             // 設定請求 URI
             requestBuilder.uri(URI.create(sbd.toString()));
         }
-        java.net.http.HttpClient client = java.net.http.HttpClient.newBuilder()
-                .version(java.net.http.HttpClient.Version.HTTP_2)
-                .followRedirects(java.net.http.HttpClient.Redirect.NORMAL)
-                .build();
-        HttpRequest request = requestBuilder.build();
+        java.net.http.HttpClient.Builder clientBuilder = java.net.http.HttpClient.newBuilder();
+        {
+            clientBuilder.version(httpVersion);
+            clientBuilder.followRedirects(httpRedirect);
+        }
+        HttpRequest request = new WeakReference<>(requestBuilder.build()).get();
+        java.net.http.HttpClient client = new WeakReference<>(clientBuilder.build()).get();
+        assert null != client;
         asyncRequest(client, request, handler);
     }
 
@@ -190,11 +199,14 @@ public class HttpClient {
             // 設定請求 URI
             requestBuilder.uri(URI.create(this.url));
         }
-        java.net.http.HttpClient client = java.net.http.HttpClient.newBuilder()
-                .version(java.net.http.HttpClient.Version.HTTP_2)
-                .followRedirects(java.net.http.HttpClient.Redirect.NORMAL)
-                .build();
-        HttpRequest request = requestBuilder.build();
+        java.net.http.HttpClient.Builder clientBuilder = java.net.http.HttpClient.newBuilder();
+        {
+            clientBuilder.version(httpVersion);
+            clientBuilder.followRedirects(httpRedirect);
+        }
+        java.net.http.HttpClient client = new WeakReference<>(clientBuilder.build()).get();
+        HttpRequest request = new WeakReference<>(requestBuilder.build()).get();
+        assert null != client;
         asyncRequest(client, request, handler);
     }
 
@@ -222,11 +234,14 @@ public class HttpClient {
             // 設定請求 URI
             requestBuilder.uri(URI.create(this.url));
         }
-        java.net.http.HttpClient client = java.net.http.HttpClient.newBuilder()
-                .version(java.net.http.HttpClient.Version.HTTP_2)
-                .followRedirects(java.net.http.HttpClient.Redirect.NORMAL)
-                .build();
+        java.net.http.HttpClient.Builder clientBuilder = java.net.http.HttpClient.newBuilder();
+        {
+            clientBuilder.version(httpVersion);
+            clientBuilder.followRedirects(httpRedirect);
+        }
+        java.net.http.HttpClient client = new WeakReference<>(clientBuilder.build()).get();
         HttpRequest request = requestBuilder.build();
+        assert null != client;
         asyncRequest(client, request, handler);
     }
 
@@ -323,11 +338,14 @@ public class HttpClient {
             // 設定請求 URI
             requestBuilder.uri(URI.create(this.url));
         }
-        java.net.http.HttpClient client = java.net.http.HttpClient.newBuilder()
-                .version(java.net.http.HttpClient.Version.HTTP_2)
-                .followRedirects(java.net.http.HttpClient.Redirect.NORMAL)
-                .build();
+        java.net.http.HttpClient.Builder clientBuilder = java.net.http.HttpClient.newBuilder();
+        {
+            clientBuilder.version(httpVersion);
+            clientBuilder.followRedirects(httpRedirect);
+        }
+        java.net.http.HttpClient client = new WeakReference<>(clientBuilder.build()).get();
         HttpRequest request = requestBuilder.build();
+        assert null != client;
         asyncRequest(client, request, handler);
     }
 

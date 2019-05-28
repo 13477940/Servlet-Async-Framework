@@ -6,6 +6,7 @@ import framework.web.context.AsyncActionContext;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import java.lang.ref.WeakReference;
 import java.time.LocalDateTime;
 
 /**
@@ -146,7 +147,7 @@ public class UserContext {
         }
 
         public UserContext.Builder setHttpSession(HttpSession session) {
-            this.session = session;
+            this.session = new WeakReference<>(session).get();
             return this;
         }
 
