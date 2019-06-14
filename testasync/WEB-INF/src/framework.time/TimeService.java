@@ -31,6 +31,14 @@ public class TimeService {
         return ldt.format(DateTimeFormatter.ofPattern(pattern_date + " " + pattern_time));
     }
 
+    public String getDatePatternString() {
+        return pattern_date;
+    }
+
+    public String getTimePatternString() {
+        return pattern_time;
+    }
+
     public LocalDateTime prototype() {
         return this.ldt;
     }

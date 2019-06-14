@@ -6,6 +6,7 @@ import framework.observer.Bundle;
 import framework.observer.Handler;
 import framework.observer.Message;
 
+import java.lang.ref.WeakReference;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -107,7 +108,7 @@ public class DatabaseAction {
         Savepoint savepoint = null;
         try {
             if (!autoCommit) savepoint = conn.setSavepoint();
-            ResultSet rs = preparedStatement.executeQuery();
+            ResultSet rs = new WeakReference<>(preparedStatement.executeQuery()).get();
             resultSetToDataRow(rs, handler, savepoint);
         } catch (Exception e) {
             e.printStackTrace();
@@ -242,12 +243,13 @@ public class DatabaseAction {
 
     // used for queryOnHandler
     private void resultSetToDataRow(ResultSet rs, Handler handler, Savepoint savepoint) {
-        String[] columns = getAllColumnName(rs);
-        try {
+        ArrayList<String> columns = getAllColumnName(rs);
+        try (rs) {
             while(rs.next()) {
                 JSONObject row = new JSONObject();
                 for (String col : columns) {
-                    String key = String.valueOf(col).toLowerCase(); // Key - LowerCase
+                    if(null == col) continue;
+                    String key = col.toLowerCase();
                     String value = rs.getString(col);
                     row.put(key, Objects.requireNonNullElse(value, ""));
                 }
@@ -290,29 +292,21 @@ public class DatabaseAction {
                 m.sendToTarget();
             }
         }
-        // resultSet close
-        try {
-            rs.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
         close();
     }
 
     // 取得 ResultSet 所有欄位名稱
-    private String[] getAllColumnName(ResultSet rs) {
-        String[] columnName = null;
+    private ArrayList<String> getAllColumnName(ResultSet rs) {
+        ArrayList<String> columnNameList = new ArrayList<>();
         try {
             ResultSetMetaData metaData = rs.getMetaData();
-            int count = metaData.getColumnCount();
-            columnName = new String[count];
-            for(int i = 0; i < count; i++) {
-                columnName[i] = metaData.getColumnLabel(i+1);
+            for(int i = 1, len = metaData.getColumnCount(); i <= len; i++) {
+                columnNameList.add(metaData.getColumnLabel(i));
             }
         } catch(Exception e) {
             e.printStackTrace();
         }
-        return columnName;
+        return columnNameList;
     }
 
 }

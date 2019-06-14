@@ -10,7 +10,7 @@ public class HashServiceStatic {
         return InstanceHolder.instance;
     }
 
-    static class InstanceHolder {
+    private static class InstanceHolder {
         static HashService instance = new HashServiceStatic.Instance();
     }
 

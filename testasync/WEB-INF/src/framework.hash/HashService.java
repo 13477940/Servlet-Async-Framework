@@ -29,7 +29,8 @@ public abstract class HashService {
     }
 
     /**
-     * 可以自行帶入使用 SHA-1 或 SHA-256 等雜湊格式
+     * https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/security/MessageDigest.html
+     * https://docs.oracle.com/en/java/javase/11/docs/specs/security/standard-names.html#messagedigest-algorithms
      */
     private String stringToHash(String hashType, String content) {
         String result = "";
@@ -46,7 +47,7 @@ public abstract class HashService {
 
     private String byteToHex(byte[] hash) {
         Formatter formatter = new Formatter();
-        for(byte b : hash) { formatter.format("%02x", b); }
+        for( byte b : hash ) { formatter.format("%02x", b); }
         String result = formatter.toString();
         formatter.close();
         return result;

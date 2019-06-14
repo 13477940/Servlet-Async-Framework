@@ -10,7 +10,7 @@ public class RandomServiceStatic {
         return InstanceHolder.instance;
     }
 
-    static class InstanceHolder {
+    private static class InstanceHolder {
         static RandomService instance = new RandomServiceStatic.Instance();
     }
 

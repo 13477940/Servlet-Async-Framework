@@ -32,7 +32,9 @@ public class DataTable {
     /**
      * ResultSet To DataTable
      */
-    public DataTable(ResultSet rs) { ResultSetToDatainstance(rs); }
+    public DataTable(ResultSet rs) {
+        ResultSetToDatainstance(new WeakReference<>(rs).get());
+    }
 
     public void addRow(DataRow row) {
         instance.add(row);
@@ -73,16 +75,15 @@ public class DataTable {
 
     // 由 ResultSet 格式轉換為 Data Object
     private void ResultSetToDatainstance(ResultSet rs) {
-        ResultSet _rs = new WeakReference<>(rs).get();
-        assert null != _rs;
         instance = new ArrayList<>();
-        ArrayList<String> cols = getAllColumnName(_rs);
-        try(_rs) {
-            while(_rs.next()) {
+        ArrayList<String> cols = getAllColumnName(rs);
+        try(rs) {
+            while(rs.next()) {
                 DataRow row = new DataRow();
                 for(String col : cols) {
-                    String key = String.valueOf(col).toLowerCase(); // Key - LowerCase
-                    String value = _rs.getString(col);
+                    if(null == col) continue; // if key is null
+                    String key = col.toLowerCase();
+                    String value = rs.getString(col);
                     row.put(key, Objects.requireNonNullElse(value, ""));
                 }
                 instance.add(row);
@@ -97,8 +98,8 @@ public class DataTable {
         ArrayList<String> columnNameList = new ArrayList<>();
         try {
             ResultSetMetaData metaData = rs.getMetaData();
-            for(int i = 0, len = metaData.getColumnCount(); i < len; i++) {
-                columnNameList.add(metaData.getColumnLabel(i+1));
+            for(int i = 1, len = metaData.getColumnCount(); i <= len; i++) {
+                columnNameList.add(metaData.getColumnLabel(i));
             }
         } catch(Exception e) {
             e.printStackTrace();

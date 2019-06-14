@@ -10,7 +10,7 @@ public class WebAppServicePoolStatic {
         return InstanceHolder.instance;
     }
 
-    static class InstanceHolder {
+    private static class InstanceHolder {
         static WebAppServicePool instance = new WebAppServicePoolStatic.Instance();
     }
 

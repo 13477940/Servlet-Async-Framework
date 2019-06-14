@@ -10,7 +10,7 @@ public class SessionServiceStatic {
         return InstanceHolder.instance;
     }
 
-    static class InstanceHolder {
+    private static class InstanceHolder {
         static SessionService instance = new SessionServiceStatic.Instance();
     }
 

@@ -8,7 +8,6 @@ import org.apache.tomcat.jdbc.pool.PoolProperties;
 
 import java.lang.ref.WeakReference;
 import java.sql.Connection;
-import java.time.LocalDateTime;
 
 /**
  * base Tomcat JDBC Connection Pool
@@ -22,10 +21,6 @@ public class TomcatDataSource extends ConnectorConfig implements ConnectionPool 
 
     private ConnectContext dbContext = null;
     private DataSource dataSource = null;
-
-    private int errorCount = 0; // 累計錯誤次數
-    private final int maxErrorCount = 50; // 最大錯誤次數，防止無窮循環
-    private LocalDateTime lastestErrorTime = null; // 最新的連接錯誤時間點
 
     private TomcatDataSource(ConnectContext dbContext) {
         if(null == dbContext) {
@@ -41,45 +36,20 @@ public class TomcatDataSource extends ConnectorConfig implements ConnectionPool 
 
     @Override
     public Connection getConnection() {
-        if(null == dataSource) {
-            initDataSource(dbContext);
-        }
+        if(null == dataSource) { initDataSource(dbContext); }
         Connection conn = null;
         try {
-            conn = dataSource.getConnection();
-            if(!conn.isValid(3000)) {
-                // 持久型服務重置處理判斷，當時間計數器超過指定時間後，將觸發流程執行重置
-                LocalDateTime currentErrorTime = LocalDateTime.now();
-                // 開啟伺服器後第一次發生時
-                if(null == lastestErrorTime) {
-                    resetDataSource(false, dbContext);
-                    return getConnection();
-                } else {
-                    // 超過指定時間未重置時，執行重置計數器流程
-                    if(lastestErrorTime.plusHours(2).isBefore(currentErrorTime)) {
-                        resetDataSource(true, dbContext);
-                        return getConnection();
-                    } else {
-                        // 未超過指定時間，但錯誤計數器已到達最大數目時（可能為無法修復的情況時）
-                        if(errorCount >= maxErrorCount) {
-                            try {
-                                throw new Exception("Connection Pool setting has fatal error.");
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
-                            return null;
-                        } else {
-                            // 未超過指定時間，且錯誤次數未超過時
-                            resetDataSource(false, dbContext);
-                            return getConnection();
-                        }
-                    }
-                }
-            }
+            conn = new WeakReference<>(dataSource.getConnection()).get();
         } catch (Exception e) {
             e.printStackTrace();
+            {
+                if(null != this.dataSource) {
+                    this.shutdown();
+                    initDataSource(dbContext);
+                }
+            }
         }
-        return new WeakReference<>(conn).get();
+        return conn;
     }
 
     @Override
@@ -136,18 +106,6 @@ public class TomcatDataSource extends ConnectorConfig implements ConnectionPool 
         poolConfig.setJdbcInterceptors(sbd.toString());
         dataSource = new DataSource();
         dataSource.setPoolProperties(poolConfig);
-    }
-
-    // 重新建立資料庫連接池
-    private void resetDataSource(boolean timerReset, ConnectContext dbContext) {
-        this.dataSource.close(true);
-        initDataSource(dbContext);
-        lastestErrorTime = LocalDateTime.now();
-        if(timerReset) {
-            errorCount = 0;
-        } else {
-            errorCount++;
-        }
     }
 
     public static class Builder {

@@ -84,7 +84,7 @@ public class SimpleDataSource extends ConnectorConfig implements ConnectionPool 
             try {
                 worker.shutdownNow();
             } catch (Exception e) {
-                worker.shutdownNow();
+                // e.printStackTrace();
             }
         }
     }

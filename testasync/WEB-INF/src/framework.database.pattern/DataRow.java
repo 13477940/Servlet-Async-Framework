@@ -2,26 +2,23 @@ package framework.database.pattern;
 
 import com.alibaba.fastjson.JSONObject;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 public class DataRow {
 
-    private HashMap<String, String> instance;
+    private LinkedHashMap<String, String> instance;
 
     /**
      * 建立一個空的 DataRow
      */
     public DataRow() {
-        this.instance = new HashMap<>();
+        this.instance = new LinkedHashMap<>();
     }
 
     /**
      * 由 HashMap<String, String> 型態轉換為 DataRow
      */
-    public DataRow(HashMap<String, String> row) {
+    public DataRow(LinkedHashMap<String, String> row) {
         this.instance = row;
     }
 
@@ -30,7 +27,7 @@ public class DataRow {
      * 前端的空值會在 JavaScript 中轉換為空字串
      */
     public DataRow(JSONObject obj) {
-        this.instance = new HashMap<>();
+        this.instance = new LinkedHashMap<>();
         for(Map.Entry<String, Object> entry : obj.entrySet()) {
             String key = entry.getKey();
             Object value = Objects.requireNonNullElse(entry.getValue(), "");
@@ -42,7 +39,7 @@ public class DataRow {
      * 由定義的兩鍵值將 DataTable 內容轉換為 DataRow 的格式，降低資料維度
      */
     public DataRow(DataTable dt, String key, String value) {
-        this.instance = new HashMap<>();
+        this.instance = new LinkedHashMap<>();
         for(DataRow row : dt.prototype()) {
             String _key = row.get(key);
             String _value = Objects.requireNonNullElse(value, "");

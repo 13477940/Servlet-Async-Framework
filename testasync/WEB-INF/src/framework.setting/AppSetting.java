@@ -37,6 +37,7 @@ public class AppSetting {
         }
         this.hostOS = System.getProperty("os.name");
         this.dirSlash = System.getProperty("file.separator");
+        if(hostOS.toLowerCase().contains("windows")) { dirSlash = "\\\\"; }
     }
 
     public File getBaseFileDir() {
