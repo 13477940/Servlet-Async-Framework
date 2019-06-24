@@ -11,7 +11,6 @@ public abstract class RandomService {
 
     private final String ranStr = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     private final String ranNum = "0123456789";
-    private final String ranUpCaseStr = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     private final int defaultSize = 8; // default random string length
 
     RandomService() {}
@@ -43,7 +42,6 @@ public abstract class RandomService {
 
     /**
      * 標準的英數亂數字串產生，使用 ThreadLocalRandom 加快亂數產生效率
-     * 要注意這只適用於大小寫敏感的用途，若大小寫不敏感則建議改用 getUpCaseRandomString()
      * https://juejin.im/post/5b8742eb6fb9a019ba68480f
      */
     public String getRandomString(int ranStrLength) {
@@ -53,21 +51,6 @@ public abstract class RandomService {
             int strLen = ranStr.length();
             int iRan = localRandom.nextInt(strLen);
             char t = ranStr.charAt(iRan);
-            sbd.append(t);
-        }
-        return sbd.toString();
-    }
-
-    /**
-     * 由於大小寫不敏感時重複的大小寫英文參數會影響亂數公平機率所以分出此方法
-     */
-    public String getUpCaseRandomString(int ranStrLength) {
-        StringBuilder sbd = new StringBuilder();
-        ThreadLocalRandom localRandom = ThreadLocalRandom.current();
-        for(int i = 0; i < ranStrLength; i++) {
-            int strLen = ranUpCaseStr.length();
-            int iRan = localRandom.nextInt(strLen);
-            char t = ranUpCaseStr.charAt(iRan);
             sbd.append(t);
         }
         return sbd.toString();

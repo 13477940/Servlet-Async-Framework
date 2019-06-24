@@ -331,7 +331,7 @@ public class AsyncActionContext {
                 {
                     Bundle b = new Bundle();
                     b.putString("status", "fail");
-                    b.putString("msg_zht", fileItem.getName() + " 該上傳檔案於建立檔案時發生錯誤");
+                    b.putString("msg_zht", String.valueOf(fileItem.getName()) + " 該上傳檔案於建立檔案時發生錯誤");
                     b.put("exception", e);
                     Message m = handler.obtainMessage();
                     m.setData(b);
@@ -422,7 +422,7 @@ public class AsyncActionContext {
                 {
                     Bundle b = new Bundle();
                     b.putString("status", "fail");
-                    b.putString("msg_zht", fileItem.getName() + " 該上傳檔案於建立檔案時發生錯誤");
+                    b.putString("msg_zht", String.valueOf(fileItem.getName()) + " 該上傳檔案於建立檔案時發生錯誤");
                     b.put("exception", e);
                     Message m = handler.obtainMessage();
                     m.setData(b);

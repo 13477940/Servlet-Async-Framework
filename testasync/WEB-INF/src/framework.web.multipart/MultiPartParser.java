@@ -5,14 +5,12 @@ import framework.random.RandomServiceStatic;
 import javax.servlet.AsyncContext;
 import javax.servlet.ServletContext;
 import java.io.*;
-import java.lang.ref.WeakReference;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 
 /**
  * implement by UrielTech.com TomLi.
- * TODO 需要思考如何降低 bigO(n) 的邏輯複雜度，目前此方法會隨著上傳檔案大小而呈現線性增加處理時間
  */
 public class MultiPartParser {
 
@@ -49,17 +47,16 @@ public class MultiPartParser {
         }
         ArrayList<Integer> boundary_start = new ArrayList<>(); // boundary 座標集合
         ArrayList<Integer> boundary_end = new ArrayList<>(); // boundary 座標集合
-        // bigO(n) - 藉由逐個 byte 讀取檢查 boundary 斷點處作為切割上傳內容二進位座標點
         {
-            try ( BufferedInputStream inputStream = new WeakReference<>( new BufferedInputStream( new FileInputStream( this.file ) ) ).get() ) {
+            // 藉由逐個 byte 讀取檢查 boundary 斷點處
+            try {
+                BufferedInputStream inputStream = new BufferedInputStream(new FileInputStream(this.file));
                 byte[] buffer = new byte[1];
                 int nowMatchCount = 0;
                 int checkToNextByteCount = 0;
                 int index = 0;
                 // 逐個 byte 檢查，連續命中時才累計
-                while(true) {
-                    if(null == inputStream) break;
-                    if(-1 >= inputStream.read(buffer)) break;
+                while(inputStream.read(buffer) != -1) {
                     String tmp = String.valueOf(buffer[0]);
                     String check = String.valueOf(byte_boundary[nowMatchCount]); // 目前命中第幾個
                     if(check.equals(tmp)) { nowMatchCount++; }
@@ -72,23 +69,25 @@ public class MultiPartParser {
                         boundary_end.add(index);
                     }
                 }
-            } catch ( Exception e ) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
         FileItemList fileItems = new FileItemList();
         // 空的 POST MultiPart 時
         if(boundary_start.size() == 1 && boundary_end.size() == 1) return fileItems;
-        // bigO(n) - 逐個 byte 進行處理，將上傳內容二進位寫入成檔案形式
+        // TODO 逐個 byte 檢查內容，這將會是效能瓶頸的區域 bigO(n)，檔案越大會跑越久
+        BufferedInputStream inputStream = null;
         BufferedOutputStream fOut = null;
         {
             // 藉由 boundary 起始及結束位置分割出每個檔案範圍中的內容 byte
-            try ( BufferedInputStream inputStream = new WeakReference<>( new BufferedInputStream( new FileInputStream( this.file ) ) ).get() ) {
+            try {
                 HashMap<Integer, Integer> boundary_index = new HashMap<>();
                 {
                     for(int tmp : boundary_start) boundary_index.put(tmp, tmp);
                     for(int tmp : boundary_end) boundary_index.put(tmp, tmp);
                 }
+                inputStream = new BufferedInputStream(new FileInputStream(this.file));
                 byte[] buffer = new byte[1];
                 int index = 0;
                 int headIndx = 1;
@@ -103,9 +102,7 @@ public class MultiPartParser {
                 ArrayList<Byte> list_ctx = new ArrayList<>(); // file context byte temp
                 FileItem.Builder fileItemBuilder = new FileItem.Builder();
                 File tmpFile = null; // 初始為空值防止第一個檔案為空內容
-                while(true) {
-                    if(null == inputStream) break;
-                    if(-1 >= inputStream.read(buffer)) break;
+                while(inputStream.read(buffer) != -1) {
                     if(index >= boundary_end.get(tailIndx) && index < boundary_start.get(headIndx)) {
                         String tmp = String.valueOf(buffer[0]);
                         String check = chk[nowMatchCount];
@@ -121,7 +118,6 @@ public class MultiPartParser {
                                     list_ctx.add(buffer[0]);
                                 } else {
                                     if(!boundary_end.contains(index + byte_boundary.length +1) && !boundary_end.contains(index + byte_boundary.length +2)) {
-                                        assert null != fOut;
                                         fOut.write(buffer[0]);
                                         fileByteCount++;
                                     }
@@ -175,7 +171,7 @@ public class MultiPartParser {
                                         if(null != fOut) fOut.close();
                                         tmpFile = File.createTempFile(RandomServiceStatic.getInstance().getTimeHash(4), null, new File(this.repository.getPath() + dirSlash));
                                         tmpFile.deleteOnExit();
-                                        fOut = new WeakReference<>( new BufferedOutputStream( new FileOutputStream( tmpFile ) ) ).get();
+                                        fOut = new BufferedOutputStream(new FileOutputStream(tmpFile));
                                     }
                                 }
                                 {
@@ -244,9 +240,10 @@ public class MultiPartParser {
                 e.printStackTrace();
             } finally {
                 try {
+                    if(null != inputStream) inputStream.close();
                     if(null != fOut) fOut.close();
-                } catch (Exception ex) {
-                    // ex.printStackTrace();
+                } catch (Exception e) {
+                    // e.printStackTrace();
                 }
             }
         }
