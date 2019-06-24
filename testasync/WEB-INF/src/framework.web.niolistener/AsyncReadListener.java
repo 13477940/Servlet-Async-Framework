@@ -58,7 +58,7 @@ public class AsyncReadListener implements ReadListener {
             }
             try {
                 assert null != this.targetFile;
-                outputStream = new WeakReference<>( new BufferedOutputStream(new FileOutputStream(targetFile)) ).get();
+                outputStream = new WeakReference<>( new BufferedOutputStream( new FileOutputStream( targetFile ) ) ).get();
             } catch (Exception e) {
                 if(devMode) { e.printStackTrace(); }
             }
@@ -67,15 +67,21 @@ public class AsyncReadListener implements ReadListener {
 
     /**
      * ReadListener 監聽進度將藉由 inputStream 被 read() 到哪部分為主，
-     * 若不在此處執行 inputStream.read() 則永遠到不了 onAllDataRead() 之中
+     * 需注意若此處不執行 inputStream.read() 則會永遠到不了 onAllDataRead() 狀態之中
+     * 2019-06-19 修正 while 處理邏輯及中斷條件
      */
     @Override
     public void onDataAvailable() {
         byte[] buffer = new byte[DiskFileItemFactory.DEFAULT_SIZE_THRESHOLD];
-        int length;
         try {
             // onAllDataRead 需要由 inputStream.read 所有 byte 之後才會被觸發
-            while (inputStream.isReady() && (length = inputStream.read(buffer)) != -1) {
+            int length;
+            while (true) {
+                if(null == inputStream) break;
+                if(!inputStream.isReady()) break;
+                length = inputStream.read(buffer);
+                if(length == -1) break;
+                if(null == outputStream) break;
                 outputStream.write(buffer, 0, length);
                 Thread.onSpinWait();
             }
