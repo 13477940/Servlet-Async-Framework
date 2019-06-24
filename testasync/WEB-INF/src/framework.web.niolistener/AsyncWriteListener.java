@@ -55,6 +55,10 @@ public class AsyncWriteListener implements WriteListener {
         this.handler = handler;
     }
 
+    /**
+     * 非同步輸出實作
+     * 2019-06-17 修改 while 處理邏輯及中斷條件，解決 CPU 高使用率的問題
+     */
     @Override
     public void onWritePossible() {
         if(requestContext.isComplete()) {
@@ -73,23 +77,25 @@ public class AsyncWriteListener implements WriteListener {
             }
             return;
         }
+        // 注意！這個 ServletOutputStream 不是獨立的，所以不能在此 close 它
         ServletOutputStream out = null;
         try {
             out = new WeakReference<>( requestContext.getAsyncContext().getResponse().getOutputStream() ).get();
         } catch (Exception e) {
             if(devMode) { e.printStackTrace(); }
         }
-        assert null != out;
         byte[] buffer = new byte[DiskFileItemFactory.DEFAULT_SIZE_THRESHOLD];
-        while (out.isReady()) {
+        while (true) {
+            if(null == out) break;
+            if(!out.isReady()) break;
             try {
+                if(null == inputStream) break;
                 int len = inputStream.read(buffer);
-                if (len != -1) {
+                if (len > -1) {
                     out.write(buffer, 0, len);
                 } else {
                     // all byte process done
                     closeStream();
-                    out.flush();
                     {
                         Bundle b = new Bundle();
                         b.putString("status", "done");
