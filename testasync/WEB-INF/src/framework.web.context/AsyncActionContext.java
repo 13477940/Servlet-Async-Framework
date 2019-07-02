@@ -28,11 +28,7 @@ import java.util.Collections;
 import java.util.HashMap;
 
 /**
- * HttpRequest 通過了 Controller Servlet 後統一採用此規格作為 Request Context
- * 藉此降低重複操作原生 HttpContext 的麻煩，簡化處理複雜度及程式碼離散度，
- * 當偵測到最終沒有任何一個責任鏈節點處理請求時，
- * 會調用 Invalid Request Handler 進行無效請求回覆，
- * 大部分的 Response 內容將由 AsyncActionContext 處理輸出
+ * WebAppController > AsyncContextRunnable > AsyncActionContext
  */
 public class AsyncActionContext {
 
@@ -54,7 +50,7 @@ public class AsyncActionContext {
 
     private String asyncStatus = "onProcess"; // 該請求的 AsyncContext 狀態目前為何
     private boolean isComplete = false; // 這個 AsyncContext 是否已被 complete
-    private boolean isOutputted = false; // 是否已是被輸出過的 requestContext
+    private boolean isOutput = false; // 限制每個 AsyncContext 只能輸出一次資料的機制
 
     private AsyncActionContext(ServletContext servletContext, ServletConfig servletConfig, AsyncContext asyncContext) {
         this.servletContext = servletContext;
@@ -436,26 +432,7 @@ public class AsyncActionContext {
      * 輸出純文本內容至 Response
      */
     public void printToResponse(String content, Handler handler) {
-        // 因為非同步架構的關係將限制單一個 request 只能有單一個輸出
-        {
-            if (isOutputted) {
-                Bundle b = new Bundle();
-                b.putString("status", "fail");
-                b.putString("msg", "a request only have one output to response");
-                Message m = handler.obtainMessage();
-                m.setData(b);
-                m.sendToTarget();
-                {
-                    try {
-                        throw new Exception("a request only have one output to response");
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-                return;
-            }
-        }
-
+        if(checkIsOutput()) return;
         HttpServletResponse response = ((HttpServletResponse) asyncContext.getResponse());
         // 因為採用 byte 輸出，如果沒有 Response Header 容易在瀏覽器端發生錯誤
         {
@@ -485,26 +462,7 @@ public class AsyncActionContext {
      * 輸出 JSON 格式的字串至 Response
      */
     public void outputJSONToResponse(JSONObject obj, Handler handler) {
-        // 因為非同步架構的關係將限制單一個 request 只能有單一個輸出
-        {
-            if (isOutputted) {
-                Bundle b = new Bundle();
-                b.putString("status", "fail");
-                b.putString("msg", "a request only have one output to response");
-                Message m = handler.obtainMessage();
-                m.setData(b);
-                m.sendToTarget();
-                {
-                    try {
-                        throw new Exception("a request only have one output to response");
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-                return;
-            }
-        }
-
+        if(checkIsOutput()) return;
         HttpServletResponse response = ((HttpServletResponse) asyncContext.getResponse());
         // 因為採用 byte 輸出，如果沒有 Response Header 容易在瀏覽器端發生錯誤
         {
@@ -536,6 +494,7 @@ public class AsyncActionContext {
      * isAttachment 影響到瀏覽器是否能預覽（true 時會被當作一般檔案來下載）
      */
     public void outputFileToResponse(String path, String fileName, String mimeType, boolean isAttachment, Handler handler) {
+        if(checkIsOutput()) return;
         if(null == path || path.length() == 0) {
             {
                 Bundle b = new Bundle();
@@ -548,6 +507,17 @@ public class AsyncActionContext {
             return;
         }
         File file = new File(path);
+        if(!file.exists()) {
+            {
+                Bundle b = new Bundle();
+                b.putString("status", "fail");
+                b.putString("msg_zht", "指定的檔案是無效的");
+                Message m = handler.obtainMessage();
+                m.setData(b);
+                m.sendToTarget();
+            }
+            return;
+        }
         outputFileToResponse(file, fileName, mimeType, isAttachment, handler);
     }
 
@@ -557,25 +527,7 @@ public class AsyncActionContext {
      * isAttachment 影響到瀏覽器是否能預覽（true 時會被當作一般檔案來下載）
      */
     public void outputFileToResponse(File file, String fileName, String mimeType, boolean isAttachment, Handler handler) {
-        // 因為非同步架構的關係將限制單一個 request 只能有單一個輸出
-        {
-            if (isOutputted) {
-                Bundle b = new Bundle();
-                b.putString("status", "fail");
-                b.putString("msg", "a request only have one output to response");
-                Message m = handler.obtainMessage();
-                m.setData(b);
-                m.sendToTarget();
-                {
-                    try {
-                        throw new Exception("a request only have one output to response");
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-                return;
-            }
-        }
+        if(checkIsOutput()) return;
 
         // 檢查檔案是否正常
         if(null == file || file.length() == 0 || !file.exists()) {
@@ -657,54 +609,49 @@ public class AsyncActionContext {
     }
 
     /**
-     * 預設的無效請求事件實作
+     * Default Invalid Request Handler
      */
     private void createInvalidRequestHandler() {
         this.invalidRequestHandler = new Handler() {
             @Override
             public void handleMessage(Message m) {
                 super.handleMessage(m);
-                JSONObject obj = new JSONObject();
-                obj.put("error_code", "404");
-                obj.put("status", "invalid_request");
-                obj.put("msg_zht", "無效的請求");
-                AsyncActionContext.this.printToResponse(obj.toJSONString(), new Handler(){
-                    @Override
-                    public void handleMessage(Message m) {
-                        super.handleMessage(m);
-                        AsyncActionContext.this.complete();
-                    }
-                });
+                {
+                    JSONObject obj = new JSONObject();
+                    obj.put("error_code", "404");
+                    obj.put("status", "invalid_request");
+                    obj.put("msg_zht", "無效的請求");
+                    AsyncActionContext.this.printToResponse(obj.toJSONString(), new Handler(){
+                        @Override
+                        public void handleMessage(Message m) {
+                            super.handleMessage(m);
+                            AsyncActionContext.this.complete();
+                        }
+                    });
+                }
             }
         };
     }
 
-    /**
-     * 自定義無效請求事件的監聽器
-     */
+    public Handler getInvalidRequestHandler() {
+        return this.invalidRequestHandler;
+    }
+
     public void setInvalidRequestHandler(Handler handler) {
         this.invalidRequestHandler = handler;
     }
 
     /**
-     * 取得無效請求事件的監聽器實例
-     */
-    public Handler getInvalidRequestHandler() {
-        return this.invalidRequestHandler;
-    }
-
-    /**
-     * 預設的廣域 Exception 事件監聽器
+     * Default Request Exception Handler
      */
     private void createAppExceptionHandler() {
         this.appExceptionHandler = new Handler(){
             @Override
             public void handleMessage(Message m) {
                 super.handleMessage(m);
-                String status = m.getData().getString("status");
-                if("fail".equals(status)) {
+                {
                     JSONObject obj = new JSONObject();
-                    obj.put("status", status);
+                    obj.put("status", m.getData().getString("status"));
                     obj.put("error_code", "500"); // server_side
                     obj.put("msg_eng", m.getData().getString("msg_eng"));
                     obj.put("msg_zht", m.getData().getString("msg_zht"));
@@ -715,11 +662,6 @@ public class AsyncActionContext {
                             AsyncActionContext.this.complete();
                         }
                     });
-                } else {
-                    // 基本上永遠不會到達此處
-                    System.out.println("Public Exception Handler Message：");
-                    System.out.println(m.getData().toString());
-                    AsyncActionContext.this.complete();
                 }
             }
         };
@@ -729,9 +671,6 @@ public class AsyncActionContext {
         return this.appExceptionHandler;
     }
 
-    /**
-     * 自定義廣域 Exception Handler
-     */
     public void setAppExceptionHandler(Handler handler) {
         this.appExceptionHandler = handler;
     }
@@ -774,6 +713,12 @@ public class AsyncActionContext {
     public File getRequestByteContent() {
         File tomcat_temp = new File(servletContext.getAttribute(ServletContext.TEMPDIR).toString());
         String dirSlash = System.getProperty("file.separator");
+        {
+            String hostOS = System.getProperty("os.name");
+            if (hostOS.toLowerCase().contains("windows")) {
+                dirSlash = "\\\\";
+            }
+        }
         File tempFile;
         try {
             tempFile = File.createTempFile(RandomServiceStatic.getInstance().getTimeHash(3), null, new File(tomcat_temp.getPath() + dirSlash));
@@ -784,6 +729,30 @@ public class AsyncActionContext {
             tempFile = null;
         }
         return tempFile;
+    }
+
+    /**
+     * 設定 AsyncContext Timeout，單位為 MilliSecond
+     * 設定非同步處理時間上限，可以由此機制防止非同步請求陷入無止境的等待問題
+     */
+    public void setTimeout(long milliSecond) {
+        this.asyncContext.setTimeout(milliSecond);
+    }
+
+    /**
+     * 非同步的 ServletOutputStream 因為綁定於 WriteListener 管理，
+     * 所以只能有一次的輸出機會，請於請求完成後處理完所有需要輸出的內容合併輸出
+     */
+    private boolean checkIsOutput() {
+        if(isOutput) {
+            try {
+                throw new Exception("Only have one output command for a WriteListener.");
+            } catch (Exception e) {
+                e.printStackTrace();
+                AsyncActionContext.this.complete();
+            }
+        }
+        return isOutput;
     }
 
     /**
@@ -883,7 +852,7 @@ public class AsyncActionContext {
      * 統一檢查與設定 AsyncWriteListener，以此管控每個請求只能輸出一次的機制
      */
     private void setOutputWriteListener(AsyncWriteListener asyncWriteListener) {
-        isOutputted = true;
+        isOutput = true;
         try {
             asyncContext.getResponse().getOutputStream().setWriteListener(asyncWriteListener);
         } catch (Exception e) {

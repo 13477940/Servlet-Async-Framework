@@ -1,5 +1,6 @@
 package framework.thread;
 
+import java.lang.ref.WeakReference;
 import java.util.concurrent.*;
 
 public class ThreadPoolStatic {
@@ -9,11 +10,13 @@ public class ThreadPoolStatic {
     static {}
 
     public static ExecutorService getInstance() {
-        return ThreadPoolStatic.InstanceHolder.worker;
+        return new WeakReference<>(ThreadPoolStatic.InstanceHolder.worker).get();
     }
 
     public static void shutdown() {
-        ThreadPoolStatic.getInstance().shutdown();
+        if(null != ThreadPoolStatic.getInstance() && !ThreadPoolStatic.getInstance().isShutdown()) {
+            ThreadPoolStatic.getInstance().shutdown();
+        }
     }
 
     private static class InstanceHolder {

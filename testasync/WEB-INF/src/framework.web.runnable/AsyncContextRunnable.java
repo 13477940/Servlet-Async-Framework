@@ -17,24 +17,21 @@ import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
-import java.io.BufferedInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
 import java.lang.ref.WeakReference;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * 每一個 HttpRequest 都會經過此處進行個別封裝，封裝後會得到 AsyncActionContext，
- * 並且作為核心應用單位進入使用者自訂義的 Request Handler 責任鏈中進行處理
+ * WebAppController > AsyncContextRunnable
+ * 此為轉換 HttpRequest 為 AsyncActionContext 的中介層角色，
+ * 封裝每一次 HttpRequest 為標準化格式，方便後續 RequestHandler 統一使用。
  */
 public class AsyncContextRunnable implements Runnable {
 
     private ServletContext servletContext;
-    private ServletConfig servletConfig;
+    // private ServletConfig servletConfig;
     private AsyncContext asyncContext;
 
     private AsyncActionContext requestContext;
@@ -44,7 +41,7 @@ public class AsyncContextRunnable implements Runnable {
      */
     private AsyncContextRunnable(ServletContext servletContext, ServletConfig servletConfig, AsyncContext asyncContext) {
         this.servletContext = servletContext;
-        this.servletConfig = servletConfig;
+        // this.servletConfig = servletConfig;
         this.asyncContext = asyncContext;
         {
             AsyncActionContext.Builder contextBuilder = new AsyncActionContext.Builder();
@@ -74,37 +71,6 @@ public class AsyncContextRunnable implements Runnable {
         }
     }
 
-    // 請求封裝處理完成，由此開始自定義的 Server 服務內容，並統一使用 requestContext 格式
-    /*
-    private void webAppStartup(HashMap<String, String> params, ArrayList<FileItem> files) {
-        // HTTP Header 處理
-        {
-            HttpServletRequest req = (HttpServletRequest) asyncContext.getRequest();
-            ArrayList<String> names = Collections.list(req.getHeaderNames());
-            HashMap<String, String> headers = new HashMap<>();
-            for(String key : names) {
-                String value = req.getHeader(key);
-                headers.put(key, value);
-            }
-            requestContext.setHeaders(headers);
-        }
-        // 處理參數內容及上傳檔案
-        {
-            requestContext.setParameters(params);
-            if (null == files || files.size() == 0) {
-                requestContext.setIsFileAction(false); // 不具有檔案上傳請求
-                requestContext.setFiles(null);
-            } else {
-                requestContext.setIsFileAction(true); // 具有檔案上傳請求
-                requestContext.setFiles(files);
-            }
-        }
-        // 每個 WebAppServiceExecutor 獨立處理完一個 AsyncActionContext 的 Task 內容
-        WebAppServiceExecutor executor = new WebAppServiceExecutor(requestContext);
-        executor.startup();
-    }
-    */
-
     private void webAppStartup(HashMap<String, String> params, FileItemList files) {
         // HTTP Header 處理
         {
@@ -133,62 +99,44 @@ public class AsyncContextRunnable implements Runnable {
         executor.startup();
     }
 
-    // TODO [TESTING] AsyncReadListener
     // 採用檔案處理方式解析 multipart/form-data 資料內容
     // 由於 Session 處理上傳進度值會影響伺服器效率，僅建議由前端處理上傳進度即可
     // jQuery 文件上传进度提示：https://segmentfault.com/a/1190000008791342
     private void parseFormData() {
-        /*
-        DiskFileItemFactory dfac = new DiskFileItemFactory();
-        {
-            // Sets the default charset for use when no explicit charset parameter is provided by the sender.
-            dfac.setDefaultCharset(StandardCharsets.UTF_8.name());
-            // Sets the size threshold beyond which files are written directly to disk.(bytes), default: 10k
-            dfac.setSizeThreshold(DiskFileItemFactory.DEFAULT_SIZE_THRESHOLD);
-            // Sets the directory used to temporarily store files that are larger than the configured size threshold.
-            dfac.setRepository(new File(servletContext.getAttribute(ServletContext.TEMPDIR).toString()));
-        }
-        ServletFileUpload upload = new ServletFileUpload(dfac);
-
-        // 上傳表單列表內容處理
-        List<FileItem> items;
-        try {
-            items = upload.parseRequest(new ServletRequestContext((HttpServletRequest) asyncContext.getRequest()));
-            createFileTable(items);
-        } catch (Exception e) {
-            e.printStackTrace();
-            asyncContext.complete();
-        }
-        */
-        AsyncReadListener asyncReadListener = new AsyncReadListener.Builder()
-                .setServletContext(servletContext)
-                .setAsyncContext(asyncContext)
-                .setHandler(new Handler(){
-                    @Override
-                    public void handleMessage(Message m) {
-                        super.handleMessage(m);
-                        FileItemList files = new FileItemList();
-                        HashMap<String, String> params = new HashMap<>();
-                        {
-                            String key = m.getData().getString("key");
-                            if(null != m.getData().get(key)) {
-                                FileItemList fileItems = (FileItemList) m.getData().get(key);
-                                for (FileItem item : fileItems.prototype()) {
-                                    if (item.isFormField()) {
-                                        params.put(item.getFieldName(), item.getContent());
-                                    } else {
-                                        files.add(item);
-                                    }
+        // TODO [stable-testing] AsyncReadListener
+        Handler asyncReadHandler = new Handler() {
+            @Override
+            public void handleMessage(Message m) {
+                super.handleMessage(m);
+                {
+                    FileItemList files = new FileItemList();
+                    HashMap<String, String> params = new HashMap<>();
+                    {
+                        String key = m.getData().getString("key");
+                        if(null != m.getData().get(key)) {
+                            FileItemList fileItems = (FileItemList) m.getData().get(key);
+                            for (FileItem item : fileItems.prototype()) {
+                                if (item.isFormField()) {
+                                    params.put(item.getFieldName(), item.getContent());
+                                } else {
+                                    files.add(item);
                                 }
                             }
                         }
-                        if(files.size() == 0) {
-                            webAppStartup(params, null);
-                        } else {
-                            webAppStartup(params, files);
-                        }
                     }
-                })
+                    // upload done
+                    if(files.size() == 0) {
+                        webAppStartup(params, null);
+                    } else {
+                        webAppStartup(params, files);
+                    }
+                }
+            }
+        };
+        AsyncReadListener asyncReadListener = new AsyncReadListener.Builder()
+                .setServletContext(servletContext)
+                .setAsyncContext(asyncContext)
+                .setHandler(asyncReadHandler)
                 .build();
         try {
             asyncContext.getRequest().getInputStream().setReadListener(asyncReadListener);
@@ -197,71 +145,7 @@ public class AsyncContextRunnable implements Runnable {
         }
     }
 
-    // form-data 內容處理
-    /*
-    private void createFileTable(List<FileItem> items) {
-        JSONObject obj_keys = new JSONObject();
-        HashMap<String, String> params = new HashMap<>();
-        ArrayList<FileItem> files = new ArrayList<>();
-        for (FileItem fi : items) {
-            if (fi.isFormField()) {
-                // 表單資料：字串內容
-                String key = fi.getFieldName();
-                String value = "";
-                try {
-                    value = readFormDataTextContent(fi.getInputStream());
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                {
-                    // 單一 parameter key 具有多個參數時（多參數值藉由 JSONArray 字串形式儲存）
-                    if(obj_keys.containsKey(key)) {
-                        obj_keys.getJSONArray(key).add(value);
-                    } else {
-                        obj_keys.put(key, new JSONArray().add(value));
-                    }
-                }
-                if(params.containsKey(key)) {
-                    params.put(key, obj_keys.getJSONArray(key).toJSONString());
-                } else {
-                    params.put(key, value);
-                }
-            } else {
-                // 實體檔案：二進位檔案內容
-                files.add(fi);
-            }
-        }
-        if(files.size() == 0) {
-            webAppStartup(params, null);
-        } else {
-            webAppStartup(params, files);
-        }
-    }
-    */
-
-    // 因為取得 form-data 的內容會造成中文亂碼，所以採用 UTF-8 的解決方式取值
-    private String readFormDataTextContent(InputStream ins) {
-        BufferedInputStream bis = new BufferedInputStream(ins);
-        ByteArrayOutputStream buf = new ByteArrayOutputStream();
-        String res = null;
-        try {
-            int result = bis.read();
-            while (result != -1) {
-                buf.write((byte) result);
-                result = bis.read();
-            }
-            {
-                bis.close();
-                buf.flush();
-                res = buf.toString(StandardCharsets.UTF_8);
-                buf.close();
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return res;
-    }
-
+    // 處理 HttpRequest Parameters（使用 HashMap 因為參數通常對順序不敏感）
     private void parseParams() {
         HashMap<String, String> params = new HashMap<>();
         for (Map.Entry<String, String[]> entry : asyncContext.getRequest().getParameterMap().entrySet()) {
