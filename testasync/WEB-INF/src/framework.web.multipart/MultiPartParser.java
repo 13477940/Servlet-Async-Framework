@@ -12,7 +12,6 @@ import java.util.HashMap;
 
 /**
  * implement by UrielTech.com TomLi.
- * TODO 需要思考如何降低 bigO(n) 的邏輯複雜度，目前此方法會隨著上傳檔案大小而呈現線性增加處理時間
  */
 public class MultiPartParser {
 
@@ -34,6 +33,7 @@ public class MultiPartParser {
     /**
      * Like Apache FileItem Parser For Async Implement
      * https://www.ibm.com/developerworks/cn/java/fileup/index.html
+     * TODO 需要思考如何降低 bigO(n) 的邏輯複雜度，目前此方法會隨著上傳檔案大小而呈現線性增加處理時間
      */
     public FileItemList parse() {
         if(null == file || !file.exists()) return null;

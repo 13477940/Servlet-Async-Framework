@@ -14,7 +14,7 @@ import java.sql.Connection;
  * https://tomcat.apache.org/tomcat-9.0-doc/jdbc-pool.html
  * 版本會跟著 Apache Tomcat 步進，相容性 JDK 則依照其需求即可
  * --- required jar file ---
- * tomcat/bin/tomcat-juli.jar
+ * tomcat/bin/tomcat-juli.jar [ not require for jetty ]
  * tomcat/lib/tomcat-jdbc.jar
  */
 public class TomcatDataSource extends ConnectorConfig implements ConnectionPool {

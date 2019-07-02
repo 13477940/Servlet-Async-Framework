@@ -7,10 +7,9 @@ import framework.observer.Handler;
 import framework.observer.Message;
 import framework.random.RandomServiceStatic;
 import framework.setting.AppSetting;
+import framework.web.multipart.FileItem;
 import framework.web.multipart.FileItemList;
 import framework.web.niolistener.AsyncWriteListener;
-import org.apache.tomcat.util.http.fileupload.FileItem;
-import org.apache.tomcat.util.http.fileupload.IOUtils;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
@@ -66,6 +65,10 @@ public class AsyncActionContext {
             // Servlet Async Listener
             {
                 this.asyncContext.addListener(new AsyncListener() {
+
+                    @Override
+                    public void onStartAsync(AsyncEvent asyncEvent) { asyncStatus = "onStartAsync"; }
+
                     @Override
                     public void onComplete(AsyncEvent asyncEvent) {
                         asyncStatus = "onComplete";
@@ -73,20 +76,11 @@ public class AsyncActionContext {
                     }
 
                     @Override
-                    public void onTimeout(AsyncEvent asyncEvent) {
-                        asyncStatus = "onTimeout";
-                    }
+                    public void onError(AsyncEvent asyncEvent) { asyncStatus = "onError"; }
 
                     @Override
-                    public void onError(AsyncEvent asyncEvent) {
-                        asyncStatus = "onError";
-                    }
+                    public void onTimeout(AsyncEvent asyncEvent) { asyncStatus = "onTimeout"; }
 
-                    @Override
-                    public void onStartAsync(AsyncEvent asyncEvent) {
-                        // 若 Listener 位於此處理論上沒辦法監聽到這個，因為 StartAsync 在 WebAppController 時已經發生
-                        asyncStatus = "onStartAsync";
-                    }
                 });
             }
             // 初始化 request context
@@ -152,18 +146,17 @@ public class AsyncActionContext {
     /**
      * Map 型態的 HTTP Request 上傳檔案內容
      */
-    public HashMap<String, framework.web.multipart.FileItem> getFilesMap() {
+    public HashMap<String, FileItem> getFilesMap() {
         if(null == this.files || this.files.size() == 0) return null;
-        HashMap<String, framework.web.multipart.FileItem> map = new HashMap<>();
-        for(framework.web.multipart.FileItem fileItem : this.files.prototype()) {
-            String key = fileItem.getFieldName(); // html form input name
+        HashMap<String, Integer> sort_map = new HashMap<>(); // 同 key 多檔案排序
+        HashMap<String, FileItem> map = new HashMap<>();
+        for(FileItem fileItem : this.files.prototype()) {
+            String key = fileItem.getFieldName();
             if(map.containsKey(key)) {
+                Integer index = sort_map.getOrDefault(key, 0);
+                sort_map.put(key, index);
                 StringBuilder sbd = new StringBuilder();
-                {
-                    sbd.append(key);
-                    sbd.append("_");
-                    sbd.append(RandomServiceStatic.getInstance().getRandomString(6));
-                }
+                { sbd.append(key).append("_").append(index); }
                 map.put(sbd.toString(), fileItem);
             } else {
                 map.put(key, fileItem);
@@ -246,9 +239,8 @@ public class AsyncActionContext {
     }
 
     /**
-     * 屬於檔案類型的 form-data 寫入硬碟中儲存實作，
-     * 如果於檔案上傳後沒有調用此方法，該檔案將會被放置在暫存資料夾中
-     * Tomcat/work/[host_name]/[app_name]
+     * 針對 framework.web.multipart.FileItem 格式進行檔案寫入
+     * 屬於檔案類型的 form-data 寫入硬碟中儲存實作
      */
     public void writeFile(FileItem fileItem, String path, String fileName, Handler handler) {
         if(null == fileItem) {
@@ -309,102 +301,9 @@ public class AsyncActionContext {
         // 寫入檔案至該資料夾中
         File file = new File(path, fileName);
         {
-            try {
+            try ( InputStream tmpInputStream = fileItem.getInputStream() ) {
                 // JDK 8+ NIO copy
-                InputStream tmpInputStream = fileItem.getInputStream();
                 Files.copy(tmpInputStream, file.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                IOUtils.closeQuietly(tmpInputStream);
-                {
-                    Bundle b = new Bundle();
-                    b.putString("status", "done");
-                    b.putString("msg_zht", "上傳檔案寫入成功");
-                    Message m = handler.obtainMessage();
-                    m.setData(b);
-                    m.sendToTarget();
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-                {
-                    Bundle b = new Bundle();
-                    b.putString("status", "fail");
-                    b.putString("msg_zht", fileItem.getName() + " 該上傳檔案於建立檔案時發生錯誤");
-                    b.put("exception", e);
-                    Message m = handler.obtainMessage();
-                    m.setData(b);
-                    m.sendToTarget();
-                }
-            }
-        }
-    }
-
-    /**
-     * 針對 framework.web.multipart.FileItem 格式進行檔案寫入
-     * 屬於檔案類型的 form-data 寫入硬碟中儲存實作
-     */
-    public void writeFile(framework.web.multipart.FileItem fileItem, String path, String fileName, Handler handler) {
-        if(null == fileItem) {
-            Bundle b = new Bundle();
-            b.putString("status", "fail");
-            b.putString("msg_zht", "必須設定一個可用的 FileItem 物件");
-            Message m = handler.obtainMessage();
-            m.setData(b);
-            m.sendToTarget();
-            return;
-        }
-        if(fileItem.isFormField()) {
-            Bundle b = new Bundle();
-            b.putString("status", "fail");
-            b.putString("msg_zht", fileItem.getFieldName() + " 是個請求參數，必須是二進位檔案格式才能進行寫入檔案的動作");
-            Message m = handler.obtainMessage();
-            m.setData(b);
-            m.sendToTarget();
-            return;
-        }
-        if(null == path || path.length() == 0) {
-            Bundle b = new Bundle();
-            b.putString("status", "fail");
-            b.putString("msg_zht", "必須設定一個可用的資料夾路徑");
-            Message m = handler.obtainMessage();
-            m.setData(b);
-            m.sendToTarget();
-            return;
-        }
-        if(null == fileName || fileName.length() == 0) {
-            Bundle b = new Bundle();
-            b.putString("status", "fail");
-            b.putString("msg_zht", "必須設定一個可用的檔案名稱");
-            Message m = handler.obtainMessage();
-            m.setData(b);
-            m.sendToTarget();
-            return;
-        }
-        {
-            File test = new File(path);
-            if(!test.exists()) {
-                try {
-                    throw new Exception(path + " 路徑並不存在");
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                return;
-            }
-            if(!test.isDirectory()) {
-                try {
-                    throw new Exception(path + " 並不是資料夾");
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                return;
-            }
-        }
-        // 寫入檔案至該資料夾中
-        File file = new File(path, fileName);
-        {
-            try {
-                // JDK 8+ NIO copy
-                InputStream tmpInputStream = fileItem.getInputStream();
-                Files.copy(tmpInputStream, file.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                IOUtils.closeQuietly(tmpInputStream);
                 {
                     Bundle b = new Bundle();
                     b.putString("status", "done");

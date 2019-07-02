@@ -109,7 +109,7 @@ public class AsyncContextRunnable implements Runnable {
             public void handleMessage(Message m) {
                 super.handleMessage(m);
                 {
-                    FileItemList files = new FileItemList();
+                    FileItemList files = null;
                     HashMap<String, String> params = new HashMap<>();
                     {
                         String key = m.getData().getString("key");
@@ -119,13 +119,14 @@ public class AsyncContextRunnable implements Runnable {
                                 if (item.isFormField()) {
                                     params.put(item.getFieldName(), item.getContent());
                                 } else {
+                                    if(null == files) files = new FileItemList();
                                     files.add(item);
                                 }
                             }
                         }
                     }
                     // upload done
-                    if(files.size() == 0) {
+                    if(null == files || files.size() == 0) {
                         webAppStartup(params, null);
                     } else {
                         webAppStartup(params, files);
