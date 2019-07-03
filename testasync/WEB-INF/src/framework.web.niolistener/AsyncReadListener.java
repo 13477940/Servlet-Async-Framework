@@ -6,7 +6,6 @@ import framework.observer.Message;
 import framework.random.RandomServiceStatic;
 import framework.web.multipart.FileItemList;
 import framework.web.multipart.MultiPartParser;
-import org.apache.tomcat.util.http.fileupload.disk.DiskFileItemFactory;
 
 import javax.servlet.AsyncContext;
 import javax.servlet.ReadListener;
@@ -72,7 +71,7 @@ public class AsyncReadListener implements ReadListener {
      */
     @Override
     public void onDataAvailable() {
-        byte[] buffer = new byte[DiskFileItemFactory.DEFAULT_SIZE_THRESHOLD];
+        byte[] buffer = new byte[4096];
         try {
             // onAllDataRead 需要由 inputStream.read 所有 byte 之後才會被觸發
             int length;

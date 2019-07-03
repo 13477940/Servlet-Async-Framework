@@ -6,8 +6,6 @@ import framework.observer.Message;
 import framework.web.context.AsyncActionContext;
 import framework.web.handler.RequestHandler;
 
-import java.util.HashMap;
-
 public class PageHandler extends RequestHandler {
 
     private AsyncActionContext requestContext;
@@ -23,10 +21,11 @@ public class PageHandler extends RequestHandler {
     }
 
     @Override
-    protected boolean checkIsMyJob(AsyncActionContext requestContext) {
-        HashMap<String, String> params = requestContext.getParameters();
-        if(requestContext.isFileAction() && !params.containsKey("page")) return false;
-        return ( null == params || params.size() == 0 || params.containsKey("page") );
+    protected boolean checkIsMyJob(AsyncActionContext asyncActionContext) {
+        if(asyncActionContext.isFileAction()) return false;
+        if(null != asyncActionContext.getResourceExtension()) return false; // 排除資源類請求
+        if("page".equals(asyncActionContext.getParameters().get("page"))) return true;
+        return asyncActionContext.getParameters().size() == 0;
     }
 
     private void processRequest() {

@@ -87,12 +87,12 @@ public class FileFinder {
             File[] list = baseFile.listFiles();
             if(null == list) return null;
             for(File pFile : list) {
-                if(fileName.equals(pFile.getName())) {
+                if(fileName.toLowerCase().equals(pFile.getName().toLowerCase())) {
                     res = pFile;
                 }
             }
         } else {
-            if(fileName.equals(baseFile.getName())) {
+            if(fileName.toLowerCase().equals(baseFile.getName().toLowerCase())) {
                 res = baseFile;
             }
         }
@@ -132,7 +132,8 @@ public class FileFinder {
     private void initFileFinder(File baseFile) {
         setHostInfo();
         if(null == baseFile) {
-            URL resourceURL = this.getClass().getClassLoader().getResource("");
+            // URL resourceURL = this.getClass().getClassLoader().getResource("");
+            URL resourceURL = Thread.currentThread().getContextClassLoader().getResource("");
             if(null != resourceURL) {
                 String classPath = URLDecoder.decode(resourceURL.getPath(), StandardCharsets.UTF_8);
                 this.baseFile = new File(classPath);

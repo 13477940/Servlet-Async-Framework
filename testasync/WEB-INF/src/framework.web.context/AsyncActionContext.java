@@ -6,7 +6,6 @@ import framework.observer.Bundle;
 import framework.observer.Handler;
 import framework.observer.Message;
 import framework.random.RandomServiceStatic;
-import framework.setting.AppSetting;
 import framework.web.multipart.FileItem;
 import framework.web.multipart.FileItemList;
 import framework.web.niolistener.AsyncWriteListener;
@@ -18,6 +17,7 @@ import javax.servlet.http.HttpSession;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.InputStream;
+import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -25,6 +25,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Objects;
 
 /**
  * WebAppController > AsyncContextRunnable > AsyncActionContext
@@ -668,7 +669,18 @@ public class AsyncActionContext {
             }
         }
         if(null == httpRequest) return;
-        // 請求路徑字串處理
+        // 檢查 ServletContextName 是否為空值
+        {
+            if(null == servletContext.getServletContextName()) {
+                try {
+                    throw new Exception("web.xml 需要設定 <display-name></display-name> 名稱，確保 AsyncActionContext 正常取得 AppName");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                return;
+            }
+        }
+        // 請求路徑處理，去掉 ServletContextName
         {
             try {
                 if(null == httpRequest.getRequestURL()) {
@@ -680,9 +692,9 @@ public class AsyncActionContext {
                     StringBuilder sURL = new StringBuilder();
                     sURL.append("/"); // root path
                     for (int i = 0, len = sLoca.length; i < len; i++) {
-                        String tmp = sLoca[i];
-                        if(i == 0) { continue; } // domain name
-                        if(i == 1 && tmp.equals(new AppSetting.Builder().build().getAppName())) { continue; } // app name
+                        String tmp = URLDecoder.decode(Objects.requireNonNullElse(sLoca[i], "").trim().toLowerCase(), StandardCharsets.UTF_8);
+                        if( i == 0 ) { continue; } // domain name
+                        if( i == 1 && tmp.equals(servletContext.getServletContextName().toLowerCase()) ) { continue; } // app name
                         // 網址處理後除了 domain name 及 app name 之外都會被當作 URI 字串內容
                         // example > http://localhost/webappname/a/index 處理後會變成 /a/index 字串
                         sURL.append(tmp);

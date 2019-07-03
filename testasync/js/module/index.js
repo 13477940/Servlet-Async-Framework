@@ -13,7 +13,7 @@ var testasync = {};
             type: "post",
             url: "/testasync/index",
             data: {
-                page: "123",
+                page: "page",
                 a: "123",
                 b: "456",
                 c: "789",
@@ -34,7 +34,7 @@ var testasync = {};
         var fData = new FormData();
 
         if (null == myfile) {
-            fData.append("page", "page");
+            // fData.append("page", "page");
             fData.append("api_type", "member_login");
             fData.append("ts", "1495423569106");
             fData.append("token", "7c4ffb9a4b227fd13e1b6bc574572862");

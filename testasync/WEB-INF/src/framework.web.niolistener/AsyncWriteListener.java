@@ -4,7 +4,6 @@ import framework.observer.Bundle;
 import framework.observer.Handler;
 import framework.observer.Message;
 import framework.web.context.AsyncActionContext;
-import org.apache.tomcat.util.http.fileupload.disk.DiskFileItemFactory;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.WriteListener;
@@ -84,7 +83,7 @@ public class AsyncWriteListener implements WriteListener {
         } catch (Exception e) {
             if(devMode) { e.printStackTrace(); }
         }
-        byte[] buffer = new byte[DiskFileItemFactory.DEFAULT_SIZE_THRESHOLD];
+        byte[] buffer = new byte[4096];
         while (true) {
             if(null == out) break;
             if(!out.isReady()) break;

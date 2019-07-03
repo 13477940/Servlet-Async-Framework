@@ -6,8 +6,7 @@
 	version="4.0"
 	metadata-complete="true">
 
-    <description>TestAsyncExample</description>
-    <display-name>TestAsyncExample</display-name>
+    <display-name>testasync</display-name>
 
     <servlet>
         <servlet-name>testAsync</servlet-name>

@@ -3,12 +3,14 @@ package framework.setting;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import framework.file.FileFinder;
+import framework.web.servlet.ServletContextStatic;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 
 /**
  * AppSetting 主要管理作業系統判斷、WebApp 名稱與統一的檔案路徑，
@@ -18,21 +20,19 @@ import java.nio.charset.StandardCharsets;
  */
 public class AppSetting {
 
-    private String configDirName = null;
-    private String configFileName = null;
-    private String baseFileDirName = null;
-    private String appName = null;
-    private AppSetting.PathContext pathContext = null;
+    private String configDirName;
+    private String configFileName;
+    private String baseFileDirName;
+    private AppSetting.PathContext pathContext;
 
-    private String hostOS = null;
-    private String dirSlash = null;
+    private String hostOS;
+    private String dirSlash;
 
-    private AppSetting(String configDirName, String configFileName, String baseFileDirName, String appName, AppSetting.PathContext pathContext) {
+    private AppSetting(String configDirName, String configFileName, String baseFileDirName, AppSetting.PathContext pathContext) {
         {
             this.configDirName = configDirName;
             this.configFileName = configFileName;
             this.baseFileDirName = baseFileDirName;
-            this.appName = appName;
             this.pathContext = pathContext;
         }
         this.hostOS = System.getProperty("os.name");
@@ -50,10 +50,6 @@ public class AppSetting {
 
     public String getHostOS() {
         return this.hostOS;
-    }
-
-    public String getAppName() {
-        return this.appName;
     }
 
     public AppSetting.PathContext getPathContext() {
@@ -170,30 +166,35 @@ public class AppSetting {
         }
 
         public AppSetting build() {
-            FileFinder finder = new FileFinder.Builder().build();
-            // 檢查是否為 Tomcat 環境中
-            File targetFile = finder.find("WEB-INF");
             {
-                if(null == this.appName) {
-                    if(null == targetFile || !targetFile.exists()) {
+                if(null == this.appName || this.appName.length() == 0) {
+                    // 如果是 WebApp 型態
+                    if(Objects.requireNonNull(Thread.currentThread().getContextClassLoader().getResource("")).getPath().contains("WEB-INF")) {
                         try {
-                            throw new Exception("在不具有 WEB-INF 的環境下需自定義 APP 名稱！");
+                            this.appName = ServletContextStatic.getInstance().getServletContextName();
                         } catch (Exception e) {
-                            e.printStackTrace();
+                            // e.printStackTrace();
                         }
-                    } else {
-                        if(null == targetFile.getParentFile()) {
+                        if(null == appName) {
                             try {
-                                throw new Exception("找尋不到指定的資料夾名稱父節點："+this.appName);
+                                throw new Exception("web.xml 需要設定 <display-name></display-name> 名稱，確保 AppSetting 正常取得 AppName");
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
-                        } else {
-                            this.appName = targetFile.getParentFile().getName();
+                            return null;
                         }
+                    }
+                    if(null == appName) {
+                        try {
+                            throw new Exception("AppSetting 必需設定一個有效的 AppName 參數");
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                        return null;
                     }
                 }
             }
+            FileFinder finder = new FileFinder.Builder().build();
             // 檢查是否具有應用程式基本儲存的資料夾區域
             {
                 File baseFileDir = finder.find(this.baseFileDirName);
@@ -202,7 +203,7 @@ public class AppSetting {
                     this.pathContext = new AppSetting.PathContext(baseFileDirPath, this.appName, System.getProperty("file.separator"));
                 } else {
                     File tmpBaseFileDir = new File(this.baseFileDirPath);
-                    if(tmpBaseFileDir.exists()) {
+                    if (tmpBaseFileDir.exists()) {
                         this.pathContext = new AppSetting.PathContext(baseFileDirPath, this.appName, System.getProperty("file.separator"));
                     } else {
                         try {
@@ -213,7 +214,7 @@ public class AppSetting {
                     }
                 }
             }
-            return new AppSetting(this.configDirName, this.configFileName, this.baseFileDirName, this.appName, this.pathContext);
+            return new AppSetting(this.configDirName, this.configFileName, this.baseFileDirName, this.pathContext);
         }
     }
 
@@ -221,10 +222,10 @@ public class AppSetting {
      * WebApp 預設資源路徑封裝
      */
     public static class PathContext {
-        private String tempDirPath = null;
-        private String uploadDirPath = null;
-        private String exportDirPath = null;
-        private String logDirPath = null;
+        private String tempDirPath;
+        private String uploadDirPath;
+        private String exportDirPath;
+        private String logDirPath;
 
         private PathContext(String baseFileDirPath, String webAppName, String dirSlash) {
             String tmpPath = baseFileDirPath + dirSlash + webAppName;

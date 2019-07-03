@@ -9,7 +9,6 @@ import framework.web.handler.RequestHandler;
 
 import java.io.File;
 import java.util.Arrays;
-import java.util.HashMap;
 
 public class FileHandler extends RequestHandler {
 
@@ -26,9 +25,9 @@ public class FileHandler extends RequestHandler {
     }
 
     @Override
-    protected boolean checkIsMyJob(AsyncActionContext requestContext) {
-        HashMap<String, String> params = requestContext.getParameters();
-        return ( params.containsKey("act") && "file".equals(params.get("act")) );
+    protected boolean checkIsMyJob(AsyncActionContext asyncActionContext) {
+        if(asyncActionContext.isFileAction()) return false;
+        return "file".equals(asyncActionContext.getParameters().get("act"));
     }
 
     private void processRequest() {

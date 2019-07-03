@@ -54,10 +54,16 @@ public class WebAppController extends HttpServlet {
                 }
             }
         }
-        // 藉由 Servlet 中的子執行緒池接手後續任務，確保 Tomcat 端執行緒可以持續的接收請求給 Servlet
-        // 並且藉由每個獨立的 Runnable 隔離每個 asyncContext 處理狀態（多執行緒安全設計）
-        // 上傳和下載持續時間皆會受到 AsyncContext Timeout 的影響，所以要依照請求處理內容去定義比較適合
-        asyncContext.setTimeout(0); // 設置為 0 時表示非同步處理中無逾時限制(ms)
+        {
+            // 上傳和下載持續時間皆會受到 AsyncContext Timeout 的影響，所以要依照請求處理內容去定義比較適合
+            // 設置為 0 時表示非同步處理中無逾時限制(ms)
+            asyncContext.setTimeout(0);
+        }
+        {
+            if(null == ServletContextStatic.InstanceHolder.instance) {
+                ServletContextStatic.InstanceHolder.instance = new WeakReference<>(getServletContext()).get();
+            }
+        }
         AsyncContextRunnable asyncContextRunnable = new AsyncContextRunnable.Builder()
                 .setServletContext(new WeakReference<>(getServletContext()).get())
                 .setServletConfig(new WeakReference<>(getServletConfig()).get())
