@@ -6,22 +6,27 @@
 	version="4.0"
 	metadata-complete="true">
 
-    <display-name>testasync</display-name>
+	<display-name>testasync</display-name>
 
+    <!-- 僅由一個中樞 Servlet 控制即可 -->
     <servlet>
-        <servlet-name>testAsync</servlet-name>
+        <servlet-name>controller_servlet</servlet-name>
         <servlet-class>framework.web.servlet.WebAppController</servlet-class>
         <async-supported>true</async-supported>
     </servlet>
     <servlet-mapping>
-        <servlet-name>testAsync</servlet-name>
-        <!-- <url-pattern>/</url-pattern> -->
-        <url-pattern>/index</url-pattern>
-        <url-pattern>/file</url-pattern>
+        <servlet-name>controller_servlet</servlet-name>
+        <url-pattern>/*</url-pattern>
     </servlet-mapping>
 
+    <!-- 服務實例任務鏈建立 -->
     <listener>
         <listener-class>app.listener.AppContextListener</listener-class>
+    </listener>
+
+    <!-- 確保 UserContext 運作正常 -->
+    <listener>
+        <listener-class>framework.web.session.AppUserSessionListener</listener-class>
     </listener>
 
 </web-app>

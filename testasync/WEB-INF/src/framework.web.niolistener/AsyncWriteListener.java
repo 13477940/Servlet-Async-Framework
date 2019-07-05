@@ -90,7 +90,7 @@ public class AsyncWriteListener implements WriteListener {
             try {
                 if(null == inputStream) break;
                 int len = inputStream.read(buffer);
-                if (len > -1) {
+                if (len >= 0) {
                     out.write(buffer, 0, len);
                 } else {
                     // all byte process done

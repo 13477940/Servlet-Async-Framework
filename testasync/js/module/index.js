@@ -12,13 +12,6 @@ var testasync = {};
             async: true,
             type: "post",
             url: "/testasync/index",
-            data: {
-                page: "page",
-                a: "123",
-                b: "456",
-                c: "789",
-                d: "中文字"
-            },
             beforeSend: function() {}
         });
         ajax.done(doneFn);
@@ -35,17 +28,17 @@ var testasync = {};
 
         if (null == myfile) {
             // fData.append("page", "page");
-            fData.append("api_type", "member_login");
-            fData.append("ts", "1495423569106");
-            fData.append("token", "7c4ffb9a4b227fd13e1b6bc574572862");
-            fData.append("password", "TestPassword");
-            fData.append("unicode_test", "中文字測試");
+            // fData.append("api_type", "member_login");
+            // fData.append("ts", "1495423569106");
+            // fData.append("token", "7c4ffb9a4b227fd13e1b6bc574572862");
+            // fData.append("password", "TestPassword");
+            // fData.append("unicode_test", "中文字測試");
 
             (function() {
                 var ajax = $.ajax({
                     async: true,
                     type: "post",
-                    url: "/testasync/index",
+                    url: "/testasync/",
                     data: fData,
                     processData: false,
                     contentType: false,
@@ -61,10 +54,10 @@ var testasync = {};
                 function failFn() {}
             }());
         } else {
-            fData.append("page", "page");
-            fData.append("api_type", "member_login");
-            fData.append("ts", "1495423569106");
-            fData.append("token", "7c4ffb9a4b227fd13e1b6bc574572862");
+            // fData.append("page", "page");
+            // fData.append("api_type", "member_login");
+            // fData.append("ts", "1495423569106");
+            // fData.append("token", "7c4ffb9a4b227fd13e1b6bc574572862");
             fData.append("password", "TestPassword");
             fData.append("unicode_test", "中文字測試");
             fData.append("myfile", myfile);

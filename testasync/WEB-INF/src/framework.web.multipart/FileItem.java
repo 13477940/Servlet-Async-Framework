@@ -4,17 +4,18 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.lang.ref.WeakReference;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 
 public class FileItem {
 
-    private File file = null;
-    private String name = null;
-    private String fieldName = null;
-    private String contentType = null;
-    private Integer size = null;
-    private Boolean isFormField = null;
+    private File file;
+    private String name;
+    private String fieldName;
+    private String contentType;
+    private Integer size;
+    private Boolean isFormField;
 
     private FileItem(File file, String name, String fieldName, String contentType, Integer size, Boolean isFormField) {
         this.file = file;
@@ -74,7 +75,7 @@ public class FileItem {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return inputStream;
+        return new WeakReference<>(inputStream).get();
     }
 
     public static class Builder {

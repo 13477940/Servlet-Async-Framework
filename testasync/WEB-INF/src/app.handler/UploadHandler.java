@@ -37,7 +37,6 @@ public class UploadHandler extends RequestHandler {
                     @Override
                     public void handleMessage(Message m) {
                         super.handleMessage(m);
-                        System.out.println(uploadPath);
                     }
                 });
             }

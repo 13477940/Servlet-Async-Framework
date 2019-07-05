@@ -40,8 +40,13 @@ public class AsyncReadListener implements ReadListener {
         this.asyncContext = asyncContext;
         this.handler = handler;
         {
-            String fileName = RandomServiceStatic.getInstance().getTimeHash(8);
-            String dirSlash = System.getProperty("file.separator");
+            String fileName = RandomServiceStatic.getInstance().getTimeHash(16).toUpperCase();
+            String dirSlash;
+            {
+                String hostOS = System.getProperty("os.name");
+                dirSlash = System.getProperty("file.separator");
+                if(hostOS.toLowerCase().contains("windows")) { dirSlash = "\\\\"; }
+            }
             try {
                 this.targetFile = File.createTempFile(fileName, null, new File(servletContext.getAttribute(ServletContext.TEMPDIR).toString() + dirSlash));
                 this.targetFile.deleteOnExit();
@@ -79,7 +84,7 @@ public class AsyncReadListener implements ReadListener {
                 if(null == inputStream) break;
                 if(!inputStream.isReady()) break;
                 length = inputStream.read(buffer);
-                if(length == -1) break;
+                if(0 > length) break;
                 if(null == outputStream) break;
                 outputStream.write(buffer, 0, length);
                 Thread.onSpinWait();
@@ -92,10 +97,10 @@ public class AsyncReadListener implements ReadListener {
     @Override
     public void onAllDataRead() {
         closeStream();
-        FileItemList fileItems = null;
+        FileItemList fileItemList = null;
         {
             if(null != targetFile && targetFile.exists()) {
-                fileItems = new MultiPartParser.Builder()
+                fileItemList = new MultiPartParser.Builder()
                         .setFile(targetFile)
                         .setRepository(null)
                         .setServletContext(servletContext)
@@ -104,14 +109,14 @@ public class AsyncReadListener implements ReadListener {
                         .parse();
             }
         }
-        if(null != fileItems) {
+        if(null != fileItemList) {
             String key = "list_file_item";
             String type = "ArrayList";
             Bundle b = new Bundle();
             b.putString("status", "done");
             b.putString("key", key);
             b.putString("type", type);
-            b.put(key, fileItems);
+            b.put(key, fileItemList);
             Message m = handler.obtainMessage();
             m.setData(b);
             m.sendToTarget();
