@@ -124,6 +124,7 @@ public class AsyncActionContext {
 
     /**
      * 使用 ArrayList 回傳的原因在於保存使用者 key 輸入的順序
+     * TODO 要注意只有 tomcat 環境下才會遵守使用者傳遞過來的順序，jetty 環境則會忽略此設定(2019-07-10)
      */
     public ArrayList<String> getParameterKeys() {
         return Collections.list(this.asyncContext.getRequest().getParameterNames());
@@ -577,6 +578,7 @@ public class AsyncActionContext {
 
     /**
      * 取得請求路徑（Path），此路徑資訊不包含 protocol, domain 及 parameters 等
+     * 如果根目錄會出現 webapp name 則代表 web.xml 的 <display-name></display-name> 不是正確的 webapp name
      */
     public String getUrlPath() {
         return this.urlPath;
@@ -681,6 +683,7 @@ public class AsyncActionContext {
             }
         }
         // 請求路徑處理，去掉 ServletContextName
+        // 要注意 web.xml 中的 <display-name> 是否設定正確
         {
             try {
                 if(null == httpRequest.getRequestURL()) {
@@ -706,6 +709,7 @@ public class AsyncActionContext {
                 e.printStackTrace();
             }
         }
+
         if(null == this.urlPath) return;
         // 處理資源連結副檔名
         {

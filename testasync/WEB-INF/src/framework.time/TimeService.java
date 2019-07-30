@@ -5,7 +5,7 @@ import java.time.format.DateTimeFormatter;
 
 /**
  * 遵循 ISO 8601 格式處理適用於資料庫儲存的日期與時間字串
- * yyyy-MM-dd HH:mm:ss（年-月-日 時:分:秒）
+ * LocalDateTime - yyyy-MM-dd HH:mm:ss（年-月-日 時:分:秒）
  * 字串結果僅適合儲存或提供解析，要比較時間、調整時間等需要切換回 LocalDateTime 型態
  */
 public class TimeService {

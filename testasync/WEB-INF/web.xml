@@ -6,6 +6,7 @@
 	version="4.0"
 	metadata-complete="true">
 
+	<!-- 指定的根路徑名稱 -->
 	<display-name>testasync</display-name>
 
     <!-- 僅由一個中樞 Servlet 控制即可 -->

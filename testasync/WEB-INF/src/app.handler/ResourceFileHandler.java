@@ -14,9 +14,10 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 
 /**
- * 此 Handler 會先處理具有副檔名格式的請求，所以要注意是否有後面的 handler 需要附帶副檔名的請求，
- * 並由此處寫入避開的判斷原則才能正常使用
- * 修正 URL UTF-8 字串的問題
+ * ResourceFileHandler 會先處理所有具有副檔名格式的 URL，
+ * 所以要注意之後的 handler 是否需要處理具有副檔名的 URL，
+ * 如果需要另外處理請由此處寫入避開的判斷原則才能正常傳遞請求。
+ * - 修正 URL UTF-8 字串的問題
  */
 public class ResourceFileHandler extends RequestHandler {
 
@@ -34,9 +35,8 @@ public class ResourceFileHandler extends RequestHandler {
 
     @Override
     protected boolean checkIsMyJob(AsyncActionContext asyncActionContext) {
-        if(asyncActionContext.isFileAction()) return false;
-        if(asyncActionContext.getUrlPath().contains("WEB-INF")) return false;
-        if(asyncActionContext.getUrlPath().contains("/upfile")) return false;
+        if(asyncActionContext.isFileAction()) return false; // 排除上傳檔案請求
+        if(asyncActionContext.getUrlPath().contains("/WEB-INF")) return false; // 基本安全機制
         return (null != asyncActionContext.getResourceExtension() && asyncActionContext.getResourceExtension().length() > 0);
     }
 

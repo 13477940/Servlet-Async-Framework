@@ -11,8 +11,8 @@ import java.util.ArrayList;
 
 /**
  * implement by UrielTech.com TomLi.
- * 190704 初步模塊化程式碼，增加可讀性
- * 190705 重構完成並修正可能發生的 byte 取碼錯誤問題
+ * 190704 發現有部分檔案可能造成解析錯誤，初步修復模塊化程式碼，增加可讀性
+ * 190705 重構完成並修正可能發生的 byte 取碼處理錯誤問題
  */
 public class MultiPartParser {
 
@@ -42,12 +42,10 @@ public class MultiPartParser {
      */
     public FileItemList parse() {
         if(null == file || !file.exists()) return null;
-        FileItemList fileItemList;
         byte[] byte_boundary = getBoundaryByteArray();
         ArrayList<Integer> list_boundary_index = getBoundaryIndexList(byte_boundary);
         if(list_boundary_index.size() <= 2) return null;
-        fileItemList = getFileItemList(byte_boundary, list_boundary_index);
-        return fileItemList;
+        return getFileItemList(byte_boundary, list_boundary_index);
     }
 
     private FileItemList getFileItemList(byte[] byte_boundary, ArrayList<Integer> list_boundary_index) {
@@ -100,7 +98,7 @@ public class MultiPartParser {
             int nowMatchCount = 0;
             int checkToNextByteCount = 0;
             int index = 0;
-            // 逐個 byte 檢查，連續命中時才累計
+            // 逐個 byte 檢查，故連續命中時才累計
             while(true) {
                 if(null == inputStream) break;
                 if(-1 >= inputStream.read(buffer)) break;
