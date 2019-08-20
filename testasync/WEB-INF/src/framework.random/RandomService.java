@@ -1,11 +1,14 @@
 package framework.random;
 
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * 基礎的亂數字串取得方法
+ * ThreadLocalRandom 相當於 Random 且提供更好的效能，但並不代表隨機性有所提高
+ * SecureRandom 為較安全的亂數產生類別，除了系統時間種子外會加上其他因素來達成不可預測的隨機數
+ * https://www.cnblogs.com/deng-cc/p/8064481.html
  */
 public abstract class RandomService {
 
@@ -14,7 +17,11 @@ public abstract class RandomService {
     private final String ranUpCaseStr = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     private final int defaultSize = 8; // default random string length
 
-    RandomService() {}
+    private SecureRandom random;
+
+    RandomService() {
+        random = new SecureRandom();
+    }
 
     /**
      * now millisecond + [random string]
@@ -48,10 +55,9 @@ public abstract class RandomService {
      */
     public String getRandomString(int ranStrLength) {
         StringBuilder sbd = new StringBuilder();
-        ThreadLocalRandom localRandom = ThreadLocalRandom.current();
         for(int i = 0; i < ranStrLength; i++) {
             int strLen = ranStr.length();
-            int iRan = localRandom.nextInt(strLen);
+            int iRan = random.nextInt(strLen);
             char t = ranStr.charAt(iRan);
             sbd.append(t);
         }
@@ -63,10 +69,9 @@ public abstract class RandomService {
      */
     public String getUpCaseRandomString(int ranStrLength) {
         StringBuilder sbd = new StringBuilder();
-        ThreadLocalRandom localRandom = ThreadLocalRandom.current();
         for(int i = 0; i < ranStrLength; i++) {
             int strLen = ranUpCaseStr.length();
-            int iRan = localRandom.nextInt(strLen);
+            int iRan = random.nextInt(strLen);
             char t = ranUpCaseStr.charAt(iRan);
             sbd.append(t);
         }
@@ -78,10 +83,9 @@ public abstract class RandomService {
      */
     public String getRandomNumber(int ranNumLength) {
         StringBuilder sbd = new StringBuilder();
-        ThreadLocalRandom localRandom = ThreadLocalRandom.current();
         for(int i = 0; i < ranNumLength; i++) {
             int strLen = ranNum.length();
-            int iRan = localRandom.nextInt(strLen);
+            int iRan = random.nextInt(strLen);
             char t = ranNum.charAt(iRan);
             sbd.append(t);
         }
@@ -92,7 +96,7 @@ public abstract class RandomService {
      * 取得兩整數之間的亂數值
      */
     public int getRangeRandom(int numL, int numR) {
-        // 確保左小右大原則，保護亂數產生器
+        // 維持左小右大原則，保護亂數產生器運算正常
         int tmp;
         if (numL > numR) {
             tmp = numR;
@@ -102,8 +106,7 @@ public abstract class RandomService {
         // 製作亂數
         int min = numL;
         int max = numR + 1; // +1 表示有機率出現最大值本身
-        ThreadLocalRandom localRandom = ThreadLocalRandom.current();
-        return localRandom.nextInt(max+1-min)+min;
+        return random.nextInt( max + 1 - min ) + min;
     }
 
 }

@@ -16,7 +16,7 @@ import java.util.Objects;
  * AppSetting 主要管理作業系統判斷、WebApp 名稱與統一的檔案路徑，
  * 在運行 Tomcat 的 WebApp 中會直接藉由 WEB-INF 資料夾作為定位點，
  * 非 Tomcat 環境中則需要由使用者自行創建一個 baseFileDir 作為定位點。
- * ！當 AppSetting 於多層次的 jar 檔封裝後可能會造成路徑無法取得的問題
+ * 要注意 AppSetting 於多層次的 jar 檔封裝後可能會有路徑無法取得的問題發生。
  */
 public class AppSetting {
 

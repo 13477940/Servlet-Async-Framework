@@ -7,10 +7,10 @@ import java.nio.charset.StandardCharsets;
 
 /**
  * FileFinder 並不是萬能的，搜尋原理為每一個資料夾階層查詢一次檔案名稱，
- * 依序往上尋找父階層與其指定資料夾下一階層的內容是否具有查詢目標，
- * 要注意此處不能使用 AppSetting.java 要不然會有重複嵌套的邏輯錯誤發生，
- * 主要是因為 AppSetting.java 改為 new Builder() 模式，所以每次都會重新建立實例，
- * 如果在互相引用的情況下會重複的互相引用
+ * 依序往上尋找父階層與其指定資料夾下一階層的內容是否具有查詢目標。
+ * 要注意此處不能使用 AppSetting 要不然會有重複嵌套的邏輯錯誤發生，
+ * 主要是因為 AppSetting 改為 new Builder() 模式，所以每次都會重新建立實例，
+ * 如果在此類別引用 AppSetting 的情況下會造成無窮迴圈的錯誤。
  * https://stackoverflow.com/questions/37902711/getting-the-path-of-a-running-jar-file-returns-rsrc
  */
 public class FileFinder {
@@ -55,9 +55,7 @@ public class FileFinder {
 
     // 該階層與往上查找的階層內的：子資料夾路徑 + 資料夾名稱 or 檔案名稱
     public File find(String fileDirectoryName, String fileName) {
-        File res = findFunc(this.baseFile, fileDirectoryName, fileName);
-        if(null == res) return null;
-        return res;
+        return findFunc(this.baseFile, fileDirectoryName, fileName);
     }
 
     // 藉由迴圈替代遞迴實作訪問資料夾的動作

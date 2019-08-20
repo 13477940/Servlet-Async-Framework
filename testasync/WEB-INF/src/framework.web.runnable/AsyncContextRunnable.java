@@ -24,9 +24,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * 請求封裝層類別關係：
  * WebAppController > AsyncContextRunnable
- * 此為轉換 HttpRequest 為 AsyncActionContext 的中介層角色，
- * 封裝每一次 HttpRequest 為標準化格式，方便後續 RequestHandler 統一使用。
+ * 此類別封裝 HttpRequest 於 AsyncActionContext 之中，
+ * 進入 RequestHandler 中將以 AsyncActionContext 型態處理請求內容為主。
  */
 public class AsyncContextRunnable implements Runnable {
 
