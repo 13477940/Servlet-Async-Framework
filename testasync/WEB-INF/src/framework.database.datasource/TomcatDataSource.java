@@ -14,6 +14,7 @@ import java.sql.Connection;
  * https://tomcat.apache.org/tomcat-9.0-doc/jdbc-pool.html
  * 版本會跟著 Apache Tomcat 步進，相容性 JDK 則依照其需求即可
  * --- required jar file ---
+ * 非 servlet 容器環境時兩者都要被帶入至 java app 引用才能正常使用
  * tomcat/bin/tomcat-juli.jar [ not require for jetty ]
  * tomcat/lib/tomcat-jdbc.jar
  */

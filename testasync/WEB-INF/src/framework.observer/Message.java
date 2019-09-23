@@ -1,5 +1,8 @@
 package framework.observer;
 
+import java.lang.ref.WeakReference;
+import java.util.Objects;
+
 public class Message {
 
     private String messageName;
@@ -9,11 +12,11 @@ public class Message {
     public Message() {}
 
     public Message(Handler handler) {
-        this.handler = handler;
+        this.handler = new WeakReference<>(handler).get();
     }
 
     public void setData(Bundle bundle) {
-        this.bundle = bundle;
+        this.bundle = new WeakReference<>(bundle).get();
     }
 
     public Bundle getData() {
@@ -46,11 +49,7 @@ public class Message {
 
     @Override
     public String toString() {
-        if(null == this.bundle) {
-            return null;
-        } else {
-            return this.bundle.prototype().toString();
-        }
+        return Objects.requireNonNullElse(this.bundle.prototype().toString(), null);
     }
 
 }

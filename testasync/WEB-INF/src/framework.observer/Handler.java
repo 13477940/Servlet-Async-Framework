@@ -1,5 +1,6 @@
 package framework.observer;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 
 /**
@@ -21,7 +22,7 @@ public class Handler {
     }
 
     public Message obtainMessage() {
-        Message m = new Message(this);
+        Message m = new WeakReference<>(new Message(this)).get();
         msgList.add(m);
         return m;
     }

@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.Objects;
 
 /**
+ * 請求封裝層類別關係：
  * WebAppController > AsyncContextRunnable > AsyncActionContext
  */
 public class AsyncActionContext {
