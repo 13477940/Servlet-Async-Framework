@@ -20,7 +20,8 @@ public class SessionCounter {
     }
 
     /**
-     * 所有活躍中的使用者數量，包含未登入狀態的訪客
+     * 所有存活中的 Session 使用者數量，包含未登入狀態的訪客
+     * 如果要計算真實人數請使用 WebSocket 較為準確
      */
     public static int userCount() {
         return onlineCount.size();

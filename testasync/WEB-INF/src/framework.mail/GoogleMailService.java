@@ -13,7 +13,7 @@ import java.util.Date;
 import java.util.Properties;
 
 /**
- * only for google mail service used.
+ * this implement only for send google mail service used.
  * 如果要連接其他信箱服務，請由 MailService 介面實作
  */
 public class GoogleMailService implements MailService {

@@ -421,21 +421,17 @@ public class HttpClient {
     }
 
     private void processTextResponse(InputStream inputStream, Handler handler) {
-        BufferedInputStream bis = new BufferedInputStream(inputStream);
-        {
-            Bundle b = new Bundle();
-            b.put("status", "done");
-            b.put("resp_type", "text");
-            try {
-                b.put("data", new String(bis.readAllBytes(), StandardCharsets.UTF_8));
-                bis.close(); // flush and close input stream
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            Message m = handler.obtainMessage();
-            m.setData(b);
-            m.sendToTarget();
+        Bundle b = new Bundle();
+        b.put("status", "done");
+        b.put("resp_type", "text");
+        try( BufferedInputStream bis = new BufferedInputStream(inputStream) ) {
+            b.put("data", new String(bis.readAllBytes(), StandardCharsets.UTF_8));
+        } catch (Exception e) {
+            e.printStackTrace();
         }
+        Message m = handler.obtainMessage();
+        m.setData(b);
+        m.sendToTarget();
     }
 
     private void processFileResponse(InputStream inputStream, Handler handler) {

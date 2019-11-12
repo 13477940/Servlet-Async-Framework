@@ -3,6 +3,7 @@ package framework.database.datasource;
 import framework.database.connection.ConnectContext;
 import framework.database.connection.ConnectorConfig;
 import framework.database.interfaces.ConnectionPool;
+import framework.thread.ThreadPoolStatic;
 
 import java.lang.ref.WeakReference;
 import java.sql.Connection;
@@ -11,7 +12,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 /**
  * 基礎資料庫連線方式，此類別為無 Connection Pool 技術可採用時才選擇的方案
@@ -49,17 +49,20 @@ public class SimpleDataSource extends ConnectorConfig implements ConnectionPool 
                     dbContext.getDB_Port(),
                     dbContext.getDB_Name()
             );
-            conn = DriverManager.getConnection(connectURI, dbContext.getDB_ACC(), dbContext.getDB_PWD());
-
-            conn.setAutoCommit(false); // AutoCommit
-            HashMap<String, Object> connObj = new HashMap<>();
-            connObj.put("time", String.valueOf(System.currentTimeMillis()));
-            connObj.put("connection", conn);
-            pool.add(connObj);
+            conn = new WeakReference<>(
+                    DriverManager.getConnection(connectURI, dbContext.getDB_ACC(), dbContext.getDB_PWD())
+            ).get();
+            if(null != conn) {
+                conn.setAutoCommit(false); // AutoCommit
+                HashMap<String, Object> connObj = new HashMap<>();
+                connObj.put("time", String.valueOf(System.currentTimeMillis()));
+                connObj.put("connection", conn);
+                pool.add(connObj);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return new WeakReference<>(conn).get();
+        return conn;
     }
 
     @Override
@@ -108,13 +111,14 @@ public class SimpleDataSource extends ConnectorConfig implements ConnectionPool 
 
     // 簡易連接池回收管理
     private void setupSimpleManager() {
-        if(null == worker) worker = Executors.newCachedThreadPool();
+        if(null == worker) worker = ThreadPoolStatic.getInstance();
         worker.submit(() -> {
             while(runTag) {
                 for (HashMap<String, Object> connObj : pool) {
+                    // 檢查是否有逾時的 Connection 未被關閉
                     try {
                         long nowTime = System.currentTimeMillis();
-                        long connTime = Long.valueOf(String.valueOf(connObj.get("time")));
+                        long connTime = Long.parseLong(String.valueOf(connObj.get("time")));
                         Connection conn = (Connection) connObj.get("connection");
                         if( ( nowTime - connTime ) > maxActiveSecond ) {
                             if(!conn.isClosed()) conn.close();

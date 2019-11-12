@@ -17,15 +17,13 @@ import javax.servlet.http.HttpSession;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.InputStream;
+import java.lang.ref.WeakReference;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * 請求封裝層類別關係：
@@ -43,6 +41,7 @@ public class AsyncActionContext {
     private HashMap<String, String> headers;
     private HashMap<String, String> params;
     private FileItemList files; // 已被暫存的檔案（不包含文字表單內容）
+
     private String urlPath = null;
     private String resourceExten = null; // 請求路徑資源的副檔名，若不具有副檔名則回傳 null
 
@@ -66,24 +65,27 @@ public class AsyncActionContext {
         } else {
             // Servlet Async Listener
             {
-                this.asyncContext.addListener(new AsyncListener() {
+                AsyncListener asyncListener = new WeakReference<AsyncListener>(
+                    new AsyncListener() {
 
-                    @Override
-                    public void onStartAsync(AsyncEvent asyncEvent) { asyncStatus = "onStartAsync"; }
+                        @Override
+                        public void onStartAsync(AsyncEvent asyncEvent) { asyncStatus = "onStartAsync"; }
 
-                    @Override
-                    public void onComplete(AsyncEvent asyncEvent) {
-                        asyncStatus = "onComplete";
-                        isComplete = true;
+                        @Override
+                        public void onComplete(AsyncEvent asyncEvent) {
+                            asyncStatus = "onComplete";
+                            isComplete = true;
+                        }
+
+                        @Override
+                        public void onError(AsyncEvent asyncEvent) { asyncStatus = "onError"; }
+
+                        @Override
+                        public void onTimeout(AsyncEvent asyncEvent) { asyncStatus = "onTimeout"; }
+
                     }
-
-                    @Override
-                    public void onError(AsyncEvent asyncEvent) { asyncStatus = "onError"; }
-
-                    @Override
-                    public void onTimeout(AsyncEvent asyncEvent) { asyncStatus = "onTimeout"; }
-
-                });
+                ).get();
+                this.asyncContext.addListener(asyncListener);
             }
             // 初始化 request context
             try {
@@ -124,8 +126,9 @@ public class AsyncActionContext {
     }
 
     /**
-     * 使用 ArrayList 回傳的原因在於保存使用者 key 輸入的順序
-     * TODO 要注意只有 tomcat 環境下才會遵守使用者傳遞過來的順序，jetty 環境則會忽略此設定(2019-07-10)
+     * 回傳 HttpRequest Parameter Keys
+     * 要注意 tomcat 環境中會依照使用者傳遞的參數順序，而 jetty 並不會依照使用者傳遞的順序
+     * 如果需要驗證傳遞內容的功能，則應該採用 base64-url-safe-withoutPadding 儲存內容去溝通
      */
     public ArrayList<String> getParameterKeys() {
         return Collections.list(this.asyncContext.getRequest().getParameterNames());
@@ -624,7 +627,11 @@ public class AsyncActionContext {
         }
         File tempFile;
         try {
-            tempFile = File.createTempFile(RandomServiceStatic.getInstance().getTimeHash(3), null, new File(tomcat_temp.getPath() + dirSlash));
+            tempFile = File.createTempFile(
+                    RandomServiceStatic.getInstance().getTimeHash(3),
+                    null,
+                    new File(tomcat_temp.getPath() + dirSlash)
+            );
             tempFile.deleteOnExit();
             Files.copy(asyncContext.getRequest().getInputStream(), tempFile.toPath());
         } catch (Exception e) {
@@ -643,8 +650,8 @@ public class AsyncActionContext {
     }
 
     /**
-     * 非同步的 ServletOutputStream 因為綁定於 WriteListener 管理，
-     * 所以只能有一次的輸出機會，請於請求完成後處理完所有需要輸出的內容合併輸出
+     * 非同步架構下 ServletOutputStream 綁定於 WriteListener 管理，
+     * 所以會只有一次的輸出機制，請將輸出資料合併輸出至單一個 WriteListener
      */
     private boolean checkIsOutput() {
         if(isOutput) {
@@ -660,6 +667,7 @@ public class AsyncActionContext {
 
     /**
      * 處理 URL 路徑的解析（去除協定、域名及參數）
+     * 191112 修改為保留前端輸入網址的大小寫（確保大小寫敏感磁區運作邏輯）
      */
     private void processUrlParse() {
         // HttpServletRequest 取得
@@ -696,9 +704,9 @@ public class AsyncActionContext {
                     StringBuilder sURL = new StringBuilder();
                     sURL.append("/"); // root path
                     for (int i = 0, len = sLoca.length; i < len; i++) {
-                        String tmp = URLDecoder.decode(Objects.requireNonNullElse(sLoca[i], "").trim().toLowerCase(), StandardCharsets.UTF_8);
+                        String tmp = URLDecoder.decode(Objects.requireNonNullElse(sLoca[i], "").trim(), StandardCharsets.UTF_8);
                         if( i == 0 ) { continue; } // domain name
-                        if( i == 1 && tmp.equals(servletContext.getServletContextName().toLowerCase()) ) { continue; } // app name
+                        if( i == 1 && tmp.equals(servletContext.getServletContextName()) ) { continue; } // app name
                         // 網址處理後除了 domain name 及 app name 之外都會被當作 URI 字串內容
                         // example > http://localhost/webappname/a/index 處理後會變成 /a/index 字串
                         sURL.append(tmp);
@@ -776,6 +784,7 @@ public class AsyncActionContext {
         }
     }
 
+    @SuppressWarnings("UnusedReturnValue")
     public static class Builder {
 
         private ServletContext servletContext;

@@ -36,7 +36,7 @@ public class FileItem {
         return this.name;
     }
 
-    public void setFieldName(String fieldName) { this.fieldName = fieldName; };
+    public void setFieldName(String fieldName) { this.fieldName = fieldName; }
     public String getFieldName() {
         return this.fieldName;
     }

@@ -6,7 +6,7 @@ import java.io.FileWriter;
 
 public class TextFileWriter {
 
-    private File targetFile = null;
+    private File targetFile;
 
     private BufferedWriter bufferedWriter = null;
     private FileWriter fileWriter = null;

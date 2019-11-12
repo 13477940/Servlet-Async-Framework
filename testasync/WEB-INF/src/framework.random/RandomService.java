@@ -1,5 +1,6 @@
 package framework.random;
 
+import java.lang.ref.WeakReference;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -12,15 +13,16 @@ import java.time.format.DateTimeFormatter;
  */
 public abstract class RandomService {
 
-    private final String ranStr = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    private final String ranNum = "0123456789";
-    private final String ranUpCaseStr = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    private final String str_num = "0123456789";
+    private final String str_lower_num = "abcdefghijklmnopqrstuvwxyz0123456789";
+    private final String str_full = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
     private final int defaultSize = 8; // default random string length
 
     private SecureRandom random;
 
     RandomService() {
-        random = new SecureRandom();
+        random = new WeakReference<>( new SecureRandom() ).get();
     }
 
     /**
@@ -28,10 +30,12 @@ public abstract class RandomService {
      * 藉由時間戳記與亂數字串生成一筆雜湊字串，亦可以藉由增加亂數字串長度減少重複機率
      */
     public String getTimeHash(int ranStrLength) {
-        StringBuilder sbd = new StringBuilder();
         String tmp = String.valueOf(System.currentTimeMillis());
-        sbd.append(tmp);
-        sbd.append(getRandomString(ranStrLength));
+        StringBuilder sbd = new StringBuilder();
+        {
+            sbd.append(tmp);
+            sbd.append(getRandomString(ranStrLength));
+        }
         return sbd.toString();
     }
     public String getTimeHash() {
@@ -42,7 +46,7 @@ public abstract class RandomService {
      * now datetime string + [random string]
      * 輸出 20191231121109 + [random string] 的日期時間字串含亂數模式
      */
-    public String getTimeStringHash(int ranStrLength) {
+    public String getDateTimeStringHash(int ranStrLength) {
         LocalDateTime ldt = LocalDateTime.now();
         String dtStr = ldt.format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
         return dtStr + getRandomString(ranStrLength);
@@ -55,45 +59,45 @@ public abstract class RandomService {
      */
     public String getRandomString(int ranStrLength) {
         StringBuilder sbd = new StringBuilder();
+        int strLen = str_full.length();
         for(int i = 0; i < ranStrLength; i++) {
-            int strLen = ranStr.length();
             int iRan = random.nextInt(strLen);
-            char t = ranStr.charAt(iRan);
+            char t = str_full.charAt(iRan);
             sbd.append(t);
         }
         return sbd.toString();
     }
 
     /**
-     * 由於大小寫不敏感時重複的大小寫英文參數會影響亂數公平機率所以分出此方法
+     * 產生一組大小寫不敏感的英數亂數字串
      */
-    public String getUpCaseRandomString(int ranStrLength) {
+    public String getLowerCaseRandomString(int ranStrLength) {
         StringBuilder sbd = new StringBuilder();
+        int strLen = str_lower_num.length();
         for(int i = 0; i < ranStrLength; i++) {
-            int strLen = ranUpCaseStr.length();
             int iRan = random.nextInt(strLen);
-            char t = ranUpCaseStr.charAt(iRan);
+            char t = str_lower_num.charAt(iRan);
             sbd.append(t);
         }
         return sbd.toString();
     }
 
     /**
-     * 取得一組連續亂數的整數字串
+     * 產生一組整數值亂數字串
      */
     public String getRandomNumber(int ranNumLength) {
         StringBuilder sbd = new StringBuilder();
+        int strLen = str_num.length();
         for(int i = 0; i < ranNumLength; i++) {
-            int strLen = ranNum.length();
             int iRan = random.nextInt(strLen);
-            char t = ranNum.charAt(iRan);
+            char t = str_num.charAt(iRan);
             sbd.append(t);
         }
         return sbd.toString();
     }
 
     /**
-     * 取得兩整數之間的亂數值
+     * 取得兩整數之間的整數亂數值
      */
     public int getRangeRandom(int numL, int numR) {
         // 維持左小右大原則，保護亂數產生器運算正常

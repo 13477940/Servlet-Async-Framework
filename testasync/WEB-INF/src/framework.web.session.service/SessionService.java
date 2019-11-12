@@ -18,7 +18,7 @@ public abstract class SessionService {
      * 也有可能只是查詢 userMap 的內容為起點
      */
     SessionService() {
-        this.userMap = new SessionService.UserMapInstance();
+        this.userMap = new UserMapInstance();
     }
 
     public void addUser(UserContext userContext) {
@@ -93,7 +93,7 @@ public abstract class SessionService {
     }
 
     /**
-     * 將所有使用者狀態更改為登出系統，適用於大型更新後需強迫使用者刷新頁面時
+     * 清空所有 Session 使用者目前的 Session 內容
      */
     public void logoutAllUser() {
         if(null == userMap) return;
@@ -103,6 +103,6 @@ public abstract class SessionService {
         clearUserMap();
     }
 
-    class UserMapInstance extends UserMap {}
+    private static class UserMapInstance extends UserMap {}
 
 }
