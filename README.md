@@ -10,11 +10,11 @@ It's a tomcat webapp for processing asynchronous http request task simple framew
 ＊實作類似於 Android Handler 功能處理後端非同步任務（Android Handler Instance for Servlet AsyncTask）
 
 # 使用需求（Require）
-[1] Java JDK 8+(recommend use latest version)<br/>
-[2] <a href="https://github.com/square/okhttp">OKHTTP</a><br/>
-[3] <a href="https://github.com/square/okio">OKIO</a><br/>
-[4] <a href="https://github.com/javaee/javamail">JavaMail</a><br/>
-[5] <a href="https://github.com/javaee/activation">javax.activation</a><br/>
+[1] Java OpenJDK 8+(recommend use latest version)<br/>
+[2] <a href="https://github.com/square/okhttp">OkHTTP</a><br/>
+[3] <a href="https://github.com/square/okio">OkIO</a><br/>
+[4] <a href="https://eclipse-ee4j.github.io/mail/">Jakarta Mail</a><br/>
+[5] <a href="https://eclipse-ee4j.github.io/jaf/">Jakarta Activation</a><br/>
 [6] Apache Tomcat 8.5+ or Jetty(attention JDBC use)<br/>
 [7] put "testasync" files to "tomcat/webapps/testasync" folder<br/>
 <!-- [4] tomcat/webapps/testasync/WEB-INF/lib/ -> put <a href="https://github.com/alibaba/fastjson">alibaba/fastjson</a> lib -->
