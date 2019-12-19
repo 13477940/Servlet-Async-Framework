@@ -13,7 +13,7 @@ import java.util.Arrays;
 import java.util.Objects;
 
 /**
- * 此 Framework 概念中每一次的 SQL 指令請求都代表一個獨立的 DatabaseAction
+ * 此 Framework 核心概念中每一次的 SQL 指令請求都代表一個獨立的 DatabaseAction
  */
 public class DatabaseAction {
 
@@ -45,14 +45,16 @@ public class DatabaseAction {
         // 設定 PreparedStatement
         {
             try {
-                PreparedStatement preState = conn.prepareStatement(sql);
+                PreparedStatement preState = new WeakReference<>( conn.prepareStatement(sql) ).get();
                 if(null != parameters && parameters.size() > 0) {
                     for(int i = 0, len = parameters.size(); i < len; i++) {
                         String value = parameters.get(i);
                         // PreparedStatement is start at 1 to N
+                        assert preState != null;
                         preState.setString(i+1, value);
                     }
                 }
+                assert preState != null;
                 preState.setEscapeProcessing(true);
                 preparedStatement = preState; // 可用時
             } catch (Exception e) {
@@ -108,7 +110,7 @@ public class DatabaseAction {
         Savepoint savepoint = null;
         try {
             if (!autoCommit) savepoint = conn.setSavepoint();
-            ResultSet rs = new WeakReference<>(preparedStatement.executeQuery()).get();
+            ResultSet rs = new WeakReference<>( preparedStatement.executeQuery() ).get();
             resultSetToDataRow(rs, handler, savepoint);
         } catch (Exception e) {
             e.printStackTrace();

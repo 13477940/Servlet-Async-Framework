@@ -14,6 +14,7 @@ import java.time.format.DateTimeFormatter;
 public abstract class RandomService {
 
     private final String str_num = "0123456789";
+    private final String str_upper_num = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     private final String str_lower_num = "abcdefghijklmnopqrstuvwxyz0123456789";
     private final String str_full = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
@@ -69,7 +70,7 @@ public abstract class RandomService {
     }
 
     /**
-     * 產生一組大小寫不敏感的英數亂數字串
+     * 產生一組小寫英文的英數亂數字串
      */
     public String getLowerCaseRandomString(int ranStrLength) {
         StringBuilder sbd = new StringBuilder();
@@ -77,6 +78,20 @@ public abstract class RandomService {
         for(int i = 0; i < ranStrLength; i++) {
             int iRan = random.nextInt(strLen);
             char t = str_lower_num.charAt(iRan);
+            sbd.append(t);
+        }
+        return sbd.toString();
+    }
+
+    /**
+     * 產生一組大寫英文的英數亂數字串
+     */
+    public String getUpperCaseRandomString(int ranStrLength) {
+        StringBuilder sbd = new StringBuilder();
+        int strLen = str_upper_num.length();
+        for(int i = 0; i < ranStrLength; i++) {
+            int iRan = random.nextInt(strLen);
+            char t = str_upper_num.charAt(iRan);
             sbd.append(t);
         }
         return sbd.toString();

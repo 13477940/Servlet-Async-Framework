@@ -105,7 +105,8 @@ public class TomcatDataSource extends ConnectorConfig implements ConnectionPool 
             sbd.append("org.apache.tomcat.jdbc.pool.interceptor.StatementFinalizer");
         }
         poolConfig.setJdbcInterceptors(sbd.toString());
-        dataSource = new DataSource();
+        dataSource = new WeakReference<>( new DataSource() ).get();
+        assert dataSource != null;
         dataSource.setPoolProperties(poolConfig);
     }
 

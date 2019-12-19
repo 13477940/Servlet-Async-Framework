@@ -1,5 +1,7 @@
 package framework.database.connection;
 
+import java.util.Objects;
+
 public abstract class ConnectorConfig {
 
     /**
@@ -7,21 +9,28 @@ public abstract class ConnectorConfig {
      */
     protected static String getDriverClassName(String databaseType) {
         String res = null;
-        String check = String.valueOf(databaseType).trim().toLowerCase();
-        switch(check) {
-            case "postgresql":
-                res = "org.postgresql.Driver";
-                break;
-            case "mssql":
+        String dbType = Objects.requireNonNullElse(databaseType, "").trim().toLowerCase();
+        switch(dbType) {
+            case "mssql": {
                 res = "com.microsoft.sqlserver.jdbc.SQLServerDriver";
-                break;
-            case "mysql":
-                // res = "com.mysql.jdbc.Driver"; // old version
-                res = "com.mysql.cj.jdbc.Driver"; // mysql 8.0+
-                break;
-            case "mariadb":
+            } break;
+            case "postgresql": {
+                res = "org.postgresql.Driver";
+            } break;
+            case "mysql": {
+                // res = "com.mysql.jdbc.Driver"; // old MySQL version
+                res = "com.mysql.cj.jdbc.Driver"; // MySQL 8.0+
+            } break;
+            case "mariadb": {
                 res = "org.mariadb.jdbc.Driver";
-                break;
+            } break;
+            default: {
+                try {
+                    throw new Exception("錯誤的資料庫類型，應為：sqlserver, postgresql, mysql, mariadb");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            } break;
         }
         return res;
     }
@@ -38,28 +47,28 @@ public abstract class ConnectorConfig {
      */
     protected static String getConnectURI(String DB_Type, String DB_IP, String DB_Port, String DB_Name, Boolean useSecurity) {
         StringBuilder sbd = new StringBuilder();
-        String check = String.valueOf(DB_Type).trim().toLowerCase();
-        String ip = String.valueOf(DB_IP).trim();
-        String port = String.valueOf(DB_Port).trim();
-        String dbName = String.valueOf(DB_Name).trim();
-        switch(check) {
-            case "mssql":
+        String dbType = Objects.requireNonNullElse(DB_Type, "").trim().toLowerCase();
+        String ip = Objects.requireNonNullElse(DB_IP, "").trim();
+        String port = Objects.requireNonNullElse(DB_Port, "").trim();
+        String dbName = Objects.requireNonNullElse(DB_Name, "").trim();
+        switch(dbType) {
+            case "sqlserver": {
                 sbd.append("jdbc:sqlserver://");
                 sbd.append(ip);
                 sbd.append(":");
                 sbd.append(port);
                 sbd.append(";databaseName=");
                 sbd.append(dbName);
-                break;
-            case "postgresql":
+            } break;
+            case "postgresql": {
                 sbd.append("jdbc:postgresql://");
                 sbd.append(ip);
                 sbd.append(":");
                 sbd.append(port);
                 sbd.append("/");
                 sbd.append(dbName);
-                break;
-            case "mysql":
+            } break;
+            case "mysql": {
                 sbd.append("jdbc:mysql://");
                 sbd.append(ip);
                 sbd.append(":");
@@ -69,7 +78,7 @@ public abstract class ConnectorConfig {
                 // MySQL 體系要採用 utf8mb4/utf8mb4_0900_ai_ci 才能正常支援所有 Unicode 字集
                 // 新增 NULL 值處理原則，zeroDateTimeBehavior=convertToNull
                 // 更新到 MySQL 8.0 以及 JDBC 版本的需求更改 zeroDateTimeBehavior=CONVERT_TO_NULL
-                if(!useSecurity) {
+                if (!useSecurity) {
                     sbd.append("?useSSL=false");
                 } else {
                     sbd.append("?useSSL=true");
@@ -81,15 +90,15 @@ public abstract class ConnectorConfig {
                 sbd.append("&zeroDateTimeBehavior=CONVERT_TO_NULL");
                 sbd.append("&serverTimezone=CST");
                 sbd.append("&useServerPrepStmts=true");
-                break;
-            case "mariadb":
+            } break;
+            case "mariadb": {
                 sbd.append("jdbc:mariadb://");
                 sbd.append(ip);
                 sbd.append(":");
                 sbd.append(port);
                 sbd.append("/");
                 sbd.append(dbName);
-                if(!useSecurity) {
+                if (!useSecurity) {
                     sbd.append("?useSSL=false");
                 } else {
                     sbd.append("?useSSL=true");
@@ -97,7 +106,14 @@ public abstract class ConnectorConfig {
                 }
                 sbd.append("&useUnicode=true");
                 sbd.append("&CharacterEncoding=utf8mb4");
-                break;
+            } break;
+            default: {
+                try {
+                    throw new Exception("錯誤的資料庫類型，應為：sqlserver, postgresql, mysql, mariadb");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            } break;
         }
         return sbd.toString();
     }

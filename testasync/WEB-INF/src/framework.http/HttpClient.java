@@ -18,17 +18,23 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 /**
+ * [required openJDK 11+]
  * https://docs.oracle.com/en/java/javase/11/docs/api/java.net.http/java/net/http/HttpClient.html
  * http://openjdk.java.net/groups/net/httpclient/intro.html
  * implement by UrielTech.com TomLi.
  * 基於 java.net.http.HttpClient 的功能實作封裝
  * 並模擬類似 OkHttp 方式處理
- * required JDK 11+
+ *
+ * old jdk version please use: https://github.com/square/okhttp
+ * https://mvnrepository.com/artifact/com.squareup.okhttp3/okhttp
+ *
+ * #191218 修正檔案下載處理的行為與回傳值可自定義處理的內容
  */
 public class HttpClient {
 
@@ -38,12 +44,14 @@ public class HttpClient {
     private HashMap<String, String> parameters;
     private HashMap<String, File> files;
     private boolean alwaysDownload;
-    private final String tempDirName = "[temp]";
+    private String tempDirPath; // 自定義下載暫存資料夾路徑
+    private String tempDirName = "http_client_temp";
+    private boolean tempFileDeleteOnExit;
 
     private java.net.http.HttpClient.Version httpVersion = java.net.http.HttpClient.Version.HTTP_2; // default
     private java.net.http.HttpClient.Redirect httpRedirect = java.net.http.HttpClient.Redirect.NORMAL; // default
 
-    private HttpClient(String url, HashMap<String, String> headers, HashMap<String, String> parameters, HashMap<String, File> files, Boolean alwaysDownload) {
+    private HttpClient(String url, HashMap<String, String> headers, HashMap<String, String> parameters, HashMap<String, File> files, Boolean alwaysDownload, Boolean tempFileDeleteOnExit, String tempDirPath, String tempDirName) {
         this.url = null;
         {
             if(url.contains("?")) {
@@ -85,6 +93,17 @@ public class HttpClient {
         this.parameters = parameters;
         this.files = files;
         this.alwaysDownload = Objects.requireNonNullElse(alwaysDownload, false);
+        this.tempFileDeleteOnExit = Objects.requireNonNullElse(tempFileDeleteOnExit, true);
+        {
+            if(null == tempDirPath) {
+                this.tempDirPath = new AppSetting.Builder().setAppName(this.tempDirName).build().getPathContext().getTempDirPath();
+            } else {
+                this.tempDirPath = tempDirPath;
+            }
+            if(null != tempDirName) {
+                this.tempDirPath = this.tempDirPath + tempDirName;
+            }
+        }
     }
 
     /**
@@ -116,25 +135,27 @@ public class HttpClient {
                 HashMap<String, String> map = new HashMap<>();
                 StringBuilder tmp = new StringBuilder();
                 String prevKey = null;
-                for(int i = 0, len = getParamsStr.length(); i < len; i++) {
-                    String s = String.valueOf(getParamsStr.charAt(i));
-                    if(mode && s.equals("=")) {
-                        prevKey = tmp.toString();
-                        map.put(prevKey, "");
-                        tmp.delete(0, tmp.length());
-                        mode = false;
-                        continue;
-                    }
-                    if(!mode && s.equals("&")) {
-                        map.put(prevKey, tmp.toString());
-                        tmp.delete(0, tmp.length());
-                        mode = true;
-                        continue;
-                    }
-                    tmp.append(s);
-                    if(i == getParamsStr.length() - 1) {
-                        map.put(prevKey, tmp.toString());
-                        tmp.delete(0, tmp.length());
+                if(null != getParamsStr && getParamsStr.length() > 0) {
+                    for (int i = 0, len = getParamsStr.length(); i < len; i++) {
+                        String s = String.valueOf(getParamsStr.charAt(i));
+                        if (mode && s.equals("=")) {
+                            prevKey = tmp.toString();
+                            map.put(prevKey, "");
+                            tmp.delete(0, tmp.length());
+                            mode = false;
+                            continue;
+                        }
+                        if (!mode && s.equals("&")) {
+                            map.put(prevKey, tmp.toString());
+                            tmp.delete(0, tmp.length());
+                            mode = true;
+                            continue;
+                        }
+                        tmp.append(s);
+                        if (i == getParamsStr.length() - 1) {
+                            map.put(prevKey, tmp.toString());
+                            tmp.delete(0, tmp.length());
+                        }
                     }
                 }
                 if(map.size() > 0) {
@@ -264,11 +285,11 @@ public class HttpClient {
             File tmpFile = null;
             {
                 try {
-                    tmpFile = File.createTempFile(
-                            RandomServiceStatic.getInstance().getTimeHash(6),
-                            null,
-                            new File(new AppSetting.Builder().setAppName(tempDirName).build().getPathContext().getTempDirPath()));
-                    tmpFile.deleteOnExit();
+                    String fileName = "upload_"+RandomServiceStatic.getInstance().getTimeHash(6)+".tmp";
+                    tmpFile = new File(tempDirPath+fileName);
+                    if(tempFileDeleteOnExit) {
+                        tmpFile.deleteOnExit();
+                    }
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -355,30 +376,37 @@ public class HttpClient {
     private void asyncRequest(java.net.http.HttpClient client, HttpRequest request, Handler handler) {
         Handler tmp_handler;
         {
-            HashMap<String, String> info = new HashMap<>();
+            HashMap<String, String> resp_header = new HashMap<>();
             tmp_handler = new Handler() {
                 @Override
                 public void handleMessage(Message m) {
                     super.handleMessage(m);
+                    m.getData().get("response");
                     String status = m.getData().getString("status");
-                    if("info".equals(status)) {
-                        info.put("status_code", m.getData().getString("status_code"));
-                        info.put("content_type", m.getData().getString("content_type"));
+                    if("header".equals(status)) {
+                        resp_header.put("status_code", m.getData().getString("status_code"));
+                        if(m.getData().containsKey("content_type")) {
+                            resp_header.put("content_type", m.getData().getString("content_type"));
+                        }
+                        if(m.getData().containsKey("content_disposition")) {
+                            resp_header.put("content_disposition", m.getData().getString("content_disposition"));
+                        }
+                        resp_header.put("json_string", m.getData().getString("headers"));
                     }
                     if("body".equals(status)) {
-                        InputStream inputStream = (InputStream) m.getData().get("input_stream");
-                        String contentType = info.get("content_type");
+                        InputStream resp_body = (InputStream) m.getData().get("input_stream");
+                        String contentType = resp_header.get("content_type");
                         if(null == contentType || contentType.length() == 0) {
-                            processTextResponse(inputStream, handler);
+                            processTextResponse(resp_header, resp_body, handler);
                         } else {
-                            if (contentType.contains("text/") || contentType.contains("application/json")) {
-                                if (alwaysDownload) {
-                                    processFileResponse(inputStream, handler);
+                            if(contentType.contains("text/") || contentType.contains("application/json")) {
+                                if(alwaysDownload) {
+                                    processFileResponse(resp_header, resp_body, handler);
                                 } else {
-                                    processTextResponse(inputStream, handler);
+                                    processTextResponse(resp_header, resp_body, handler);
                                 }
                             } else {
-                                processFileResponse(inputStream, handler);
+                                processFileResponse(resp_header, resp_body, handler);
                             }
                         }
                     }
@@ -389,28 +417,46 @@ public class HttpClient {
         CompletableFuture<InputStream> responseFuture = client
                 .sendAsync(request, HttpResponse.BodyHandlers.ofInputStream())
                 .thenApply(response -> {
-                    String statusCode = String.valueOf(response.statusCode());
-                    String contentType = null;
-                    if(response.headers().map().containsKey("content-type")) {
-                        contentType = String.valueOf(response.headers().map().get("content-type").get(0));
+                    HashMap<String, String> headers = new HashMap<>();
+                    {
+                        for(Map.Entry<String, List<String>> entry : response.headers().map().entrySet()) {
+                            String key = entry.getKey();
+                            List<String> value = entry.getValue();
+                            if(value.size() > 1) {
+                                int indx = 0;
+                                for(String str : entry.getValue()) {
+                                    if(0 == indx) {
+                                        headers.put(key, str);
+                                    } else {
+                                        headers.put(key+"_"+indx, str);
+                                    }
+                                    indx++;
+                                }
+                            } else {
+                                headers.put(key, value.get(0));
+                            }
+                        }
                     }
-                    // 第一次回傳 response header 內容
+                    // 第一階段 async 回傳 handler message 提供 response header 內容
                     {
                         Bundle b = new Bundle();
-                        b.put("status", "info");
-                        b.put("status_code", statusCode);
-                        b.put("content_type", contentType);
+                        b.put("status", "header");
+                        b.put("status_code", String.valueOf(response.statusCode()));
+                        b.put("headers", new WeakReference<>( headers ).get());
+                        if(headers.containsKey("content-type")) b.put("content_type", headers.get("content-type"));
+                        if(headers.containsKey("content-disposition")) b.put("content_disposition", headers.get("content-disposition"));
                         Message m = tmp_handler.obtainMessage();
                         m.setData(b);
                         m.sendToTarget();
                     }
                     return response;
                 })
-                .thenApply(HttpResponse::body); // 第二次回傳 response body
+                .thenApply(HttpResponse::body); // 第二階段回傳 response body 內容
         try {
             Bundle b = new Bundle();
             b.put("status", "body");
-            // 最後一次 handler 提交一定要由 future.get() 之後送出，要不然會有 InterruptedException 卡死的問題
+            // 最後一次 handler 提交一定要經由 future.get() 送出，
+            // 要不然會有 InterruptedException 卡死的問題
             b.put("input_stream", responseFuture.get());
             Message m = tmp_handler.obtainMessage();
             m.setData(b);
@@ -420,13 +466,15 @@ public class HttpClient {
         }
     }
 
-    private void processTextResponse(InputStream inputStream, Handler handler) {
+    private void processTextResponse(HashMap<String, String> resp_header, InputStream resp_body, Handler handler) {
         Bundle b = new Bundle();
         b.put("status", "done");
+        if(resp_header.containsKey("content_type")) b.put("content_type", resp_header.get("content_type"));
         b.put("resp_type", "text");
-        try( BufferedInputStream bis = new BufferedInputStream(inputStream) ) {
+        try( BufferedInputStream bis = new BufferedInputStream( resp_body ) ) {
             b.put("data", new String(bis.readAllBytes(), StandardCharsets.UTF_8));
         } catch (Exception e) {
+            b.put("status", "fail");
             e.printStackTrace();
         }
         Message m = handler.obtainMessage();
@@ -434,17 +482,22 @@ public class HttpClient {
         m.sendToTarget();
     }
 
-    private void processFileResponse(InputStream inputStream, Handler handler) {
+    private void processFileResponse(HashMap<String, String> resp_header, InputStream resp_body, Handler handler) {
         File tmpFile = null;
         boolean download_status = false;
         try {
-            tmpFile = File.createTempFile(
-                    RandomServiceStatic.getInstance().getTimeHash(8),
-                    null,
-                    new File(new AppSetting.Builder().setAppName(tempDirName).build().getPathContext().getTempDirPath()));
-            tmpFile.deleteOnExit();
-            // 當非檔案操作時可使用 inputStream.transferTo()，而有牽涉到檔案輸出入時要採用 Files.copy() 確保程式效率
-            Files.copy(new BufferedInputStream(inputStream), tmpFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            String fileName = "download_"+RandomServiceStatic.getInstance().getTimeHash(6)+".tmp";
+            tmpFile = new File(tempDirPath+fileName);
+            if(tempFileDeleteOnExit) {
+                tmpFile.deleteOnExit();
+            }
+            // 當非檔案操作時可使用 inputStream.transferTo()，
+            // 而有牽涉到檔案輸出入時要採用 Files.copy() 確保程式效率
+            Files.copy(
+                    new BufferedInputStream( resp_body ),
+                    tmpFile.toPath(),
+                    StandardCopyOption.REPLACE_EXISTING
+            );
             download_status = true;
         } catch (Exception e) {
             e.printStackTrace();
@@ -453,10 +506,22 @@ public class HttpClient {
             Bundle b = new Bundle();
             b.put("status", "done");
             b.put("resp_type", "file");
-            b.put("name", tmpFile.getName());
-            b.put("size", tmpFile.length());
-            b.put("path", tmpFile.getPath());
-            b.put("download_status", "true");
+            // http response header
+            {
+                JSONObject obj = new JSONObject();
+                for(Map.Entry<String, String> entry : resp_header.entrySet()) {
+                    obj.put(entry.getKey(), entry.getValue());
+                }
+                b.put("headers", obj.toJSONString());
+                if (resp_header.containsKey("content_type")) b.put("content_type", resp_header.get("content_type"));
+                if (resp_header.containsKey("content_disposition")) b.put("content_disposition", resp_header.get("content_disposition"));
+            }
+            // 本地端暫存回傳值
+            {
+                b.put("name", tmpFile.getName());
+                b.put("size", tmpFile.length());
+                b.put("path", tmpFile.getPath());
+            }
             Message m = handler.obtainMessage();
             m.setData(b);
             m.sendToTarget();
@@ -464,7 +529,6 @@ public class HttpClient {
             Bundle b = new Bundle();
             b.put("status", "fail");
             b.put("resp_type", "file");
-            b.put("download_status", "false");
             Message m = handler.obtainMessage();
             m.setData(b);
             m.sendToTarget();
@@ -478,6 +542,10 @@ public class HttpClient {
         private HashMap<String, String> parameters = null;
         private HashMap<String, File> files = null;
         private Boolean alwaysDownload = false;
+        private Boolean tempFileDeleteOnExit = true;
+
+        private String tempDirPath = null;
+        private String tempDirName = null;
 
         public HttpClient.Builder setUrl(String url) {
             this.url = url;
@@ -552,8 +620,33 @@ public class HttpClient {
             return this;
         }
 
+        /**
+         * 設定由 HttpClient 下載的暫存檔案長期存放原則，
+         * 若為 false 則表示主程式結束時仍持續保留暫存檔案
+         */
+        public HttpClient.Builder setTempFileDelete(Boolean deleteOnExit) {
+            if(null != deleteOnExit) this.tempFileDeleteOnExit = deleteOnExit;
+            return this;
+        }
+
+        /**
+         * 設定下載檔案的暫存資料夾路徑
+         */
+        public HttpClient.Builder setTempDirPath(String tempDirPath) {
+            this.tempDirPath = tempDirPath;
+            return this;
+        }
+
+        /**
+         * 設定下載檔案的暫存資料夾名稱
+         */
+        public HttpClient.Builder setTempDirName(String tempDirName) {
+            this.tempDirName = tempDirName;
+            return this;
+        }
+
         public HttpClient build() {
-            return new HttpClient(this.url, this.headers, this.parameters, this.files, this.alwaysDownload);
+            return new HttpClient(this.url, this.headers, this.parameters, this.files, this.alwaysDownload, this.tempFileDeleteOnExit, this.tempDirPath, this.tempDirName);
         }
 
     }

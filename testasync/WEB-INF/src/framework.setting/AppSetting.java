@@ -202,9 +202,17 @@ public class AppSetting {
                     baseFileDirPath = baseFileDir.getPath();
                     this.pathContext = new AppSetting.PathContext(baseFileDirPath, this.appName, System.getProperty("file.separator"));
                 } else {
-                    File tmpBaseFileDir = new File(this.baseFileDirPath);
-                    if (tmpBaseFileDir.exists()) {
-                        this.pathContext = new AppSetting.PathContext(baseFileDirPath, this.appName, System.getProperty("file.separator"));
+                    if(null != this.baseFileDirPath) {
+                        File tmpBaseFileDir = new File(this.baseFileDirPath);
+                        if(tmpBaseFileDir.exists()) {
+                            this.pathContext = new AppSetting.PathContext(baseFileDirPath, this.appName, System.getProperty("file.separator"));
+                        } else {
+                            try {
+                                throw new Exception("由 AppSetting 類別路徑往上尋找並未找到名為 " + this.baseFileDirName + " 的資料夾！");
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        }
                     } else {
                         try {
                             throw new Exception("由 AppSetting 類別路徑往上尋找並未找到名為 " + this.baseFileDirName + " 的資料夾！");

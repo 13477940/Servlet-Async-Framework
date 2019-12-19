@@ -11,7 +11,7 @@ import java.util.Objects;
 public class DataTable {
 
     /**
-     * ArrayList 實例，丟入的內容會依照丟入先後的順序
+     * 由 ArrayList 型態保留來自資料庫定義的資料列順序
      */
     private ArrayList<DataRow> instance = null;
 
