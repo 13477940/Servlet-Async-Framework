@@ -11,7 +11,10 @@ It's a tomcat(or jetty) webapp for processing asynchronous http request task sim
 
 # Require
 [1] Java OpenJDK 8+(recommend use latest version)<br/>
+<a href="https://adoptopenjdk.net/">AdoptOpenJDK</a><br/>
 [2] Apache Tomcat 8.5+ or Jetty(attention JDBC use)<br/>
+<a href="http://tomcat.apache.org/">Tomcat</a><br/>
+<a href="https://www.eclipse.org/jetty/">Jetty(recommend)</a><br/>
 [3] <a href="https://github.com/alibaba/fastjson">FastJSON</a><br/>
 [4] put "testasync" files to "tomcat/webapps/testasync" folder<br/>
 
