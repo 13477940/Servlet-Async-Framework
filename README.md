@@ -1,5 +1,5 @@
 # Servlet-Async-Framework
-It's a tomcat webapp for processing asynchronous http request task simple framework instance.
+It's a tomcat(or jetty) webapp for processing asynchronous http request task simple framework instance.
 
 # Features
 ＊非同步處理每個連結至 Servlet 的 HttpRequest（AsyncHttpServlet）<br/>
