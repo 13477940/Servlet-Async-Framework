@@ -10,11 +10,15 @@ It's a tomcat(or jetty) webapp for processing asynchronous http request task sim
 ＊實作類似於 Android Handler 功能處理後端非同步任務（Android Handler Instance for Servlet AsyncTask）
 
 # Require
-[1] Java OpenJDK 8+(recommend use latest version)<br/>
-<a href="https://adoptopenjdk.net/">AdoptOpenJDK</a><br/>
-[2] Apache Tomcat 8.5+ or Jetty(attention JDBC use)<br/>
-<a href="http://tomcat.apache.org/">Tomcat</a><br/>
-<a href="https://www.eclipse.org/jetty/">Jetty(recommend)</a><br/>
+[1] Java OpenJDK 8+(recommend use latest version)
+<ul>
+        <li><a href="https://adoptopenjdk.net/">AdoptOpenJDK</a></li>
+</ul>
+[2] Apache Tomcat 8.5+ or Jetty(attention JDBC use)
+<ul>
+        <li><a href="http://tomcat.apache.org/">Tomcat</a></li>
+        <li><a href="https://www.eclipse.org/jetty/">Jetty (recommend)</a></li>
+</ul>
 [3] <a href="https://github.com/alibaba/fastjson">FastJSON</a><br/>
 [4] put "testasync" files to "tomcat/webapps/testasync" folder<br/>
 
