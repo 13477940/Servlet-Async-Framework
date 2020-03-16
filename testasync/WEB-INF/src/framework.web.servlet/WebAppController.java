@@ -54,16 +54,19 @@ public class WebAppController extends HttpServlet {
                 }
             }
         }
+        // Async Request Timeout
         {
             // 上傳和下載持續時間皆會受到 AsyncContext Timeout 的影響，所以要依照請求處理內容去定義比較適合
             // 設置為 0 時表示非同步處理中無逾時限制(ms)
             asyncContext.setTimeout(0);
         }
+        // Servlet Context
         {
-            if(null == ServletContextStatic.InstanceHolder.instance) {
-                ServletContextStatic.InstanceHolder.instance = new WeakReference<>(getServletContext()).get();
+            if(null == ServletContextStatic.getInstance()) {
+                ServletContextStatic.setInstance( new WeakReference<>(getServletContext()).get() );
             }
         }
+        // Process Async Request
         AsyncContextRunnable asyncContextRunnable = new AsyncContextRunnable.Builder()
                 .setServletContext(new WeakReference<>(getServletContext()).get())
                 .setServletConfig(new WeakReference<>(getServletConfig()).get())

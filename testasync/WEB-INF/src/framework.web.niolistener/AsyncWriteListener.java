@@ -57,6 +57,7 @@ public class AsyncWriteListener implements WriteListener {
     /**
      * 非同步輸出實作
      * 2019-06-17 修改 while 處理邏輯及中斷條件，解決 CPU 高使用率的問題
+     * 2019-12-31 取消自旋鎖
      */
     @Override
     public void onWritePossible() {
@@ -76,7 +77,7 @@ public class AsyncWriteListener implements WriteListener {
             }
             return;
         }
-        // 注意！這個 ServletOutputStream 不是獨立的，所以不能在此 close 它
+        // 注意！這個 ServletOutputStream 是共用的，所以不能在此 close 它
         ServletOutputStream out = null;
         try {
             out = new WeakReference<>( requestContext.getAsyncContext().getResponse().getOutputStream() ).get();
@@ -107,7 +108,7 @@ public class AsyncWriteListener implements WriteListener {
             } catch (Exception e) {
                 if(devMode) { e.printStackTrace(); }
             }
-            Thread.onSpinWait();
+            // Thread.onSpinWait();
         }
     }
 

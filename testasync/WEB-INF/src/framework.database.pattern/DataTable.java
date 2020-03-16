@@ -8,6 +8,11 @@ import java.sql.ResultSetMetaData;
 import java.util.ArrayList;
 import java.util.Objects;
 
+/**
+ * [data access object]
+ * 每個 DataTable 通常代表一次 Query 的結果集
+ * DataTable 中通常會具有多個 DataRow 對應於資料庫的內容狀態
+ */
 public class DataTable {
 
     /**

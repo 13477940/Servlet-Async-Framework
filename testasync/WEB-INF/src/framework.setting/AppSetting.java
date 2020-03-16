@@ -9,8 +9,8 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.Objects;
 
 /**
  * AppSetting 主要管理作業系統判斷、WebApp 名稱與統一的檔案路徑，
@@ -166,25 +166,19 @@ public class AppSetting {
         }
 
         public AppSetting build() {
+            // check is webapp(in servlet container)
             {
                 if(null == this.appName || this.appName.length() == 0) {
-                    // 如果是 WebApp 型態
-                    if(Objects.requireNonNull(Thread.currentThread().getContextClassLoader().getResource("")).getPath().contains("WEB-INF")) {
-                        try {
-                            this.appName = ServletContextStatic.getInstance().getServletContextName();
-                        } catch (Exception e) {
-                            // e.printStackTrace();
-                        }
-                        if(null == appName) {
-                            try {
-                                throw new Exception("web.xml 需要設定 <display-name></display-name> 名稱，確保 AppSetting 正常取得 AppName");
-                            } catch (Exception e) {
-                                e.printStackTrace();
+                    ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+                    if(null != classLoader) {
+                        URL url = classLoader.getResource("");
+                        if(null != url) {
+                            if( url.getPath().contains("WEB-INF") ) {
+                                this.appName = ServletContextStatic.getInstance().getServletContextName();
                             }
-                            return null;
                         }
                     }
-                    if(null == appName) {
+                    if(null == this.appName) {
                         try {
                             throw new Exception("AppSetting 必需設定一個有效的 AppName 參數");
                         } catch (Exception e) {
@@ -194,12 +188,13 @@ public class AppSetting {
                     }
                 }
             }
-            FileFinder finder = new FileFinder.Builder().build();
-            // 檢查是否具有應用程式基本儲存的資料夾區域
+            // System.ou.println(this.appName)
+            // check base dir path
             {
+                FileFinder finder = new FileFinder.Builder().build();
                 File baseFileDir = finder.find(this.baseFileDirName);
                 if(null != baseFileDir && baseFileDir.exists()) {
-                    baseFileDirPath = baseFileDir.getPath();
+                    this.baseFileDirPath = baseFileDir.getPath();
                     this.pathContext = new AppSetting.PathContext(baseFileDirPath, this.appName, System.getProperty("file.separator"));
                 } else {
                     if(null != this.baseFileDirPath) {
@@ -244,26 +239,26 @@ public class AppSetting {
         }
 
         public String getTempDirPath() {
-            processPreMKDIR(tempDirPath);
+            processPreMkDir(tempDirPath);
             return tempDirPath;
         }
 
         public String getUploadDirPath() {
-            processPreMKDIR(uploadDirPath);
+            processPreMkDir(uploadDirPath);
             return uploadDirPath;
         }
 
         public String getExportDirPath() {
-            processPreMKDIR(exportDirPath);
+            processPreMkDir(exportDirPath);
             return exportDirPath;
         }
 
         public String getLogDirPath() {
-            processPreMKDIR(logDirPath);
+            processPreMkDir(logDirPath);
             return logDirPath;
         }
 
-        private void processPreMKDIR(String path) {
+        private void processPreMkDir(String path) {
             File tmp = new File(path);
             if(!tmp.exists() || !tmp.isDirectory()) {
                 boolean isDirCreated = tmp.mkdirs();

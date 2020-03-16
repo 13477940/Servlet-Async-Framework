@@ -5,12 +5,12 @@ import com.alibaba.fastjson.JSONObject;
 import framework.web.session.context.UserContext;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 
 public abstract class UserMap {
 
-    private HashMap<String, UserContext> map = new HashMap<>();
+    private LinkedHashMap<String, UserContext> map = new LinkedHashMap<>();
 
     public UserMap() {}
 
@@ -66,7 +66,7 @@ public abstract class UserMap {
         return list;
     }
 
-    public HashMap<String, UserContext> prototype() {
+    public LinkedHashMap<String, UserContext> prototype() {
         return map;
     }
 

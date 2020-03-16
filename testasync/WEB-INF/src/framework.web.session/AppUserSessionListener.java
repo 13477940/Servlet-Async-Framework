@@ -6,6 +6,11 @@ import framework.web.session.service.SessionCounter;
 import javax.servlet.http.HttpSessionEvent;
 import javax.servlet.http.HttpSessionListener;
 
+/**
+ * 此類別使用於 WEB-INF/web.xml -> <listener></listener> 定義之中
+ *
+ * https://openhome.cc/Gossip/ServletJSP/BehindHttpSession.html
+ */
 public class AppUserSessionListener implements HttpSessionListener {
 
     @Override

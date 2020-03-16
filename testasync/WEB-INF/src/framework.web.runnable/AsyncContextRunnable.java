@@ -69,7 +69,7 @@ public class AsyncContextRunnable implements Runnable {
         }
     }
 
-    private void webAppStartup(HashMap<String, String> params, FileItemList files) {
+    private void webAppStartup(LinkedHashMap<String, String> params, FileItemList files) {
         // HTTP Header 處理
         {
             HttpServletRequest req = (HttpServletRequest) asyncContext.getRequest();
@@ -108,7 +108,7 @@ public class AsyncContextRunnable implements Runnable {
                 super.handleMessage(m);
                 {
                     FileItemList files = null;
-                    HashMap<String, String> params = new HashMap<>();
+                    LinkedHashMap<String, String> params = new LinkedHashMap<>();
                     {
                         String key = m.getData().getString("key");
                         if(null != m.getData().get(key)) {
@@ -146,7 +146,7 @@ public class AsyncContextRunnable implements Runnable {
 
     // 處理 HttpRequest Parameters（使用 HashMap 因為參數通常對順序不敏感）
     private void parseParams() {
-        HashMap<String, String> params = new HashMap<>();
+        LinkedHashMap<String, String> params = new LinkedHashMap<>();
         for (Map.Entry<String, String[]> entry : asyncContext.getRequest().getParameterMap().entrySet()) {
             try {
                 String key = entry.getKey();

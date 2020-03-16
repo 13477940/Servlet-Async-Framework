@@ -137,7 +137,7 @@ public class FileFinder {
                 this.baseFile = new File(classPath);
             } else {
                 try {
-                    throw new Exception("無法取得目前類別的 ClassLoader 路徑！");
+                    throw new Exception("FileFinder 無法取得目前類別的 ClassLoader 路徑！");
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

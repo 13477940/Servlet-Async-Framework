@@ -21,6 +21,9 @@ public class DatabaseAction {
     private PreparedStatement preparedStatement = null;
     private boolean autoCommit = false;
 
+    /**
+     * SQL 指令字串, Connection, ArrayList（確保順序）, AutoCommit Status
+     */
     public DatabaseAction(String sql, Connection conn, ArrayList<String> parameters, boolean autoCommit) {
         if(null == conn) {
             try {
@@ -104,7 +107,8 @@ public class DatabaseAction {
     }
 
     /**
-     * 當查詢具有大型資料回傳時，請藉由 Handler 將資料分散為多筆進行片段處理
+     * 當查詢具有大型資料回傳時，將藉由 Handler 機制將資料分散為多筆進行片段處理
+     * 避免同時間使用大量記憶體造成 out of memory 錯誤
      */
     public void queryOnHandler(Handler handler) {
         Savepoint savepoint = null;

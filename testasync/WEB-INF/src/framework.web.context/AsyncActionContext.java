@@ -39,7 +39,7 @@ public class AsyncActionContext {
     private String reqMethod;
     private boolean isFileAction = false; // 該請求是否具有上傳檔案的需求
     private HashMap<String, String> headers;
-    private HashMap<String, String> params;
+    private LinkedHashMap<String, String> params;
     private FileItemList files; // 已被暫存的檔案（不包含文字表單內容）
 
     private String urlPath = null;
@@ -117,11 +117,11 @@ public class AsyncActionContext {
         return this.headers;
     }
 
-    public void setParameters(HashMap<String, String> params) {
+    public void setParameters(LinkedHashMap<String, String> params) {
         this.params = params;
     }
 
-    public HashMap<String, String> getParameters() {
+    public LinkedHashMap<String, String> getParameters() {
         return this.params;
     }
 

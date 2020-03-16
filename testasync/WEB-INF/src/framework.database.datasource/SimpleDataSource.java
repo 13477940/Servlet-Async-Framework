@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.concurrent.ExecutorService;
 
 /**
+ * [connection template]
  * 基礎資料庫連線方式，此類別為無 Connection Pool 技術可採用時才選擇的方案
  * 因為不具有 ConnectionPool 管理會造成整體效率較差，不建議直接將此功能使用於生產環境中
  */

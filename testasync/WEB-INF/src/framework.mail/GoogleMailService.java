@@ -15,6 +15,7 @@ import java.util.Properties;
 /**
  * this implement only for send google mail service used.
  * 如果要連接其他信箱服務，請由 MailService 介面實作
+ * #200118 Google 將強制所有使用者轉用 OAuth2 的第三方登入方式
  */
 public class GoogleMailService implements MailService {
 

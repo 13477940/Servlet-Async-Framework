@@ -6,7 +6,6 @@ import framework.observer.Bundle;
 import framework.observer.Handler;
 import framework.observer.Message;
 import framework.random.RandomServiceStatic;
-import framework.setting.AppSetting;
 
 import java.io.*;
 import java.lang.ref.WeakReference;
@@ -17,10 +16,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -31,27 +27,29 @@ import java.util.concurrent.CompletableFuture;
  * 基於 java.net.http.HttpClient 的功能實作封裝
  * 並模擬類似 OkHttp 方式處理
  *
- * old jdk version please use: https://github.com/square/okhttp
+ * for old jdk version use: https://github.com/square/okhttp
  * https://mvnrepository.com/artifact/com.squareup.okhttp3/okhttp
  *
- * #191218 修正檔案下載處理的行為與回傳值可自定義處理的內容
+ * -191218 修正檔案下載處理的行為與回傳值可自定義處理的內容
+ * -200225 刪除 AppSetting 引用，下載檔案時請自行指定暫存路徑
+ * -200316 更換 LinkedHashMap 為基礎，維持使用者傳入的參數順序
  */
 public class HttpClient {
 
     private String url;
     private String getParamsStr;
     private HashMap<String, String> headers;
-    private HashMap<String, String> parameters;
-    private HashMap<String, File> files;
+    private LinkedHashMap<String, String> parameters;
+    private LinkedHashMap<String, File> files;
     private boolean alwaysDownload;
     private String tempDirPath; // 自定義下載暫存資料夾路徑
-    private String tempDirName = "http_client_temp";
+    // private String tempDirName = "http_client_temp";
     private boolean tempFileDeleteOnExit;
 
     private java.net.http.HttpClient.Version httpVersion = java.net.http.HttpClient.Version.HTTP_2; // default
     private java.net.http.HttpClient.Redirect httpRedirect = java.net.http.HttpClient.Redirect.NORMAL; // default
 
-    private HttpClient(String url, HashMap<String, String> headers, HashMap<String, String> parameters, HashMap<String, File> files, Boolean alwaysDownload, Boolean tempFileDeleteOnExit, String tempDirPath, String tempDirName) {
+    private HttpClient(String url, HashMap<String, String> headers, LinkedHashMap<String, String> parameters, LinkedHashMap<String, File> files, Boolean alwaysDownload, Boolean tempFileDeleteOnExit, String tempDirPath, String tempDirName) {
         this.url = null;
         {
             if(url.contains("?")) {
@@ -95,11 +93,7 @@ public class HttpClient {
         this.alwaysDownload = Objects.requireNonNullElse(alwaysDownload, false);
         this.tempFileDeleteOnExit = Objects.requireNonNullElse(tempFileDeleteOnExit, true);
         {
-            if(null == tempDirPath) {
-                this.tempDirPath = new AppSetting.Builder().setAppName(this.tempDirName).build().getPathContext().getTempDirPath();
-            } else {
-                this.tempDirPath = tempDirPath;
-            }
+            this.tempDirPath = tempDirPath;
             if(null != tempDirName) {
                 this.tempDirPath = this.tempDirPath + tempDirName;
             }
@@ -132,7 +126,7 @@ public class HttpClient {
                 }
             } else {
                 boolean mode = true; // t = key, f = value;
-                HashMap<String, String> map = new HashMap<>();
+                LinkedHashMap<String, String> map = new LinkedHashMap<>();
                 StringBuilder tmp = new StringBuilder();
                 String prevKey = null;
                 if(null != getParamsStr && getParamsStr.length() > 0) {
@@ -376,7 +370,7 @@ public class HttpClient {
     private void asyncRequest(java.net.http.HttpClient client, HttpRequest request, Handler handler) {
         Handler tmp_handler;
         {
-            HashMap<String, String> resp_header = new HashMap<>();
+            LinkedHashMap<String, String> resp_header = new LinkedHashMap<>();
             tmp_handler = new Handler() {
                 @Override
                 public void handleMessage(Message m) {
@@ -391,7 +385,6 @@ public class HttpClient {
                         if(m.getData().containsKey("content_disposition")) {
                             resp_header.put("content_disposition", m.getData().getString("content_disposition"));
                         }
-                        resp_header.put("json_string", m.getData().getString("headers"));
                     }
                     if("body".equals(status)) {
                         InputStream resp_body = (InputStream) m.getData().get("input_stream");
@@ -466,7 +459,7 @@ public class HttpClient {
         }
     }
 
-    private void processTextResponse(HashMap<String, String> resp_header, InputStream resp_body, Handler handler) {
+    private void processTextResponse(LinkedHashMap<String, String> resp_header, InputStream resp_body, Handler handler) {
         Bundle b = new Bundle();
         b.put("status", "done");
         if(resp_header.containsKey("content_type")) b.put("content_type", resp_header.get("content_type"));
@@ -482,11 +475,37 @@ public class HttpClient {
         m.sendToTarget();
     }
 
-    private void processFileResponse(HashMap<String, String> resp_header, InputStream resp_body, Handler handler) {
+    private void processFileResponse(LinkedHashMap<String, String> resp_header, InputStream resp_body, Handler handler) {
         File tmpFile = null;
         boolean download_status = false;
+        StringBuilder sbd = new StringBuilder();
+        {
+            sbd.append("http_client_download_");
+            sbd.append(System.currentTimeMillis());
+            sbd.append("_");
+            sbd.append(RandomServiceStatic.getInstance().getLowerCaseRandomString(8));
+            sbd.append(".tmp");
+        }
         try {
-            String fileName = "download_"+RandomServiceStatic.getInstance().getTimeHash(6)+".tmp";
+            if(null == tempDirPath) {
+                throw new Exception("請設定 HttpClient 檔案下載的路徑");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        // 如果沒有暫存路徑則取消下載處理
+        if(null == tempDirPath) {
+            Bundle b = new Bundle();
+            b.put("status", "fail");
+            b.put("resp_type", "file");
+            b.put("msg_zht", "請設定 HttpClient 檔案下載的路徑");
+            Message m = handler.obtainMessage();
+            m.setData(b);
+            m.sendToTarget();
+            return;
+        }
+        try {
+            String fileName = sbd.toString();
             tmpFile = new File(tempDirPath+fileName);
             if(tempFileDeleteOnExit) {
                 tmpFile.deleteOnExit();
@@ -539,8 +558,8 @@ public class HttpClient {
 
         private String url = null;
         private HashMap<String, String> headers = null;
-        private HashMap<String, String> parameters = null;
-        private HashMap<String, File> files = null;
+        private LinkedHashMap<String, String> parameters = null;
+        private LinkedHashMap<String, File> files = null;
         private Boolean alwaysDownload = false;
         private Boolean tempFileDeleteOnExit = true;
 
@@ -552,7 +571,7 @@ public class HttpClient {
             return this;
         }
 
-        public HttpClient.Builder setHeaders(Map<String, String> headers) {
+        public HttpClient.Builder setHeaders(HashMap<String, String> headers) {
             HashMap<String, String> map = new HashMap<>();
             for(Map.Entry<String, String> entry : headers.entrySet()) {
                 String key = entry.getKey();
@@ -576,8 +595,8 @@ public class HttpClient {
             return this;
         }
 
-        public HttpClient.Builder setParameters(Map<String, String> parameters) {
-            HashMap<String, String> map = new HashMap<>();
+        public HttpClient.Builder setParameters(LinkedHashMap<String, String> parameters) {
+            LinkedHashMap<String, String> map = new LinkedHashMap<>();
             for(Map.Entry<String, String> entry : parameters.entrySet()) {
                 String key = entry.getKey();
                 String value = entry.getValue();
@@ -589,7 +608,7 @@ public class HttpClient {
         }
 
         public HttpClient.Builder setParameters(JSONObject parameters) {
-            HashMap<String, String> map = new HashMap<>();
+            LinkedHashMap<String, String> map = new LinkedHashMap<>();
             for(Map.Entry<String, Object> entry : parameters.entrySet()) {
                 String key = entry.getKey();
                 String value = entry.getValue().toString();
@@ -600,8 +619,8 @@ public class HttpClient {
             return this;
         }
 
-        public HttpClient.Builder setFiles(Map<String, File> files) {
-            HashMap<String, File> map = new HashMap<>();
+        public HttpClient.Builder setFiles(LinkedHashMap<String, File> files) {
+            LinkedHashMap<String, File> map = new LinkedHashMap<>();
             for(Map.Entry<String, File> entry : files.entrySet()) {
                 String key = entry.getKey();
                 File value = entry.getValue();

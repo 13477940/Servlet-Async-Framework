@@ -4,6 +4,9 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 
+/**
+ * 簡易純文字檔案寫入工具
+ */
 public class TextFileWriter {
 
     private File targetFile;

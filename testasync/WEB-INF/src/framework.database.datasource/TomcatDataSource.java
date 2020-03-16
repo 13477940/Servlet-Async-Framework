@@ -10,6 +10,7 @@ import java.lang.ref.WeakReference;
 import java.sql.Connection;
 
 /**
+ * [connection template]
  * base Tomcat JDBC Connection Pool
  * https://tomcat.apache.org/tomcat-9.0-doc/jdbc-pool.html
  * 版本會跟著 Apache Tomcat 步進，相容性 JDK 則依照其需求即可

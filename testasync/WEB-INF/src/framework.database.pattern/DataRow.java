@@ -4,6 +4,11 @@ import com.alibaba.fastjson.JSONObject;
 
 import java.util.*;
 
+/**
+ * [data access object]
+ * 每個 DataRow 通常代表結果集的一列
+ * 一列中會有多個欄位內容 key-value 形式
+ */
 public class DataRow {
 
     /**
@@ -98,7 +103,7 @@ public class DataRow {
     /**
      * 取得實作原型
      */
-    public HashMap<String, String> prototype() {
+    public LinkedHashMap<String, String> prototype() {
         return instance;
     }
 

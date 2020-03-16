@@ -1,15 +1,19 @@
 package framework.observer;
 
 import java.io.File;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Set;
 
 public class Bundle {
 
-    protected HashMap<String, Object> map;
+    protected LinkedHashMap<String, Object> map;
 
     public Bundle() {
-        this.map = new HashMap<>();
+        this.map = new LinkedHashMap<>();
+    }
+
+    public void remove(String key) {
+        map.remove(key);
     }
 
     public boolean containsKey(String key) {
@@ -28,7 +32,7 @@ public class Bundle {
         return (null == map || map.size() == 0);
     }
 
-    public HashMap<String, Object> prototype() {
+    public LinkedHashMap<String, Object> prototype() {
         return map;
     }
 

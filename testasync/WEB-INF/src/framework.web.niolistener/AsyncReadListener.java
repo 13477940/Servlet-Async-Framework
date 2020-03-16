@@ -73,6 +73,7 @@ public class AsyncReadListener implements ReadListener {
      * ReadListener 監聽進度將藉由 inputStream 被 read() 到哪部分為主，
      * 需注意若此處不執行 inputStream.read() 則會永遠到不了 onAllDataRead() 狀態之中
      * 2019-06-19 修正 while 處理邏輯及中斷條件
+     * 2019-12-31 取消自旋鎖
      */
     @Override
     public void onDataAvailable() {
@@ -87,7 +88,7 @@ public class AsyncReadListener implements ReadListener {
                 if(0 > length) break;
                 if(null == outputStream) break;
                 outputStream.write(buffer, 0, length);
-                Thread.onSpinWait();
+                // Thread.onSpinWait();
             }
         } catch (Exception e) {
             if(devMode) { e.printStackTrace(); }

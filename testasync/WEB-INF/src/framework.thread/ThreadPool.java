@@ -5,6 +5,7 @@ import java.util.concurrent.*;
 /**
  * 不建議直接使用 Executors.newCachedThreadPool(); 因為其並未針對使用資源最大值設定限制，
  * 其他預設的 Executors 模式彈性也不好控制，所以建議直接採用 ThreadPoolExecutor 建立去制定。
+ *
  * https://docs.oracle.com/javase/7/docs/api/java/util/concurrent/ThreadPoolExecutor.html
  * https://juejin.im/post/5c90698ef265da611d7423ae
  * http://givemepass-blog.logdown.com/posts/296960-how-to-use-the-threadpool
@@ -123,8 +124,9 @@ public class ThreadPool {
         }
 
         /**
-         * 通常會設定一個幾倍於 MaximumPoolSize 的數目，確保所有事件可以進入佇列
-         * 但是若設定很大的數目仍出現 rejectedExecution 因該要思考是否程式碼有濫用 Thread 的情況
+         * 通常會設定一個幾倍於 MaximumPoolSize 的數目，確保所有事件可以進入等待佇列，
+         * 若設定很大的數值仍出現 rejectedExecution，則需要去思考使用過多 Thread 的問題，
+         * 過多的 Thread 會導致 CPU 頻繁存取 Thread Context 造成效能低落
          */
         public ThreadPool.Builder setBlockingQueueSize(int blockingQueueSize) {
             this.blockingQueueSize = blockingQueueSize;

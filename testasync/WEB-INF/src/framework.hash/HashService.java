@@ -49,6 +49,9 @@ public abstract class HashService {
         return result;
     }
 
+    /**
+     * 雜湊碼 byte[] 轉換為 string 的通用方法
+     */
     private String byteToHex(byte[] hash) {
         Formatter formatter = new Formatter();
         for ( byte b : hash ) { formatter.format("%02x", b); }

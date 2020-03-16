@@ -1,6 +1,7 @@
 package framework.time;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
 /**
@@ -37,6 +38,12 @@ public class TimeService {
 
     public String getTimePatternString() {
         return pattern_time;
+    }
+
+    // https://currentmillis.com/
+    public long currentTimeMillis() {
+        ZoneId zoneId = ZoneId.systemDefault();
+        return ldt.atZone(zoneId).toInstant().toEpochMilli();
     }
 
     public LocalDateTime prototype() {
