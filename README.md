@@ -52,10 +52,10 @@ or Windows:
 <pre><code>cd tomcat\webapps\testasync\WEB-INF\</code></pre>
 
 ＊For Unix/Linux/Mac OS:<br/>
-<pre><code>javac -cp ../../../lib/*:./lib/*:./classes/:. -d ./classes/. -encoding utf-8 ./src/*/*.java</code></pre>
+<pre><code>javac -cp ../../../lib/*:./lib/*:./classes/: -d ./classes -encoding utf-8 ./src/*/*.java</code></pre>
 
 ＊For Windows OS:<br/>
-<pre><code>javac -cp ..\..\..\lib\*;.\lib\*;.\classes\;. -d .\classes\. -encoding utf-8 .\src\*\*.java</code></pre>
+<pre><code>javac -cp ..\..\..\lib\*;.\lib\*;.\classes\; -d .\classes -encoding utf-8 .\src\*\*.java</code></pre>
 
 # How To Use Database Functions
 <pre><code>ConnectionPool connectionPool = new TomcatDataSource.Builder()
