@@ -1,7 +1,7 @@
 "use strict"
-var testasync = {};
+var siteFn = {};
 (function() {
-    testasync["readyFn"] = function() {
+    siteFn["readyFn"] = function() {
 		// click upload
         $("#upok").on("click", function() {
 			var targetFile = $("#upfile")[0]["files"][0];
@@ -33,6 +33,36 @@ var testasync = {};
 				})();
 			})();
         });
+		// jQuery + Axios 實作動態腳本載入模擬模組化
+		(function(){
+			var def = null;
+			var worker = new Worker("/testasync/js/worker/web_worker.js");
+			worker.addEventListener("message", workerMsgFn, false);
+			function workerMsgFn(e) {
+				var tmp = [];
+				tmp.push("<script>");
+				tmp.push(e.data.data);
+				tmp.push("</script>");
+				$("body").append(tmp.join(''));
+				def.resolve(e.data);
+			}
+			siteFn["add_module"] = function(url) {
+				def = $.Deferred();
+				var reqObj = { act: "get", url: url };
+				worker.postMessage( reqObj );
+				return def;
+			};
+		})();
+		siteFn["add_module"]("/testasync/js/moment/moment.min.js").done(function(){
+			siteFn["add_module"]("https://cdn.jsdelivr.net/npm/vue").done(function(){
+				var myVue = new Vue({
+					data: {
+						myValue: { key: "now_moment", value: moment().format("YYYY-MM-DD HH:mm:ss") }
+					}
+				});
+				console.log(myVue.myValue);
+			});
+		});
     };
 }());
-$(testasync["readyFn"]);
+$(siteFn["readyFn"]);

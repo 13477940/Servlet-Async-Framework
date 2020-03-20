@@ -41,7 +41,7 @@ function workerReady(e) {
 			params: data
 		};
 		axios(axiosObj).then(function (response) {
-			console.log(response);
+			// console.log(response);
 			var respObj = {
 				status: response.status,
 				statusText: response.statusText,
@@ -79,7 +79,7 @@ function workerReady(e) {
 			params: data
 		};
 		axios(axiosObj).then(function (response) {
-			console.log(response);
+			// console.log(response);
 			var respObj = {
 				status: response.status,
 				statusText: response.statusText,
