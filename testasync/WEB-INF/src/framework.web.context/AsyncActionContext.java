@@ -614,7 +614,7 @@ public class AsyncActionContext {
     /**
      * 若是 Request 為純檔案傳輸（image/jpeg, image/png...），
      * 可由此方法將 InputStream 內容轉換為 File 的型態，
-     * 這個檔案會被暫存至 Tomcat 被關閉為止（deleteOnExit）
+     * 這個檔案會被暫存至 Tomcat or Jetty 被關閉為止（deleteOnExit）
      */
     public File getRequestByteContent() {
         File tomcat_temp = new File(servletContext.getAttribute(ServletContext.TEMPDIR).toString());

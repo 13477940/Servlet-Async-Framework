@@ -33,6 +33,7 @@ import java.util.concurrent.CompletableFuture;
  * -191218 修正檔案下載處理的行為與回傳值可自定義處理的內容
  * -200225 刪除 AppSetting 引用，下載檔案時請自行指定暫存路徑
  * -200316 更換 LinkedHashMap 為基礎，維持使用者傳入的參數順序
+ * -200324 增加 keepUrlSearchParams 參數，判斷是否需保留完整的輸入網址
  */
 public class HttpClient {
 
@@ -49,14 +50,27 @@ public class HttpClient {
     private java.net.http.HttpClient.Version httpVersion = java.net.http.HttpClient.Version.HTTP_2; // default
     private java.net.http.HttpClient.Redirect httpRedirect = java.net.http.HttpClient.Redirect.NORMAL; // default
 
-    private HttpClient(String url, HashMap<String, String> headers, LinkedHashMap<String, String> parameters, LinkedHashMap<String, File> files, Boolean alwaysDownload, Boolean tempFileDeleteOnExit, String tempDirPath, String tempDirName) {
+    // 建構子
+    private HttpClient(
+            String url,
+            HashMap<String, String> headers,
+            LinkedHashMap<String, String> parameters,
+            LinkedHashMap<String, File> files,
+            Boolean alwaysDownload,
+            Boolean tempFileDeleteOnExit,
+            String tempDirPath,
+            String tempDirName,
+            Boolean keepUrlSearchParams
+    ) {
         this.url = null;
         {
+            // 是否具有 UrlSearchParams
             if(url.contains("?")) {
                 String[] tmp = url.split("\\?");
                 url = tmp[0];
                 getParamsStr = tmp[1];
             }
+            // 是否為正式的 Url Path
             StringBuilder sbd = new StringBuilder();
             if(url.contains("://")) {
                 String[] tmpSch = url.split("://");
@@ -85,13 +99,19 @@ public class HttpClient {
                     }
                 }
             }
-            this.url = sbd.toString();
+            // 是否需保留原始網址（非正規情況時，可能只處理網址內容）
+            if(Objects.requireNonNullElse(keepUrlSearchParams, false)) {
+                this.url = sbd.toString() + "?" + getParamsStr;
+            } else {
+                this.url = sbd.toString();
+            }
         }
         this.headers = headers;
         this.parameters = parameters;
         this.files = files;
         this.alwaysDownload = Objects.requireNonNullElse(alwaysDownload, false);
         this.tempFileDeleteOnExit = Objects.requireNonNullElse(tempFileDeleteOnExit, true);
+        // 下載暫存資料夾
         {
             this.tempDirPath = tempDirPath;
             if(null != tempDirName) {
@@ -101,6 +121,7 @@ public class HttpClient {
     }
 
     /**
+     * GET application/x-www-form-urlencoded
      * GET 僅具有 Authorization 及 Header 夾帶能力，
      * 其他資料由網址後的參數夾帶進行附加，要注意 URI Encoding 的使用範圍
      */
@@ -167,7 +188,7 @@ public class HttpClient {
                     }
                 }
             }
-            // 設定 Method
+            // method GET
             requestBuilder.GET();
             // 設定請求 URI
             requestBuilder.uri(URI.create(sbd.toString()));
@@ -207,8 +228,10 @@ public class HttpClient {
                     sbd.append("=");
                     sbd.append(URLEncoder.encode(params.getValue(), StandardCharsets.UTF_8));
                 }
+                // method POST
                 requestBuilder.POST(HttpRequest.BodyPublishers.ofString(sbd.toString(), StandardCharsets.UTF_8));
             } else {
+                // method POST
                 requestBuilder.POST(HttpRequest.BodyPublishers.noBody());
             }
             // 設定請求 URI
@@ -242,8 +265,10 @@ public class HttpClient {
             requestBuilder.setHeader("Content-Type","application/json;charset=utf-8");
             // 設定 request parameters
             if (null != obj) {
+                // method POST
                 requestBuilder.POST(HttpRequest.BodyPublishers.ofString(obj.toJSONString(), StandardCharsets.UTF_8));
             } else {
+                // method POST
                 requestBuilder.POST(HttpRequest.BodyPublishers.noBody());
             }
             // 設定請求 URI
@@ -340,6 +365,7 @@ public class HttpClient {
             // 設定上傳的 MultiPart 內容 by InputStream
             {
                 final File fTmpFile = tmpFile;
+                // method POST
                 requestBuilder.POST(HttpRequest.BodyPublishers.ofInputStream(() -> {
                     InputStream inputStream = null;
                     try {
@@ -566,8 +592,22 @@ public class HttpClient {
         private String tempDirPath = null;
         private String tempDirName = null;
 
+        private Boolean keepUrlSearchParams = null;
+
         public HttpClient.Builder setUrl(String url) {
             this.url = url;
+            return this;
+        }
+
+        public HttpClient.Builder setHeaders(LinkedHashMap<String, String> headers) {
+            HashMap<String, String> map = new HashMap<>();
+            for(Map.Entry<String, String> entry : headers.entrySet()) {
+                String key = entry.getKey();
+                String value = entry.getValue();
+                if(null == value) value = "";
+                map.put(key, value);
+            }
+            if(map.size() > 0) this.headers = map;
             return this;
         }
 
@@ -607,6 +647,21 @@ public class HttpClient {
             return this;
         }
 
+        /**
+         * from HashMap 將不保證參數順序
+         */
+        public HttpClient.Builder setParameters(HashMap<String, String> parameters) {
+            LinkedHashMap<String, String> map = new LinkedHashMap<>();
+            for(Map.Entry<String, String> entry : parameters.entrySet()) {
+                String key = entry.getKey();
+                String value = entry.getValue();
+                if(null == value) value = "";
+                map.put(key, value);
+            }
+            if(map.size() > 0) this.parameters = map;
+            return this;
+        }
+
         public HttpClient.Builder setParameters(JSONObject parameters) {
             LinkedHashMap<String, String> map = new LinkedHashMap<>();
             for(Map.Entry<String, Object> entry : parameters.entrySet()) {
@@ -620,6 +675,17 @@ public class HttpClient {
         }
 
         public HttpClient.Builder setFiles(LinkedHashMap<String, File> files) {
+            LinkedHashMap<String, File> map = new LinkedHashMap<>();
+            for(Map.Entry<String, File> entry : files.entrySet()) {
+                String key = entry.getKey();
+                File value = entry.getValue();
+                map.put(key, value);
+            }
+            if(map.size() > 0) this.files = map;
+            return this;
+        }
+
+        public HttpClient.Builder setFiles(HashMap<String, File> files) {
             LinkedHashMap<String, File> map = new LinkedHashMap<>();
             for(Map.Entry<String, File> entry : files.entrySet()) {
                 String key = entry.getKey();
@@ -664,8 +730,17 @@ public class HttpClient {
             return this;
         }
 
+        /**
+         * https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams
+         * 是否維持網址夾帶 URLSearchParams
+         */
+        public HttpClient.Builder setKeepUrlSearchParams(boolean keepUrlSearchParams) {
+            this.keepUrlSearchParams = keepUrlSearchParams;
+            return this;
+        }
+
         public HttpClient build() {
-            return new HttpClient(this.url, this.headers, this.parameters, this.files, this.alwaysDownload, this.tempFileDeleteOnExit, this.tempDirPath, this.tempDirName);
+            return new HttpClient(this.url, this.headers, this.parameters, this.files, this.alwaysDownload, this.tempFileDeleteOnExit, this.tempDirPath, this.tempDirName, this.keepUrlSearchParams);
         }
 
     }
