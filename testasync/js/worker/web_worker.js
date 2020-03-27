@@ -8,14 +8,12 @@ self.importScripts("/testasync/js/axios/axios.min.js");
 self.addEventListener("message", workerReady, false);
 var workerFn = {};
 
-// WebWorker 可以開始接收 message 時
 function workerReady(e) {
-	var reqObj = e.data;
+	var reqObj = e.data.reqObj;
 	switch(reqObj["act"]) {
 		case "get": { workerFn["get"](reqObj); } break;
 		case "post": { workerFn["post"](reqObj); } break;
-		case "form_data": { workerFn["form_data"](reqObj); } break;
-		case "web_socket": { workerFn["web_socket"]() } break;
+		case "post_form_data": { workerFn["post_form_data"](reqObj); } break;
 	}
 }
 
@@ -36,6 +34,7 @@ function workerReady(e) {
 			}
 		})();
 		var axiosObj = {
+			transformResponse: [(data) => { return data; }],
 			method: "get",
 			url: reqObj["url"],
 			params: data
@@ -43,16 +42,23 @@ function workerReady(e) {
 		axios(axiosObj).then(function (response) {
 			// console.log(response);
 			var respObj = {
-				status: response.status,
-				statusText: response.statusText,
+				req_type: "get",
+				status: "done",
+				status_code: response.status,
+				status_text: response.statusText,
 				data: response.data,
 				headers: response.headers
 				// config: response.config
 				// request: response.request
 			};
 			self.postMessage(respObj);
-		}).catch(function (error) {
-			console.log(error);
+		}).catch(function (err) {
+			var respObj = {
+				req_type: "get",
+				status: "error",
+				error: err
+			};
+			self.postMessage(respObj);
 		});
 	};
 })();
@@ -74,29 +80,37 @@ function workerReady(e) {
 			}
 		})();
 		var axiosObj = {
+			transformResponse: [(data) => { return data; }],
 			method: "post",
 			url: reqObj["url"],
 			params: data
 		};
-		axios(axiosObj).then(function (response) {
+		axios(axiosObj).then(function(response) {
 			// console.log(response);
 			var respObj = {
-				status: response.status,
-				statusText: response.statusText,
+				req_type: "post",
+				status: "done",
+				status_code: response.status,
+				status_text: response.statusText,
 				data: response.data,
 				headers: response.headers
 				// config: response.config
 				// request: response.request
 			};
 			self.postMessage(respObj);
-		}).catch(function (error) {
-			console.log(error);
+		}).catch(function(err) {
+			var respObj = {
+				req_type: "post",
+				status: "error",
+				error: err
+			};
+			self.postMessage(respObj);
 		});
 	};
 })();
 
 (function(){
-	workerFn["form_data"] = function(reqObj) {
+	workerFn["post_form_data"] = function(reqObj) {
 		if(null != reqObj["data"] && false == Array.isArray(reqObj["data"])) {
 			console.error("data 參數必須使用 array 型態");
 			return;
@@ -112,27 +126,41 @@ function workerReady(e) {
 			}
 		})();
 		var config = {
+			transformResponse: [(data) => { return data; }],
 			// maxContentLength: 20000000,
 			onUploadProgress: function(progressEvent) {
 				var percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
 				var percentStr = String(percentCompleted);
-				console.log("uploadPercent:"+percentStr+"%");
+				// console.log("uploadPercent:"+percentStr+"%");
+				var respObj = {
+					req_type: "post_form_data",
+					status: "upload_progress",
+					progress_value: percentStr
+				};
+				self.postMessage(respObj);
 			}
 		};
 		// 要注意請使用 axios.post()
 		axios.post(reqObj["url"], formData, config).then(function (response) {
-			console.log(response);
+			// console.log(response);
 			var respObj = {
-				status: response.status,
-				statusText: response.statusText,
+				req_type: "post_form_data",
+				status: "done",
+				status_code: response.status,
+				status_text: response.statusText,
 				data: response.data,
 				headers: response.headers
 				// config: response.config
 				// request: response.request
 			};
 			self.postMessage(respObj);
-		}).catch(function (error) {
-			console.log(error);
+		}).catch(function (err) {
+			var respObj = {
+				req_type: "post_form_data",
+				status: "error",
+				error: err
+			};
+			self.postMessage(respObj);
 		});
 	};
 })();

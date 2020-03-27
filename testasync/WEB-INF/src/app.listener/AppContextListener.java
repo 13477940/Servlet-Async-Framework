@@ -1,9 +1,6 @@
 package app.listener;
 
-import app.handler.FileHandler;
-import app.handler.PageHandler;
-import app.handler.ResourceFileHandler;
-import app.handler.UploadHandler;
+import app.handler.*;
 import framework.web.executor.WebAppServicePoolStatic;
 
 import javax.servlet.ServletContextEvent;
@@ -17,6 +14,7 @@ public class AppContextListener implements ServletContextListener {
         WebAppServicePoolStatic.getInstance().addHandler(new ResourceFileHandler());
         WebAppServicePoolStatic.getInstance().addHandler(new FileHandler());
         WebAppServicePoolStatic.getInstance().addHandler(new UploadHandler());
+        WebAppServicePoolStatic.getInstance().addHandler(new ParameterHandler());
     }
 
     @Override
