@@ -20,10 +20,13 @@ var website = window.website || {};
 						value: targetFile
 					});
 				}
-				console.log(reqObj);
-				website.post_form_data(reqObj).done(function(respd){
-					console.log(respd);
-				});
+				website.post_form_data(reqObj)
+					.progress(function(prog){
+						console.log(prog);
+					})
+					.done(function(respd){
+						console.log(respd);
+					});
 			})();
         });
 		// pure javascript dialog example
@@ -44,7 +47,7 @@ var website = window.website || {};
 				openDialog();
 			});
 		})();
-		console.log(website);
+		// console.log(website);
     };
 }());
 $(website["readyFn"]);

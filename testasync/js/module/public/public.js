@@ -54,6 +54,10 @@ var website = window.website || {};
 				return;
 			}
 			var worker = new Worker("/testasync/js/worker/web_worker.js");
+			// if worker init error
+			worker.addEventListener("error", function(e){
+				console.log(e);
+			}, false);
 			// set listener
 			worker.addEventListener("message", workerMsgFn, false);
 			function workerMsgFn(e) {
@@ -84,6 +88,10 @@ var website = window.website || {};
 				return;
 			}
 			var worker = new Worker("/testasync/js/worker/web_worker.js");
+			// if worker init error
+			worker.addEventListener("error", function(e){
+				console.log(e);
+			}, false);
 			// set listener
 			worker.addEventListener("message", workerMsgFn, false);
 			function workerMsgFn(e) {
@@ -114,12 +122,16 @@ var website = window.website || {};
 				return;
 			}
 			var worker = new Worker("/testasync/js/worker/web_worker.js");
+			// if worker init error
+			worker.addEventListener("error", function(e){
+				console.log(e);
+			}, false);
 			// set listener
 			worker.addEventListener("message", workerMsgFn, false);
 			function workerMsgFn(e) {
 				var respObj = e.data;
 				if("upload_progress" == respObj["status"]) {
-					def.notify(reqObj["progress_value"]);
+					def.notify(respObj["progress_value"]);
 				}
 				if("done" == respObj["status"]) {
 					def.resolve(e.data.data);
