@@ -3,20 +3,38 @@
 	<head>
 		<meta charset="utf-8" />
 		<meta name="description" content="" />
+		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<title>Test Async</title>
+		<link rel="stylesheet" href="/testasync/css/module/controller/controller.css">
 		<script src="/testasync/js/jquery/jquery.slim.min.js"></script>
 		<script src="/testasync/js/module/public/public.js"></script>
 		<script src="/testasync/js/module/index/index.js"></script>
+		<script>
+			$(function(){
+				var dropdown_list = [
+					"<div style='padding: 15px 20px;color: #000;'>option 1</div>",
+					"<div style='padding: 15px 20px;color: #000;'>option 2</div>",
+					"<div style='padding: 15px 20px;color: #000;'>option 3</div>"
+				]
+				website.dropdown($("div[ui_key=test_dropdown]"), dropdown_list).done(function(dropdown){
+					console.log(dropdown);
+				});
+			});
+		</script>
 	</head>
 	<body>
-		<div>TEST PAGE</div>
-		<div style="height: 20px;"></div>
-		<div>
-			<input id="upfile" type="file" />
-			<button id="upok">上傳檔案</button>
-			<script ui_key="load_script"></script>
+		<div style="padding: 20px;">
+			<div>TEST PAGE</div>
+			<div style="height: 20px;"></div>
+			<div style="display: flex;align-items: center;">
+				<div><input id="upfile" type="file" /></div>
+				<div style="width: 20px;"></div>
+				<div><button id="upok" style="padding: 10px 20px 10px 20px;">上傳檔案</button></div>
+			</div>
+			<div style="height: 20px;"></div>
+			<div><button ui_key="open_dialog" style="padding: 10px 20px 10px 20px;">Open Dialog</button></div>
+			<div style="height: 20px;"></div>
+			<div ui_key="test_dropdown" style="display: flex;"></div>
 		</div>
-		<div style="height: 20px;"></div>
-		<div><button ui_key="open_dialog">Open Dialog</button></div>
 	</body>
 </html>

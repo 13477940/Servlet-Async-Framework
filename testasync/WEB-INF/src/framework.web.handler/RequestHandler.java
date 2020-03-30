@@ -1,7 +1,6 @@
 package framework.web.handler;
 
 import framework.web.context.AsyncActionContext;
-import framework.observer.Message;
 
 public abstract class RequestHandler {
 
@@ -32,8 +31,7 @@ public abstract class RequestHandler {
             this.nextRequestHandler.startup(requestContext);
         } else {
             // 如果是持續遞交到沒有下一個 handler 表示為無效的請求
-            Message m = requestContext.getInvalidRequestHandler().obtainMessage();
-            m.sendToTarget();
+            requestContext.getInvalidRequestHandler().obtainMessage().sendToTarget();
         }
     }
 

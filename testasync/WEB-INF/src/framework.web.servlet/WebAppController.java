@@ -27,6 +27,7 @@ public class WebAppController extends HttpServlet {
 
     private void startAsync(HttpServletRequest req, HttpServletResponse resp) {
         setEncoding(req, resp);
+        // https://docs.oracle.com/javaee/6/api/javax/servlet/AsyncContext.html
         AsyncContext asyncContext;
         if(req.isAsyncStarted()) {
             asyncContext = req.getAsyncContext();
@@ -44,6 +45,7 @@ public class WebAppController extends HttpServlet {
         }
         // Async Request Timeout
         {
+            // Sets the timeout (in milliseconds) for this AsyncContext.
             // 上傳和下載持續時間皆會受到 AsyncContext Timeout 的影響
             // 設置為 0 時表示非同步處理中無逾時限制(ms)
             asyncContext.setTimeout(0);

@@ -11,18 +11,23 @@ public abstract class ConnectorConfig {
         String res = null;
         String dbType = Objects.requireNonNullElse(databaseType, "").trim().toLowerCase();
         switch(dbType) {
-            case "mssql": {
-                res = "com.microsoft.sqlserver.jdbc.SQLServerDriver";
+            // https://dev.mysql.com/doc/connector-j/5.1/en/connector-j-usagenotes-connect-drivermanager.html
+            // https://dev.mysql.com/doc/connector-j/8.0/en/connector-j-usagenotes-connect-drivermanager.html
+            case "mysql": {
+                // res = "com.mysql.jdbc.Driver"; // MySQL 5.x
+                res = "com.mysql.cj.jdbc.Driver"; // MySQL 8.0+
             } break;
+            // https://mariadb.com/kb/en/about-mariadb-connector-j/
+            case "mariadb": {
+                res = "org.mariadb.jdbc.Driver";
+            } break;
+            // https://jdbc.postgresql.org/documentation/81/load.html
             case "postgresql": {
                 res = "org.postgresql.Driver";
             } break;
-            case "mysql": {
-                // res = "com.mysql.jdbc.Driver"; // old MySQL version
-                res = "com.mysql.cj.jdbc.Driver"; // MySQL 8.0+
-            } break;
-            case "mariadb": {
-                res = "org.mariadb.jdbc.Driver";
+            // https://docs.microsoft.com/zh-tw/sql/connect/jdbc/using-the-jdbc-driver?view=sql-server-ver15#making-a-simple-connection-to-a-database
+            case "mssql": {
+                res = "com.microsoft.sqlserver.jdbc.SQLServerDriver";
             } break;
             default: {
                 try {

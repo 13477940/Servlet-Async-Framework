@@ -558,7 +558,7 @@ public class AsyncActionContext {
                     JSONObject obj = new JSONObject();
                     obj.put("status", m.getData().getString("status"));
                     obj.put("error_code", "500"); // server_side
-                    obj.put("msg_eng", m.getData().getString("msg_eng"));
+                    obj.put("msg", m.getData().getString("msg"));
                     obj.put("msg_zht", m.getData().getString("msg_zht"));
                     AsyncActionContext.this.printToResponse(obj.toJSONString(), new Handler(){
                         @Override

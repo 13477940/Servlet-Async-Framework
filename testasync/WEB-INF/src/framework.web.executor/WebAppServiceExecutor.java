@@ -23,14 +23,15 @@ public class WebAppServiceExecutor {
             if (handlers.size() == 0) {
                 Bundle b = new Bundle();
                 b.putString("status", "fail");
-                b.putString("msg_eng", "not_exist_request_handler");
+                b.putString("msg", "not_exist_request_handler");
+                b.putString("msg_zht", "尚未建立任何一個責任鏈節點 RequestHandler");
                 Message m = requestContext.getAppExceptionHandler().obtainMessage();
                 m.setData(b);
                 m.sendToTarget();
                 return;
             }
         }
-        // 具有責任鏈時由第一節點進入
+        // 確認具有責任鏈，由第一節點進入開始執行
         try {
             handlers.get(0).startup(requestContext);
         } catch (Exception e) {
@@ -41,7 +42,8 @@ public class WebAppServiceExecutor {
             {
                 Bundle b = new Bundle();
                 b.putString("status", "fail");
-                b.putString("msg_eng", "server_side_exception_error");
+                b.putString("msg", "server_side_exception_error");
+                b.putString("msg_zht", "伺服器端例外錯誤，請檢查後台程式碼");
                 Message m = requestContext.getAppExceptionHandler().obtainMessage();
                 m.setData(b);
                 m.sendToTarget();
