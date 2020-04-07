@@ -44,6 +44,43 @@ var website = window.website || {};
 			return website.randomString();
 		}
 	})();
+	// 動態載入 JavaScript（base GET method）
+	(function(){
+		var loadedScript = {}; // 載入過的 script 路徑
+		website["script"] = function(_url) {
+			var def = $.Deferred();
+			// 如果 script 已在快取中
+			if(null != loadedScript[_url]) {
+				def.resolve();
+				return;
+			}
+			loadedScript[_url] = "loaded";
+			(function(){
+				var worker = new Worker("/testasync/js/worker/axios_worker.js");
+				// if worker init error
+				worker.addEventListener("error", function(e){
+					console.log(e);
+				}, false);
+				// set listener
+				worker.addEventListener("message", workerMsgFn, false);
+				function workerMsgFn(e) {
+					$("body").append("<script>"+e.data.data+"</script>");
+					def.resolve(e.data.data);
+					worker.terminate();
+				}
+				// send init msg
+				(function(){
+					worker.postMessage({
+						reqObj: {
+							act: "get",
+							url: _url
+						}
+					});
+				})();
+			})();
+			return def;
+		}
+	})();
 	// AJAX - GET x-www-form-urlencoded
 	(function(){
 		website["get"] = function(reqObj){
@@ -53,7 +90,7 @@ var website = window.website || {};
 				console.error("data 參數必須使用 array 型態");
 				return;
 			}
-			var worker = new Worker("/testasync/js/worker/web_worker.js");
+			var worker = new Worker("/testasync/js/worker/axios_worker.js");
 			// if worker init error
 			worker.addEventListener("error", function(e){
 				console.log(e);
@@ -87,7 +124,7 @@ var website = window.website || {};
 				console.error("data 參數必須使用 array 型態");
 				return;
 			}
-			var worker = new Worker("/testasync/js/worker/web_worker.js");
+			var worker = new Worker("/testasync/js/worker/axios_worker.js");
 			// if worker init error
 			worker.addEventListener("error", function(e){
 				console.log(e);
@@ -121,7 +158,7 @@ var website = window.website || {};
 				console.error("data 參數必須使用 array 型態");
 				return;
 			}
-			var worker = new Worker("/testasync/js/worker/web_worker.js");
+			var worker = new Worker("/testasync/js/worker/axios_worker.js");
 			// if worker init error
 			worker.addEventListener("error", function(e){
 				console.log(e);
@@ -151,7 +188,7 @@ var website = window.website || {};
 			return def;
 		};
 	})();
-	// Dialog - implement by pure js
+	// Dialog
 	(function(){
 		website["dialog"] = function(initObj) {
 			var def = $.Deferred();

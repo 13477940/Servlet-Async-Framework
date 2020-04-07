@@ -140,7 +140,7 @@ function workerReady(e) {
 				self.postMessage(respObj);
 			}
 		};
-		// 要注意請使用 axios.post()
+		// form-data 格式請使用 post method
 		axios.post(reqObj["url"], formData, config).then(function (response) {
 			// console.log(response);
 			var respObj = {
@@ -162,47 +162,5 @@ function workerReady(e) {
 			};
 			self.postMessage(respObj);
 		});
-	};
-})();
-
-// WebSocket Client Example
-(function(){
-	var socketList = [];
-	workerFn["web_socket"] = function() {
-		(function(){
-			function getRootUri() {
-				var ws_protocal = "ws://";
-				var ws_port = ":80";
-				if(location.protocol.indexOf("https") > -1) {
-					ws_protocal = "wss://";
-					ws_port = ":443";
-				}
-				return ws_protocal + location.host + ws_port;
-			}
-			var web_socket = new WebSocket(ws_uri);
-			socketList.push(web_socket);
-			web_socket.onopen = function(evt) {
-				socketReady();
-			};
-			web_socket.onmessage = function(evt) {
-				var eventObj = JSON.parse(evt.data);
-				console.log(eventObj);
-			};
-			web_socket.onerror = function(evt) {
-				reconnectFn();
-			};
-			web_socket.onclose = function(evt) {
-				reconnectFn();
-			};
-			function socketReady() {
-				var sendMsgObj = { "content": "test" };
-				web_socket.send(JSON.stringify(sendMsgObj));
-			}
-			function reconnectFn() {
-				var opt = socketList.shift();
-				opt.close();
-				connectWebSocket();
-			}
-		})();
 	};
 })();

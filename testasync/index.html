@@ -6,11 +6,18 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<title>Test Async</title>
 		<link rel="stylesheet" href="/testasync/css/module/controller/controller.css">
+		<script src="/testasync/js/axios/axios.min.js"></script>
 		<script src="/testasync/js/jquery/jquery.slim.min.js"></script>
 		<script src="/testasync/js/module/public/public.js"></script>
-		<script src="/testasync/js/module/index/index.js"></script>
+		<!-- <script src="/testasync/js/module/index/index.js"></script> -->
 		<script>
 			$(function(){
+				website.script("/testasync/js/module/index/index.js", function(){
+					console.log("done");
+				});
+				website.script("/testasync/js/module/index/index.js", function(){
+					console.log("done");
+				});
 				var dropdown_list = [
 					"<div style='padding: 15px 20px;color: #000;'>option 1</div>",
 					"<div style='padding: 15px 20px;color: #000;'>option 2</div>",
