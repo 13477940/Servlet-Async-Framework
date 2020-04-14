@@ -20,7 +20,11 @@ It's a tomcat(or jetty) webapp for processing asynchronous http request task sim
         <li><a href="https://www.eclipse.org/jetty/">Jetty (recommend)</a></li>
 </ul>
 [3] <a href="https://github.com/alibaba/fastjson">FastJSON</a><br/>
-[4] put "testasync" files to "tomcat/webapps/testasync" folder<br/>
+[4] <a href="https://github.com/Elopteryx/upload-parser">Elopteryx/upload-parser</a>
+<ul>
+        <li><a href="https://search.maven.org/search?q=g:com.github.elopteryx%20AND%20a:upload-parser">Maven Central Repository</a></li>
+</ul>
+[5] put "testasync" files to "tomcat/webapps/testasync" folder<br/>
 
 # Optional
 <a href="https://eclipse-ee4j.github.io/mail/">Jakarta Mail</a><br/>
