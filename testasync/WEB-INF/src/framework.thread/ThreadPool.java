@@ -1,5 +1,6 @@
 package framework.thread;
 
+import java.lang.ref.WeakReference;
 import java.util.concurrent.*;
 
 /**
@@ -20,7 +21,7 @@ public class ThreadPool {
     }
 
     public ExecutorService getInstance() {
-        return this.worker;
+        return new WeakReference<>( this.worker ).get();
     }
 
     public void shutdown() {

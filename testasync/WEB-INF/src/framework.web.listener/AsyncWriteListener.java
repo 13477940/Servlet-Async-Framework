@@ -1,4 +1,4 @@
-package framework.web.niolistener;
+package framework.web.listener;
 
 import framework.observer.Bundle;
 import framework.observer.Handler;
@@ -15,6 +15,10 @@ import java.lang.ref.WeakReference;
 import java.nio.charset.StandardCharsets;
 
 /**
+ * https://medium.com/@clu1022/%E6%B7%BA%E8%AB%87i-o-model-32da09c619e6
+ * https://www.slideshare.net/SimoneBordet/servlet-31-async-io
+ * https://openhome.cc/Gossip/ServletJSP/WriteListener.html
+ *
  * 當每個獨立輸出的內容希望被非同步輸出時，要封裝於 WriteListener 才能確保完整的輸出，
  * 因為 onWritePossible 和 ServletOutputStream.isReady() 兩者狀態是持續變動的，
  * 例如寫入過長的（例如 2MiB 純文字）文檔或檔案於 onWritePossible 中處理時，
@@ -26,9 +30,9 @@ public class AsyncWriteListener implements WriteListener {
 
     private final boolean devMode = false;
 
-    private AsyncActionContext requestContext;
+    private final AsyncActionContext requestContext;
     private BufferedInputStream inputStream;
-    private Handler handler;
+    private final Handler handler;
 
     private AsyncWriteListener(AsyncActionContext asyncActionContext, CharSequence charSequence, Handler handler) {
         this.requestContext = asyncActionContext;
@@ -58,9 +62,11 @@ public class AsyncWriteListener implements WriteListener {
      * 非同步輸出實作
      * 2019-06-17 修改 while 處理邏輯及中斷條件，解決 CPU 高使用率的問題
      * 2019-12-31 取消自旋鎖
+     * 2020-04-13 修正 Buffer Size 為 inputStream.available() 自動取值
      */
     @Override
     public void onWritePossible() {
+        // 檢查 AsyncContext 是否可用
         if(requestContext.isComplete()) {
             Bundle b = new Bundle();
             b.putString("status", "fail");
@@ -84,17 +90,18 @@ public class AsyncWriteListener implements WriteListener {
         } catch (Exception e) {
             if(devMode) { e.printStackTrace(); }
         }
-        byte[] buffer = new byte[4096];
-        while (true) {
+        // 非同步模式之下將 inputStream 內容讀取並輸出至 ServletOutputStream
+        int rLength;
+        while ( true ) {
             if(null == out) break;
             if(!out.isReady()) break;
+            if(null == inputStream) break;
             try {
-                if(null == inputStream) break;
-                int len = inputStream.read(buffer);
-                if (len >= 0) {
-                    out.write(buffer, 0, len);
-                } else {
-                    // all byte process done
+                int bSize = inputStream.available();
+                byte[] buffer = new byte[ bSize ];
+                rLength = inputStream.read(buffer);
+                // if all byte process done
+                if( 0 > rLength || 0 == bSize ) {
                     closeStream();
                     {
                         Bundle b = new Bundle();
@@ -105,10 +112,10 @@ public class AsyncWriteListener implements WriteListener {
                     }
                     break;
                 }
+                out.write(buffer, 0, rLength);
             } catch (Exception e) {
                 if(devMode) { e.printStackTrace(); }
             }
-            // Thread.onSpinWait();
         }
     }
 
@@ -144,7 +151,7 @@ public class AsyncWriteListener implements WriteListener {
         private Handler handler = null;
 
         public AsyncWriteListener.Builder setAsyncActionContext(AsyncActionContext asyncActionContext) {
-            this.requestContext = asyncActionContext;
+            this.requestContext = new WeakReference<>( asyncActionContext ).get();
             return this;
         }
 
@@ -159,12 +166,14 @@ public class AsyncWriteListener implements WriteListener {
         }
 
         public AsyncWriteListener.Builder setHandler(Handler handler) {
-            this.handler = handler;
+            this.handler = new WeakReference<>( handler ).get();
             return this;
         }
 
         public AsyncWriteListener build() {
-            if(null == file) { return new AsyncWriteListener(requestContext, charSequence, handler); }
+            if(null == file) {
+                return new AsyncWriteListener(requestContext, charSequence, handler);
+            }
             return new AsyncWriteListener(requestContext, file, handler);
         }
 

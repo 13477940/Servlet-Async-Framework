@@ -1,4 +1,4 @@
-package framework.web.niolistener;
+package framework.web.listener;
 
 import framework.observer.Bundle;
 import framework.observer.Handler;
@@ -17,19 +17,22 @@ import java.io.FileOutputStream;
 import java.lang.ref.WeakReference;
 
 /**
+ * https://medium.com/@clu1022/%E6%B7%BA%E8%AB%87i-o-model-32da09c619e6
+ * https://www.slideshare.net/SimoneBordet/servlet-31-async-io
+ * https://openhome.cc/Gossip/ServletJSP/ReadListener.html
+ *
  * 當每個獨立的上傳請求希望被非同步處理時，要採用 ReadListener，
  * 當伺服器有空閒的時間可以處理上傳資料時會調用 onDataAvailable，
  * 調用 onDataAvailable 是一個重複性的動作，
  * 直到該請求所有上傳的資料都傳遞完成才會呼叫 onAllDataRead
- * https://openhome.cc/Gossip/ServletJSP/ReadListener.html
  */
 public class AsyncReadListener implements ReadListener {
 
     private final boolean devMode = false;
 
-    private ServletContext servletContext;
-    private AsyncContext asyncContext;
-    private Handler handler;
+    private final ServletContext servletContext;
+    private final AsyncContext asyncContext;
+    private final Handler handler;
 
     private File targetFile;
     private ServletInputStream inputStream = null;
@@ -74,21 +77,21 @@ public class AsyncReadListener implements ReadListener {
      * 需注意若此處不執行 inputStream.read() 則會永遠到不了 onAllDataRead() 狀態之中
      * 2019-06-19 修正 while 處理邏輯及中斷條件
      * 2019-12-31 取消自旋鎖
+     * 2020-04-13 修正 while 判斷中斷邏輯
+     * 2020-04-13 修正 Buffer Size 為 inputStream.available() 自動取值
      */
     @Override
     public void onDataAvailable() {
-        byte[] buffer = new byte[4096];
         try {
-            // onAllDataRead 需要由 inputStream.read 所有 byte 之後才會被觸發
-            int length;
-            while (true) {
+            // onAllDataRead() 是此 inputStream.read 讀取完所有 byte 之後才會被觸發
+            int rLength;
+            while ( inputStream.isReady() && !inputStream.isFinished() ) {
                 if(null == inputStream) break;
-                if(!inputStream.isReady()) break;
-                length = inputStream.read(buffer);
-                if(0 > length) break;
+                byte[] buffer = new byte[ inputStream.available() ];
+                rLength = inputStream.read(buffer);
+                if( 0 > rLength ) break;
                 if(null == outputStream) break;
-                outputStream.write(buffer, 0, length);
-                // Thread.onSpinWait();
+                outputStream.write(buffer, 0, rLength);
             }
         } catch (Exception e) {
             if(devMode) { e.printStackTrace(); }
@@ -160,17 +163,17 @@ public class AsyncReadListener implements ReadListener {
         private Handler handler;
 
         public AsyncReadListener.Builder setServletContext(ServletContext servletContext) {
-            this.servletContext = servletContext;
+            this.servletContext = new WeakReference<>( servletContext ).get();
             return this;
         }
 
         public AsyncReadListener.Builder setAsyncContext(AsyncContext asyncContext) {
-            this.asyncContext = asyncContext;
+            this.asyncContext = new WeakReference<>( asyncContext ).get();
             return this;
         }
 
         public AsyncReadListener.Builder setHandler(Handler handler) {
-            this.handler = handler;
+            this.handler = new WeakReference<>( handler ).get();
             return this;
         }
 

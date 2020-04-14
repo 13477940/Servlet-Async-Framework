@@ -8,7 +8,7 @@ import framework.observer.Message;
 import framework.random.RandomServiceStatic;
 import framework.web.multipart.FileItem;
 import framework.web.multipart.FileItemList;
-import framework.web.niolistener.AsyncWriteListener;
+import framework.web.listener.AsyncWriteListener;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;

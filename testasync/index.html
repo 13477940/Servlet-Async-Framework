@@ -9,23 +9,49 @@
 		<script src="/testasync/js/axios/axios.min.js"></script>
 		<script src="/testasync/js/jquery/jquery.slim.min.js"></script>
 		<script src="/testasync/js/module/public/public.js"></script>
-		<!-- <script src="/testasync/js/module/index/index.js"></script> -->
 		<script>
 			$(function(){
 				website.script("/testasync/js/module/index/index.js", function(){
 					console.log("done");
 				});
-				website.script("/testasync/js/module/index/index.js", function(){
-					console.log("done");
-				});
-				var dropdown_list = [
-					"<div style='padding: 15px 20px;color: #000;'>option 1</div>",
-					"<div style='padding: 15px 20px;color: #000;'>option 2</div>",
-					"<div style='padding: 15px 20px;color: #000;'>option 3</div>"
-				]
-				website.dropdown($("div[ui_key=test_dropdown]"), dropdown_list).done(function(dropdown){
-					console.log(dropdown);
-				});
+				/* 壓力測試
+				for(var i = 0, len = 1000; i < len; i++) {
+					var targetFile = $("#upfile")[0]["files"][0];
+					(function(){
+						var reqObj = {
+							url: "/testasync/index",
+							data: [
+								{ key: "a", value: "100" },
+								{ key: "b", value: "ABC" },
+								{ key: "c", value: "國字測試" }
+							]
+						};
+						if(null != targetFile) {
+							reqObj.data.push({
+								key: "myfile",
+								value: targetFile
+							});
+						}
+						website.post_form_data(reqObj)
+							.progress(function(prog){
+								console.log(prog);
+							})
+							.done(function(respd){
+								console.log(respd);
+							});
+					})();
+				}*/
+				// dropdown demo
+				(function(){
+					var dropdown_list = [
+						"<div style='padding: 15px 20px;color: #000;'>option 1</div>",
+						"<div style='padding: 15px 20px;color: #000;'>option 2</div>",
+						"<div style='padding: 15px 20px;color: #000;'>option 3</div>"
+					]
+					website.dropdown($("div[ui_key=test_dropdown]"), dropdown_list).done(function(dropdown){
+						console.log(dropdown);
+					});
+				})();
 			});
 		</script>
 	</head>
