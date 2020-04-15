@@ -5,7 +5,7 @@ import java.util.Iterator;
 
 public class FileItemList {
 
-    private ArrayList<FileItem> list;
+    private final ArrayList<FileItem> list;
 
     public FileItemList() {
         this.list = new ArrayList<>();

@@ -11,7 +11,7 @@ import java.util.ArrayList;
  */
 public class Handler {
 
-    private ArrayList<Message> msgList;
+    private final ArrayList<Message> msgList;
 
     public Handler() {
         this.msgList = new ArrayList<>();
@@ -32,7 +32,7 @@ public class Handler {
     }
 
     public boolean isEmpty() {
-        return (null == msgList || msgList.size() == 0);
+        return msgList.size() == 0;
     }
 
 }

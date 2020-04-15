@@ -33,22 +33,22 @@ import java.util.concurrent.CompletableFuture;
  * -191218 修正檔案下載處理的行為與回傳值可自定義處理的內容
  * -200225 刪除 AppSetting 引用，下載檔案時請自行指定暫存路徑
  * -200316 更換 LinkedHashMap 為基礎，維持使用者傳入的參數順序
- * -200324 增加 keepUrlSearchParams 參數，判斷是否需保留完整的輸入網址
+ * -200324 增加 keepUrlSearchParams 參數，判斷是否需保留完整的參數網址
  */
 public class HttpClient {
 
     private String url;
     private String getParamsStr;
-    private HashMap<String, String> headers;
-    private LinkedHashMap<String, String> parameters;
-    private LinkedHashMap<String, File> files;
-    private boolean alwaysDownload;
+    private final HashMap<String, String> headers;
+    private final LinkedHashMap<String, String> parameters;
+    private final LinkedHashMap<String, File> files;
+    private final boolean alwaysDownload;
     private String tempDirPath; // 自定義下載暫存資料夾路徑
     // private String tempDirName = "http_client_temp";
-    private boolean tempFileDeleteOnExit;
+    private final boolean tempFileDeleteOnExit;
 
-    private java.net.http.HttpClient.Version httpVersion = java.net.http.HttpClient.Version.HTTP_2; // default
-    private java.net.http.HttpClient.Redirect httpRedirect = java.net.http.HttpClient.Redirect.NORMAL; // default
+    private final java.net.http.HttpClient.Version httpVersion = java.net.http.HttpClient.Version.HTTP_2; // default
+    private final java.net.http.HttpClient.Redirect httpRedirect = java.net.http.HttpClient.Redirect.NORMAL; // default
 
     // 建構子
     private HttpClient(

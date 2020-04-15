@@ -31,9 +31,9 @@ import java.util.*;
  */
 public class AsyncActionContext {
 
-    private ServletContext servletContext;
-    private ServletConfig servletConfig;
-    private AsyncContext asyncContext;
+    private final ServletContext servletContext;
+    private final ServletConfig servletConfig;
+    private final AsyncContext asyncContext;
 
     private HttpSession httpSession;
     private String reqMethod;

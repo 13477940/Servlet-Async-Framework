@@ -8,24 +8,25 @@ import java.lang.ref.WeakReference;
  * https://openhome.cc/Gossip/ServletJSP/ServletContext.html
  * https://www.zhihu.com/question/38481443
  *
- * #200225 修改適用於 ServletContextListener 之中，解決 AppSetting 類別建立問題
+ * 2020-02-25 修改適用於 ServletContextListener 之中，解決 AppSetting 類別建立問題
+ * 2020-04-14 修改初始化流程
  */
 public class ServletContextStatic {
 
+    private static ServletContext _servletContext;
+
     private ServletContextStatic() {}
 
-    static {}
+    static {
+        _servletContext = null;
+    }
 
     public static ServletContext getInstance() {
-        return ServletContextStatic.InstanceHolder.instance;
+        return _servletContext;
     }
 
     public static void setInstance(ServletContext servletContext) {
-        InstanceHolder.instance = new WeakReference<>( servletContext ).get();
-    }
-
-    private static class InstanceHolder {
-        private static ServletContext instance = null;
+        _servletContext = new WeakReference<>( servletContext ).get();
     }
 
 }

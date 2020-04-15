@@ -12,6 +12,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * [connection template]
@@ -132,7 +133,8 @@ public class SimpleDataSource extends ConnectorConfig implements ConnectionPool 
                     }
                 }
                 try {
-                    Thread.sleep(1000 * 60 * 10);
+                    TimeUnit.MINUTES.sleep(10);
+                    // Thread.sleep(1000 * 60 * 10);
                 } catch (Exception e) {
                     // e.printStackTrace();
                 }

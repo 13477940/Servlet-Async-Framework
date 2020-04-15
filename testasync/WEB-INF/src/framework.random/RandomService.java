@@ -20,7 +20,7 @@ public abstract class RandomService {
 
     private final int defaultSize = 8; // default random string length
 
-    private SecureRandom random;
+    private final SecureRandom random;
 
     RandomService() {
         random = new WeakReference<>( new SecureRandom() ).get();

@@ -14,10 +14,10 @@ public class FileItem {
     private String name;
     private String fieldName;
     private String contentType;
-    private Integer size;
+    private Long size;
     private Boolean isFormField;
 
-    private FileItem(File file, String name, String fieldName, String contentType, Integer size, Boolean isFormField) {
+    private FileItem(File file, String name, String fieldName, String contentType, Long size, Boolean isFormField) {
         this.file = file;
         this.name = name;
         this.fieldName = fieldName;
@@ -46,8 +46,8 @@ public class FileItem {
         return this.contentType;
     }
 
-    public void setSize(Integer size) { this.size = size; }
-    public Integer getSize() {
+    public void setSize(Long size) { this.size = size; }
+    public Long getSize() {
         return this.size;
     }
 
@@ -84,7 +84,7 @@ public class FileItem {
         private String name = null;
         private String fieldName = null;
         private String contentType = null;
-        private Integer size = null;
+        private Long size = null;
         private Boolean isFormField = null;
 
         public FileItem.Builder setFile(File file) {
@@ -107,7 +107,7 @@ public class FileItem {
             return this;
         }
 
-        public FileItem.Builder setSize(Integer size) {
+        public FileItem.Builder setSize(Long size) {
             this.size = size;
             return this;
         }

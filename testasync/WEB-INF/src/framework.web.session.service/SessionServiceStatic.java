@@ -2,16 +2,16 @@ package framework.web.session.service;
 
 public class SessionServiceStatic {
 
+    private static final SessionService instance;
+
     private SessionServiceStatic () {}
 
-    static {}
-
-    public static SessionService getInstance() {
-        return InstanceHolder.instance;
+    static {
+        instance = new SessionServiceStatic.Instance();
     }
 
-    private static class InstanceHolder {
-        static SessionService instance = new SessionServiceStatic.Instance();
+    public static SessionService getInstance() {
+        return instance;
     }
 
     private static class Instance extends SessionService {}

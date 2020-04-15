@@ -2,16 +2,16 @@ package framework.random;
 
 public class RandomServiceStatic {
 
+    private static final RandomService instance;
+
     private RandomServiceStatic() {}
 
-    static {}
-
-    public static RandomService getInstance() {
-        return InstanceHolder.instance;
+    static {
+        instance = new RandomServiceStatic.Instance();
     }
 
-    private static class InstanceHolder {
-        static RandomService instance = new RandomServiceStatic.Instance();
+    public static RandomService getInstance() {
+        return instance;
     }
 
     private static class Instance extends RandomService {}

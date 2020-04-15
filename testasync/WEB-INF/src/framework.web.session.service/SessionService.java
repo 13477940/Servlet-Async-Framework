@@ -10,7 +10,7 @@ import java.util.Map;
 
 public abstract class SessionService {
 
-    private UserMap userMap;
+    private final UserMap userMap;
     private final String userContextTag = "user_context";
 
     /**
@@ -47,7 +47,7 @@ public abstract class SessionService {
     }
 
     public void removeUser(HttpSession session) {
-        if(null == userMap || userMap.size() == 0) return;
+        if(userMap.size() == 0) return;
         String sessionID = session.getId();
         if(userMap.prototype().containsKey(sessionID)) {
             userMap.remove(sessionID);
@@ -88,7 +88,6 @@ public abstract class SessionService {
      * 如果是活躍的使用者將會在短時間內被恢復登記於使用者列表中。
      */
     public void clearUserMap() {
-        if(null == userMap) return;
         userMap.prototype().clear();
     }
 
@@ -96,7 +95,6 @@ public abstract class SessionService {
      * 清空所有 Session 使用者目前的 Session 內容
      */
     public void logoutAllUser() {
-        if(null == userMap) return;
         for(Map.Entry<String, UserContext> uc : userMap.prototype().entrySet()) {
             removeUser(uc.getValue().getSession());
         }

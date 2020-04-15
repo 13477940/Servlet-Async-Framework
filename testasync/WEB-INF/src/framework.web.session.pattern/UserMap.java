@@ -10,7 +10,7 @@ import java.util.Map.Entry;
 
 public abstract class UserMap {
 
-    private LinkedHashMap<String, UserContext> map = new LinkedHashMap<>();
+    private final LinkedHashMap<String, UserContext> map = new LinkedHashMap<>();
 
     public UserMap() {}
 
@@ -39,7 +39,6 @@ public abstract class UserMap {
      * 目前登入人數
      */
     public int size() {
-        if(null == map) { return 0; }
         return map.size();
     }
 

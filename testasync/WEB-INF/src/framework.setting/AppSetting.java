@@ -20,12 +20,12 @@ import java.nio.charset.StandardCharsets;
  */
 public class AppSetting {
 
-    private String configDirName;
-    private String configFileName;
-    private String baseFileDirName;
-    private AppSetting.PathContext pathContext;
+    private final String configDirName;
+    private final String configFileName;
+    private final String baseFileDirName;
+    private final AppSetting.PathContext pathContext;
 
-    private String hostOS;
+    private final String hostOS;
     private String dirSlash;
 
     private AppSetting(String configDirName, String configFileName, String baseFileDirName, AppSetting.PathContext pathContext) {
@@ -225,10 +225,10 @@ public class AppSetting {
      * WebApp 預設資源路徑封裝
      */
     public static class PathContext {
-        private String tempDirPath;
-        private String uploadDirPath;
-        private String exportDirPath;
-        private String logDirPath;
+        private final String tempDirPath;
+        private final String uploadDirPath;
+        private final String exportDirPath;
+        private final String logDirPath;
 
         private PathContext(String baseFileDirPath, String webAppName, String dirSlash) {
             String tmpPath = baseFileDirPath + dirSlash + webAppName;

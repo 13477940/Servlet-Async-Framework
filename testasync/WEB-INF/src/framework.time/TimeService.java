@@ -14,7 +14,7 @@ public class TimeService {
     private static final String pattern_date = "yyyy-MM-dd";
     private static final String pattern_time = "HH:mm:ss";
 
-    private LocalDateTime ldt;
+    private final LocalDateTime ldt;
 
     private TimeService(LocalDateTime ldt) {
         this.ldt = ldt;

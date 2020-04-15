@@ -9,7 +9,7 @@ import java.io.FileWriter;
  */
 public class TextFileWriter {
 
-    private File targetFile;
+    private final File targetFile;
 
     private BufferedWriter bufferedWriter = null;
     private FileWriter fileWriter = null;

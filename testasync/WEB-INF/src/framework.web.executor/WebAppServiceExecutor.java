@@ -10,7 +10,7 @@ import java.util.ArrayList;
 
 public class WebAppServiceExecutor {
 
-    private AsyncActionContext requestContext;
+    private final AsyncActionContext requestContext;
 
     public WebAppServiceExecutor(AsyncActionContext asyncActionContext) {
         this.requestContext = asyncActionContext;

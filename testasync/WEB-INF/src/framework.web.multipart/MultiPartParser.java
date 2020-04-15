@@ -10,15 +10,21 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
 /**
+ * TODO [ beta version, not used ]
  * implement by UrielTech.com TomLi.
- * 190704 發現有部分檔案可能造成解析錯誤，初步修復模塊化程式碼，增加可讀性
- * 190705 重構完成並修正可能發生的 byte 取碼處理錯誤問題
+ *
+ * TODO Recommend Parser
+ * https://github.com/Elopteryx/upload-parser
+ *
+ * 2019-07-04 發現有部分檔案可能造成解析錯誤，初步修復模塊化程式碼，增加可讀性
+ * 2019-07-05 重構完成並修正可能發生的 byte 取碼處理錯誤問題
+ * 2020-04-14 請改用 https://github.com/Elopteryx/upload-parser，此類別將被凍結保存！
  */
 public class MultiPartParser {
 
-    private AsyncContext asyncContext;
+    private final AsyncContext asyncContext;
 
-    private File file;
+    private final File file;
     private File tempDir;
     private String dirSlash;
 
@@ -137,15 +143,15 @@ public class MultiPartParser {
 
         private int parseContentType = 0; // 0 = title, 1 = mime, 2 = binary
         private boolean validByte = false;
-        private ArrayList<Byte> tmpByteList = new ArrayList<>();
+        private final ArrayList<Byte> tmpByteList = new ArrayList<>();
         private boolean watchByte = false;
         // private Byte prevByte = null;
         private boolean isBinary = false; // 連續兩次 13 10 命中後才開啟檔案寫入模式
 
-        private FileItemList fileItemList;
+        private final FileItemList fileItemList;
         private FileItem fileItem = null;
         private OutputStream tmpOutputStream = null;
-        private int fileSize = 0;
+        private long fileSize = 0;
 
         ByteProcessor() {
             fileItemList = new WeakReference<>(new FileItemList()).get();
@@ -189,7 +195,6 @@ public class MultiPartParser {
                                         fileItem.setFieldName( getFieldName(content_disposition) );
                                         fileItem.setName( getFileName(content_disposition) );
                                     }
-                                    return;
                                 } else {
                                     parseContentType = 2;
                                     {
@@ -197,8 +202,8 @@ public class MultiPartParser {
                                         fileItem.setFieldName( getFieldName(content_disposition) );
                                         fileItem.setContentType("text/plain");
                                     }
-                                    return;
                                 }
+                                return;
                             }
                         } else {
                             if ( 13 == b ) {
@@ -326,22 +331,22 @@ public class MultiPartParser {
         private File repository = null; // 暫存資料夾
 
         public MultiPartParser.Builder setServletContext(ServletContext servletContext) {
-            this.servletContext = servletContext;
+            this.servletContext = new WeakReference<>( servletContext ).get();
             return this;
         }
 
         public MultiPartParser.Builder setAsyncContext(AsyncContext asyncContext) {
-            this.asyncContext = asyncContext;
+            this.asyncContext = new WeakReference<>( asyncContext ).get();
             return this;
         }
 
         public MultiPartParser.Builder setFile(File file) {
-            this.file = file;
+            this.file = new WeakReference<>( file ).get();
             return this;
         }
 
         public MultiPartParser.Builder setRepository(File repository) {
-            this.repository = repository;
+            this.repository = new WeakReference<>( repository ).get();
             return this;
         }
 

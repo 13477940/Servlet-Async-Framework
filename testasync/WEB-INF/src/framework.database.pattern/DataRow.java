@@ -14,7 +14,7 @@ public class DataRow {
     /**
      * 由 LinkedHashMap 型態保留來自資料庫欄位定義的狀態
      */
-    private LinkedHashMap<String, String> instance;
+    private final LinkedHashMap<String, String> instance;
 
     /**
      * 建立一個空的 DataRow

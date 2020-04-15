@@ -21,7 +21,7 @@ import java.sql.Connection;
  */
 public class TomcatDataSource extends ConnectorConfig implements ConnectionPool {
 
-    private ConnectContext dbContext = null;
+    private final ConnectContext dbContext = null;
     private DataSource dataSource = null;
 
     private TomcatDataSource(ConnectContext dbContext) {
@@ -38,7 +38,9 @@ public class TomcatDataSource extends ConnectorConfig implements ConnectionPool 
 
     @Override
     public Connection getConnection() {
-        if(null == dataSource) { initDataSource(dbContext); }
+        if(null == dataSource) {
+            assert false;
+            initDataSource(dbContext); }
         Connection conn = null;
         try {
             conn = new WeakReference<>(dataSource.getConnection()).get();
@@ -47,6 +49,7 @@ public class TomcatDataSource extends ConnectorConfig implements ConnectionPool 
             {
                 if(null != this.dataSource) {
                     this.shutdown();
+                    assert false;
                     initDataSource(dbContext);
                 }
             }
@@ -112,7 +115,7 @@ public class TomcatDataSource extends ConnectorConfig implements ConnectionPool 
     }
 
     public static class Builder {
-        private ConnectContext dbContext = new TomcatPoolContext();
+        private final ConnectContext dbContext = new TomcatPoolContext();
 
         public TomcatDataSource.Builder setAccount(String account) {
             this.dbContext.setDB_ACC(account);

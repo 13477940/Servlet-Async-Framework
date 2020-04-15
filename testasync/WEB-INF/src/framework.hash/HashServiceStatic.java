@@ -2,17 +2,18 @@ package framework.hash;
 
 public class HashServiceStatic {
 
+    private static final HashService instance;
+
     private HashServiceStatic() {}
 
-    static {}
+    static {
+        instance = new HashServiceStatic.Instance();
+    }
 
     public static HashService getInstance() {
-        return InstanceHolder.instance;
+        return instance;
     }
 
-    private static class InstanceHolder {
-        static HashService instance = new HashServiceStatic.Instance();
-    }
 
     private static class Instance extends HashService {}
 

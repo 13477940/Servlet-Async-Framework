@@ -1,13 +1,14 @@
 package framework.web.runnable;
 
 import com.alibaba.fastjson.JSONArray;
-import framework.observer.Handler;
-import framework.observer.Message;
+import com.github.elopteryx.upload.PartOutput;
+import com.github.elopteryx.upload.UploadParser;
+import framework.random.RandomServiceStatic;
+import framework.setting.AppSetting;
 import framework.web.context.AsyncActionContext;
 import framework.web.executor.WebAppServiceExecutor;
 import framework.web.multipart.FileItem;
 import framework.web.multipart.FileItemList;
-import framework.web.listener.AsyncReadListener;
 import framework.web.session.context.UserContext;
 import framework.web.session.pattern.UserMap;
 import framework.web.session.service.SessionServiceStatic;
@@ -17,7 +18,11 @@ import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.lang.ref.WeakReference;
+import java.nio.file.Files;
 import java.util.*;
 
 /**
@@ -28,17 +33,16 @@ import java.util.*;
  */
 public class AsyncContextRunnable implements Runnable {
 
-    private ServletContext servletContext;
+    // private final ServletContext servletContext;
     // private ServletConfig servletConfig;
-    private AsyncContext asyncContext;
-
-    private AsyncActionContext requestContext;
+    private final AsyncContext asyncContext;
+    private final AsyncActionContext requestContext;
 
     /**
      * 每個非同步請求實例派發給個別的 AsyncContextRunnable 隔離執行
      */
     private AsyncContextRunnable(ServletContext servletContext, ServletConfig servletConfig, AsyncContext asyncContext) {
-        this.servletContext = servletContext;
+        // this.servletContext = servletContext;
         // this.servletConfig = servletConfig;
         this.asyncContext = asyncContext;
         {
@@ -99,9 +103,9 @@ public class AsyncContextRunnable implements Runnable {
 
     // 採用檔案處理方式解析 multipart/form-data 資料內容
     // 由於 Session 處理上傳進度值會影響伺服器效率，僅建議由前端處理上傳進度即可
-    // jQuery 文件上传进度提示：https://segmentfault.com/a/1190000008791342
+    // 前端 AJAX 操作推薦採用 https://github.com/axios/axios
     private void parseFormData() {
-        // TODO [stable-testing] AsyncReadListener
+        /*
         Handler asyncReadHandler = new Handler() {
             @Override
             public void handleMessage(Message m) {
@@ -141,6 +145,84 @@ public class AsyncContextRunnable implements Runnable {
             asyncContext.getRequest().getInputStream().setReadListener(asyncReadListener);
         } catch (Exception e) {
             e.printStackTrace();
+        }*/
+
+        // Elopteryx/upload-parser
+        // https://github.com/Elopteryx/upload-parser
+        // 使用該模組解決原本 byte to byte 的無 Buffer 效率問題
+        {
+            File targetFile = null;
+            AppSetting appSetting = new AppSetting.Builder().build();
+            try {
+                targetFile = new File(appSetting.getPathContext().getTempDirPath());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            final File _targetFile = targetFile;
+            FileItemList fileItemList = new FileItemList();
+            LinkedHashMap<String, String> params = new LinkedHashMap<>();
+            final HashMap<String, File> fileTmp = new HashMap<>();
+            fileTmp.put("file", null);
+            try {
+                UploadParser.newParser()
+                        .onPartBegin((context, byteBuffer) -> {
+                            File nowFile = new WeakReference<>( File.createTempFile(RandomServiceStatic.getInstance().getTimeHash(12), null, _targetFile) ).get();
+                            assert nowFile != null;
+                            nowFile.deleteOnExit();
+                            fileTmp.put("file", nowFile);
+                            // 快取清零，因小資料塞不滿 byteBuffer 會造成一堆 byte 0
+                            // https://stackoverflow.com/questions/17003164/byte-array-with-padding-of-null-bytes-at-the-end-how-to-efficiently-copy-to-sma
+                            byte[] byteArr = byteBuffer.array();
+                            byte[] fixByteArr;
+                            {
+                                int i = byteArr.length - 1;
+                                while ( i >= 0 && byteArr[i] == 0 ) --i;
+                                fixByteArr = Arrays.copyOf(byteArr, i + 1);
+                            }
+                            // 開頭資料會先儲存在 byteBuffer，所以要先處理完 byteBuffer 內的資料才能確保檔案完整
+                            try (BufferedOutputStream bOut = new BufferedOutputStream(new FileOutputStream(nowFile))) {
+                                bOut.write(fixByteArr);
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                            return PartOutput.from(nowFile.toPath());
+                        })
+                        .onPartEnd((context) -> {
+                            String field_name = context.getCurrentPart().getName();
+                            if(context.getCurrentPart().isFile()) {
+                                FileItem fileItem = new FileItem.Builder()
+                                        .setFile(fileTmp.get("file"))
+                                        .setContentType(context.getCurrentPart().getContentType())
+                                        .setName(context.getCurrentPart().getSubmittedFileName())
+                                        .setSize(context.getCurrentPart().getKnownSize())
+                                        .setIsFormField(false)
+                                        .setFieldName(context.getCurrentPart().getName())
+                                        .build();
+                                fileItemList.add(fileItem);
+                            } else {
+                                File nowFile = fileTmp.get("file");
+                                String param_value = Files.readString(nowFile.toPath());
+                                params.put(field_name, param_value.trim());
+                            }
+                        })
+                        .onRequestComplete(context -> {
+                            fileTmp.clear();
+                            {
+                                if(fileItemList.size() == 0) {
+                                    webAppStartup(params, null);
+                                } else {
+                                    webAppStartup(params, fileItemList);
+                                }
+                            }
+                        })
+                        .onError((context, throwable) -> throwable.printStackTrace())
+                        .sizeThreshold( 1024 * 4 ) // buffer size
+                        .maxPartSize( Long.MAX_VALUE ) // 單個 form-data 項目大小限制
+                        .maxRequestSize( Long.MAX_VALUE ) // 整體 request 大小限制
+                        .setupAsyncParse( (HttpServletRequest) asyncContext.getRequest() );
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 
