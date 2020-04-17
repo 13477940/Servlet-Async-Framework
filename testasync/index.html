@@ -6,53 +6,25 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<title>Test Async</title>
 		<link rel="stylesheet" href="/testasync/css/module/controller/controller.css">
-		<script src="/testasync/js/axios/axios.min.js"></script>
-		<script src="/testasync/js/jquery/jquery.slim.min.js"></script>
-		<script src="/testasync/js/module/public/public.js"></script>
+		<script src="/testasync/js/module/controller/controller.js"></script>
 		<script>
-			$(function(){
-				website.script("/testasync/js/module/index/index.js", function(){
-					console.log("done");
-				});
-				/* 壓力測試
-				for(var i = 0, len = 1000; i < len; i++) {
-					var targetFile = $("#upfile")[0]["files"][0];
+			"use strict"
+			var website = window.website || {};
+			(function(){
+				website["ready"] = function(){
+					// dropdown demo
 					(function(){
-						var reqObj = {
-							url: "/testasync/index",
-							data: [
-								{ key: "a", value: "100" },
-								{ key: "b", value: "ABC" },
-								{ key: "c", value: "國字測試" }
-							]
-						};
-						if(null != targetFile) {
-							reqObj.data.push({
-								key: "myfile",
-								value: targetFile
-							});
-						}
-						website.post_form_data(reqObj)
-							.progress(function(prog){
-								console.log(prog);
-							})
-							.done(function(respd){
-								console.log(respd);
-							});
+						var dropdown_list = [
+							"<div style='padding: 15px 20px;color: #000;'>option 1</div>",
+							"<div style='padding: 15px 20px;color: #000;'>option 2</div>",
+							"<div style='padding: 15px 20px;color: #000;'>option 3</div>"
+						]
+						website.dropdown($("div[ui_key=btn_dropdown]"), dropdown_list).done(function(dropdown){
+							console.log(dropdown);
+						});
 					})();
-				}*/
-				// dropdown demo
-				(function(){
-					var dropdown_list = [
-						"<div style='padding: 15px 20px;color: #000;'>option 1</div>",
-						"<div style='padding: 15px 20px;color: #000;'>option 2</div>",
-						"<div style='padding: 15px 20px;color: #000;'>option 3</div>"
-					]
-					website.dropdown($("div[ui_key=test_dropdown]"), dropdown_list).done(function(dropdown){
-						console.log(dropdown);
-					});
-				})();
-			});
+				};
+			})();
 		</script>
 	</head>
 	<body>
@@ -60,14 +32,17 @@
 			<div>TEST PAGE</div>
 			<div style="height: 20px;"></div>
 			<div style="display: flex;align-items: center;">
-				<div><input id="upfile" type="file" /></div>
-				<div style="width: 20px;"></div>
-				<div><button id="upok" style="padding: 10px 20px 10px 20px;">上傳檔案</button></div>
+				<div style="display: none;"><input id="upfile" type="file" /></div>
+				<div><button id="btn_select_file" style="padding: 10px 20px 10px 20px;">選擇檔案</button></div>
+				<div style="width: 20px;flex-shrink: 0;"></div>
+				<div id="label_select_file" style="font-size: 1rem;line-height: 1.2rem;letter-spacing: 1px;word-break: break-all;"></div>
+				<div style="width: 20px;flex-shrink: 0;"></div>
+				<div><button id="btn_upload_submit" style="padding: 10px 20px 10px 20px;">上傳檔案</button></div>
 			</div>
 			<div style="height: 20px;"></div>
-			<div><button ui_key="open_dialog" style="padding: 10px 20px 10px 20px;">Open Dialog</button></div>
+			<div><button ui_key="btn_open_dialog" style="padding: 10px 20px 10px 20px;">Open Dialog</button></div>
 			<div style="height: 20px;"></div>
-			<div ui_key="test_dropdown" style="display: flex;"></div>
+			<div ui_key="btn_dropdown" style="display: flex;"></div>
 		</div>
 	</body>
 </html>

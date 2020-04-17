@@ -1,13 +1,15 @@
 package framework.http;
 
 import com.alibaba.fastjson.JSONObject;
-import framework.hash.HashServiceStatic;
 import framework.observer.Bundle;
 import framework.observer.Handler;
 import framework.observer.Message;
 import framework.random.RandomServiceStatic;
 
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.ref.WeakReference;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -16,24 +18,28 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.time.Duration;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * [required openJDK 11+]
  * https://docs.oracle.com/en/java/javase/11/docs/api/java.net.http/java/net/http/HttpClient.html
  * http://openjdk.java.net/groups/net/httpclient/intro.html
- * implement by UrielTech.com TomLi.
+ * https://golb.hplar.ch/2019/01/java-11-http-client.html
+ *
+ * implement by UrielTech.com TomLi
  * 基於 java.net.http.HttpClient 的功能實作封裝
  * 並模擬類似 OkHttp 方式處理
  *
  * for old jdk version use: https://github.com/square/okhttp
  * https://mvnrepository.com/artifact/com.squareup.okhttp3/okhttp
  *
- * -191218 修正檔案下載處理的行為與回傳值可自定義處理的內容
- * -200225 刪除 AppSetting 引用，下載檔案時請自行指定暫存路徑
- * -200316 更換 LinkedHashMap 為基礎，維持使用者傳入的參數順序
- * -200324 增加 keepUrlSearchParams 參數，判斷是否需保留完整的參數網址
+ * 2019-12-18 修正檔案下載處理的行為與回傳值可自定義處理的內容
+ * 2020-02-25 刪除 AppSetting 引用，下載檔案時請自行指定暫存路徑
+ * 2020-03-16 更換 LinkedHashMap 為基礎，維持使用者傳入的參數順序
+ * 2020-03-24 增加 keepUrlSearchParams 參數，判斷是否需保留完整的參數網址
+ * 2020-04-16 修正 post form-data 無法正常關閉連線的問題
+ * 2020-04-17 修正語法細節及預設方法的使用方式
  */
 public class HttpClient {
 
@@ -50,6 +56,8 @@ public class HttpClient {
     private final java.net.http.HttpClient.Version httpVersion = java.net.http.HttpClient.Version.HTTP_2; // default
     private final java.net.http.HttpClient.Redirect httpRedirect = java.net.http.HttpClient.Redirect.NORMAL; // default
 
+    private final Duration conn_timeout;
+
     // 建構子
     private HttpClient(
             String url,
@@ -60,7 +68,8 @@ public class HttpClient {
             Boolean tempFileDeleteOnExit,
             String tempDirPath,
             String tempDirName,
-            Boolean keepUrlSearchParams
+            Boolean keepUrlSearchParams,
+            Duration conn_timeout
     ) {
         this.url = null;
         {
@@ -80,7 +89,16 @@ public class HttpClient {
                 boolean isDomain = true;
                 for(String str : tmp) {
                     if(isDomain) {
-                        sbd.append(URLEncoder.encode(str, StandardCharsets.UTF_8));
+                        // example http://localhost:8080/testasync/index
+                        if(str.contains(":")) {
+                            String[] pStr = str.split(":");
+                            String pDomain = pStr[0];
+                            String pNumber = pStr[1];
+                            sbd.append(URLEncoder.encode(pStr[0], StandardCharsets.UTF_8));
+                            sbd.append(":").append(pNumber);
+                        } else {
+                            sbd.append(URLEncoder.encode(str, StandardCharsets.UTF_8));
+                        }
                         isDomain = false;
                     } else {
                         sbd.append("/").append(URLEncoder.encode(str, StandardCharsets.UTF_8));
@@ -101,7 +119,11 @@ public class HttpClient {
             }
             // 是否需保留原始網址（非正規情況時，可能只處理網址內容）
             if(Objects.requireNonNullElse(keepUrlSearchParams, false)) {
-                this.url = sbd.toString() + "?" + getParamsStr;
+                if(null != getParamsStr && getParamsStr.length() > 0) {
+                    this.url = sbd.toString() + "?" + getParamsStr;
+                } else {
+                    this.url = sbd.toString();
+                }
             } else {
                 this.url = sbd.toString();
             }
@@ -111,6 +133,7 @@ public class HttpClient {
         this.files = files;
         this.alwaysDownload = Objects.requireNonNullElse(alwaysDownload, false);
         this.tempFileDeleteOnExit = Objects.requireNonNullElse(tempFileDeleteOnExit, true);
+        this.conn_timeout = conn_timeout;
         // 下載暫存資料夾
         {
             this.tempDirPath = tempDirPath;
@@ -197,9 +220,12 @@ public class HttpClient {
         {
             clientBuilder.version(httpVersion);
             clientBuilder.followRedirects(httpRedirect);
+            // clientBuilder.executor(ThreadPoolStatic.getInstance());
+            if(null != conn_timeout) clientBuilder.connectTimeout(conn_timeout);
         }
-        HttpRequest request = new WeakReference<>(requestBuilder.build()).get();
-        java.net.http.HttpClient client = new WeakReference<>(clientBuilder.build()).get();
+        // build & run
+        HttpRequest request = new WeakReference<>( requestBuilder.build() ).get();
+        java.net.http.HttpClient client = new WeakReference<>( clientBuilder.build() ).get();
         assert null != client;
         asyncRequest(client, request, handler);
     }
@@ -241,9 +267,12 @@ public class HttpClient {
         {
             clientBuilder.version(httpVersion);
             clientBuilder.followRedirects(httpRedirect);
+            // clientBuilder.executor(ThreadPoolStatic.getInstance());
+            if(null != conn_timeout) clientBuilder.connectTimeout(conn_timeout);
         }
-        java.net.http.HttpClient client = new WeakReference<>(clientBuilder.build()).get();
-        HttpRequest request = new WeakReference<>(requestBuilder.build()).get();
+        // build & run
+        HttpRequest request = new WeakReference<>( requestBuilder.build() ).get();
+        java.net.http.HttpClient client = new WeakReference<>( clientBuilder.build() ).get();
         assert null != client;
         asyncRequest(client, request, handler);
     }
@@ -278,116 +307,87 @@ public class HttpClient {
         {
             clientBuilder.version(httpVersion);
             clientBuilder.followRedirects(httpRedirect);
+            // clientBuilder.executor(ThreadPoolStatic.getInstance());
+            if(null != conn_timeout) clientBuilder.connectTimeout(conn_timeout);
         }
-        java.net.http.HttpClient client = new WeakReference<>(clientBuilder.build()).get();
-        HttpRequest request = requestBuilder.build();
+        // build & run
+        HttpRequest request = new WeakReference<>( requestBuilder.build() ).get();
+        java.net.http.HttpClient client = new WeakReference<>( clientBuilder.build() ).get();
         assert null != client;
         asyncRequest(client, request, handler);
     }
 
     /**
      * POST multipart/form-data
+     *
+     * 2020-04-16 修正檔案上傳效能及非正常關閉的問題
      */
     public void postFormData(Handler handler) {
+        String boundary = "jdk11hc_"+System.currentTimeMillis()+"_"+ RandomServiceStatic.getInstance().getLowerCaseRandomString(8);
+        System.out.println(boundary);
+        LinkedHashMap<String, Object> bMap = new LinkedHashMap<>();
+        if(null != parameters && parameters.size() > 0) {
+            for (Map.Entry<String, String> param : parameters.entrySet()) {
+                bMap.put(param.getKey(), param.getValue());
+            }
+        }
+        if(null != files && files.size() > 0) {
+            for (Map.Entry<String, File> file : files.entrySet()) {
+                bMap.put(file.getKey(), file.getValue());
+            }
+        }
         HttpRequest.Builder requestBuilder = HttpRequest.newBuilder();
         {
-            // 設定 request header
-            if (null != headers && headers.size() > 0) {
-                for (Map.Entry<String, String> header : headers.entrySet()) {
-                    requestBuilder.setHeader(header.getKey(), header.getValue());
-                }
-            }
-            // 採用 post 預設方法必須是 application/x-www-form-urlencoded 的方式夾帶參數
-            final String boundary = "----" + HashServiceStatic.getInstance().stringToSHA256(RandomServiceStatic.getInstance().getTimeHash(6));
-            requestBuilder.setHeader("Content-Type","multipart/form-data;boundary="+boundary);
-            // 製作暫存檔案 -> 要被轉換為上傳的 InputStream 內容
-            File tmpFile = null;
-            {
-                try {
-                    String fileName = "upload_"+RandomServiceStatic.getInstance().getTimeHash(6)+".tmp";
-                    tmpFile = new File(tempDirPath+fileName);
-                    if(tempFileDeleteOnExit) {
-                        tmpFile.deleteOnExit();
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-            // FileOutput
-            BufferedOutputStream outputStream = null;
-            {
-                assert null != tmpFile;
-                try {
-                    outputStream = new BufferedOutputStream(new FileOutputStream(tmpFile, true));
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-            {
-                assert null != outputStream;
-                byte[] eol_byte = { 13, 10 }; // 換行符號
-                try {
-                    // 設定 request parameters
-                    if (null != parameters && parameters.size() > 0) {
-                        for (Map.Entry<String, String> param : parameters.entrySet()) {
-                            outputStream.write(("--" + boundary).getBytes(StandardCharsets.UTF_8));
-                            outputStream.write(eol_byte);
-                            String key = param.getKey();
-                            outputStream.write(("Content-Disposition: form-data; name=\""+key+"\"").getBytes(StandardCharsets.UTF_8));
-                            outputStream.write(eol_byte);
-                            outputStream.write(eol_byte);
-                            String value = param.getValue();
-                            outputStream.write(value.getBytes(StandardCharsets.UTF_8));
-                            outputStream.write(eol_byte);
-                        }
-                    }
-                    // 設定 upload files
-                    if (null != files && files.size() > 0) {
-                        for (Map.Entry<String, File> fileOpt : files.entrySet()) {
-                            outputStream.write(("--" + boundary).getBytes(StandardCharsets.UTF_8));
-                            outputStream.write(eol_byte);
-                            String key = fileOpt.getKey();
-                            outputStream.write(("Content-Disposition: form-data; name=\""+key+"\"").getBytes(StandardCharsets.UTF_8));
-                            outputStream.write(eol_byte);
-                            outputStream.write(eol_byte);
-                            File file = fileOpt.getValue();
-                            Files.copy(file.toPath(), outputStream);
-                            outputStream.write(eol_byte);
-                        }
-                    }
-                    // multipart 結尾符號
-                    outputStream.write(("--" + boundary + "--").getBytes(StandardCharsets.UTF_8));
-                    outputStream.close();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-            // 設定上傳的 MultiPart 內容 by InputStream
-            {
-                final File fTmpFile = tmpFile;
-                // method POST
-                requestBuilder.POST(HttpRequest.BodyPublishers.ofInputStream(() -> {
-                    InputStream inputStream = null;
-                    try {
-                        inputStream = new BufferedInputStream(new FileInputStream(fTmpFile));
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                    return inputStream;
-                }));
-            }
-            // 設定請求 URI
             requestBuilder.uri(URI.create(this.url));
+            requestBuilder.header("Content-Type", "multipart/form-data;boundary=" + boundary);
+            requestBuilder.POST(ofMimeMultipartData(bMap, boundary));
         }
         java.net.http.HttpClient.Builder clientBuilder = java.net.http.HttpClient.newBuilder();
         {
             clientBuilder.version(httpVersion);
             clientBuilder.followRedirects(httpRedirect);
+            // clientBuilder.executor(ThreadPoolStatic.getInstance());
+            if(null != conn_timeout) clientBuilder.connectTimeout(conn_timeout);
         }
-        java.net.http.HttpClient client = new WeakReference<>(clientBuilder.build()).get();
-        HttpRequest request = requestBuilder.build();
-        assert null != client;
+        // build & run
+        HttpRequest request = new WeakReference<>( requestBuilder.build() ).get();
+        java.net.http.HttpClient client = new WeakReference<>( clientBuilder.build() ).get();
+        assert client != null;
         asyncRequest(client, request, handler);
+    }
+
+    /**
+     * https://golb.hplar.ch/2019/01/java-11-http-client.html
+     * https://github.com/ralscha/blog2019/blob/master/java11httpclient/client/src/main/java/ch/rasc/httpclient/File.java
+     *
+     * 2020-04-16 modify by UrielTech.com TomLi
+     */
+    private static HttpRequest.BodyPublisher ofMimeMultipartData(Map<String, Object> data, String boundary) {
+        var byteArrays = new ArrayList<byte[]>();
+        byte[] separator = ("--" + boundary + "\r\nContent-Disposition: form-data; name=").getBytes(StandardCharsets.UTF_8);
+        for ( Map.Entry<String, Object> entry : data.entrySet() ) {
+            byteArrays.add(separator);
+            if ( entry.getValue() instanceof File ) {
+                var path = ((File) entry.getValue()).toPath();
+                String mimeType = null;
+                try {
+                    mimeType = Files.probeContentType(path);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                byteArrays.add(("\"" + entry.getKey() + "\"; filename=\"" + path.getFileName()+ "\"\r\nContent-Type: " + mimeType + "\r\n\r\n").getBytes(StandardCharsets.UTF_8));
+                try {
+                    byteArrays.add(Files.readAllBytes(path));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                byteArrays.add("\r\n".getBytes(StandardCharsets.UTF_8));
+            } else {
+                byteArrays.add(("\"" + entry.getKey() + "\"\r\n\r\n" + entry.getValue() + "\r\n").getBytes(StandardCharsets.UTF_8));
+            }
+        }
+        byteArrays.add(("--" + boundary + "--").getBytes(StandardCharsets.UTF_8));
+        return HttpRequest.BodyPublishers.ofByteArrays(byteArrays);
     }
 
     /**
@@ -429,16 +429,31 @@ public class HttpClient {
                             }
                         }
                     }
+                    if("exception".equals(status)) {
+                        handler.sendMessage(m);
+                    }
                 }
             };
         }
-        // 藉由 Future 接收非同步回傳結果
-        CompletableFuture<InputStream> responseFuture = client
-                .sendAsync(request, HttpResponse.BodyHandlers.ofInputStream())
-                .thenApply(response -> {
-                    HashMap<String, String> headers = new HashMap<>();
+        // https://github.com/biezhi/java11-examples/blob/master/src/main/java/io/github/biezhi/java11/http/Example.java#L108
+        client.sendAsync(request, HttpResponse.BodyHandlers.ofInputStream())
+                .whenCompleteAsync((resp, throwable) -> {
+                    if(null == resp) {
+                        // throwable.printStackTrace();
+                        {
+                            Bundle b = new Bundle();
+                            b.put("status", "exception");
+                            b.put("throwable", throwable);
+                            Message m = tmp_handler.obtainMessage();
+                            m.setData(b);
+                            m.sendToTarget();
+                        }
+                        return;
+                    }
+                    // response header
                     {
-                        for(Map.Entry<String, List<String>> entry : response.headers().map().entrySet()) {
+                        LinkedHashMap<String, String> headers = new LinkedHashMap<>();
+                        for(Map.Entry<String, List<String>> entry : resp.headers().map().entrySet()) {
                             String key = entry.getKey();
                             List<String> value = entry.getValue();
                             if(value.size() > 1) {
@@ -455,34 +470,29 @@ public class HttpClient {
                                 headers.put(key, value.get(0));
                             }
                         }
+                        {
+                            Bundle b = new Bundle();
+                            b.put("status", "header");
+                            b.put("status_code", String.valueOf(resp.statusCode()));
+                            b.put("headers", new WeakReference<>( headers ).get());
+                            if(headers.containsKey("content-type")) b.put("content_type", headers.get("content-type"));
+                            if(headers.containsKey("content-disposition")) b.put("content_disposition", headers.get("content-disposition"));
+                            Message m = tmp_handler.obtainMessage();
+                            m.setData(b);
+                            m.sendToTarget();
+                        }
                     }
-                    // 第一階段 async 回傳 handler message 提供 response header 內容
+                    // response body
                     {
                         Bundle b = new Bundle();
-                        b.put("status", "header");
-                        b.put("status_code", String.valueOf(response.statusCode()));
-                        b.put("headers", new WeakReference<>( headers ).get());
-                        if(headers.containsKey("content-type")) b.put("content_type", headers.get("content-type"));
-                        if(headers.containsKey("content-disposition")) b.put("content_disposition", headers.get("content-disposition"));
+                        b.put("status", "body");
+                        b.put("input_stream", resp.body());
                         Message m = tmp_handler.obtainMessage();
                         m.setData(b);
                         m.sendToTarget();
                     }
-                    return response;
                 })
-                .thenApply(HttpResponse::body); // 第二階段回傳 response body 內容
-        try {
-            Bundle b = new Bundle();
-            b.put("status", "body");
-            // 最後一次 handler 提交一定要經由 future.get() 送出，
-            // 要不然會有 InterruptedException 卡死的問題
-            b.put("input_stream", responseFuture.get());
-            Message m = tmp_handler.obtainMessage();
-            m.setData(b);
-            m.sendToTarget();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+                .join();
     }
 
     private void processTextResponse(LinkedHashMap<String, String> resp_header, InputStream resp_body, Handler handler) {
@@ -533,9 +543,7 @@ public class HttpClient {
         try {
             String fileName = sbd.toString();
             tmpFile = new File(tempDirPath+fileName);
-            if(tempFileDeleteOnExit) {
-                tmpFile.deleteOnExit();
-            }
+            if(tempFileDeleteOnExit) tmpFile.deleteOnExit();
             // 當非檔案操作時可使用 inputStream.transferTo()，
             // 而有牽涉到檔案輸出入時要採用 Files.copy() 確保程式效率
             Files.copy(
@@ -586,13 +594,15 @@ public class HttpClient {
         private HashMap<String, String> headers = null;
         private LinkedHashMap<String, String> parameters = null;
         private LinkedHashMap<String, File> files = null;
-        private Boolean alwaysDownload = false;
-        private Boolean tempFileDeleteOnExit = true;
+        private Boolean alwaysDownload = false; // default
+        private Boolean tempFileDeleteOnExit = true; // default
 
         private String tempDirPath = null;
         private String tempDirName = null;
 
         private Boolean keepUrlSearchParams = null;
+
+        private Duration conn_timeout = null; // default
 
         public HttpClient.Builder setUrl(String url) {
             this.url = url;
@@ -739,8 +749,27 @@ public class HttpClient {
             return this;
         }
 
+        /**
+         * 設定下載檔案的暫存資料夾名稱
+         */
+        public HttpClient.Builder setConnectionTimeout(Duration duration) {
+            this.conn_timeout = duration;
+            return this;
+        }
+
         public HttpClient build() {
-            return new HttpClient(this.url, this.headers, this.parameters, this.files, this.alwaysDownload, this.tempFileDeleteOnExit, this.tempDirPath, this.tempDirName, this.keepUrlSearchParams);
+            return new HttpClient(
+                    this.url,
+                    this.headers,
+                    this.parameters,
+                    this.files,
+                    this.alwaysDownload,
+                    this.tempFileDeleteOnExit,
+                    this.tempDirPath,
+                    this.tempDirName,
+                    this.keepUrlSearchParams,
+                    this.conn_timeout
+            );
         }
 
     }

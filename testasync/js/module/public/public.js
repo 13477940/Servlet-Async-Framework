@@ -1,6 +1,6 @@
 "use strict"
 var website = window.website || {};
-// 擴充項目
+// 公用方法
 (function(){
 	// 亂數產生器
 	(function(){
@@ -42,43 +42,6 @@ var website = window.website || {};
 	    };
 		function getRandomString() {
 			return website.randomString();
-		}
-	})();
-	// 動態載入 JavaScript（base GET method）
-	(function(){
-		var loadedScript = {}; // 載入過的 script 路徑
-		website["script"] = function(_url) {
-			var def = $.Deferred();
-			// 如果 script 已在快取中
-			if(null != loadedScript[_url]) {
-				def.resolve();
-				return;
-			}
-			loadedScript[_url] = "loaded";
-			(function(){
-				var worker = new Worker("/testasync/js/worker/axios_worker.js");
-				// if worker init error
-				worker.addEventListener("error", function(e){
-					console.log(e);
-				}, false);
-				// set listener
-				worker.addEventListener("message", workerMsgFn, false);
-				function workerMsgFn(e) {
-					$("body").append("<script>"+e.data.data+"</script>");
-					def.resolve(e.data.data);
-					worker.terminate();
-				}
-				// send init msg
-				(function(){
-					worker.postMessage({
-						reqObj: {
-							act: "get",
-							url: _url
-						}
-					});
-				})();
-			})();
-			return def;
 		}
 	})();
 	// AJAX - GET x-www-form-urlencoded
@@ -204,7 +167,14 @@ var website = window.website || {};
 			})();
 			$("body").append(dialogElem);
 			dialogElem.css("display", "flex");
-			def.resolve(dialogElem);
+			var dialogObj = {
+				dialog: dialogElem.find("div[modal_dialog_key=wrap]"),
+				overlay: dialogElem,
+				close: function(){
+					dialogElem.remove();
+				}
+			}
+			def.resolve(dialogObj);
 			return def;
 		};
 		function buildDialogHtml() {
@@ -215,7 +185,7 @@ var website = window.website || {};
 			return tmp.join('');
 		}
 	})();
-	// Dropdown
+	// Dropdown：尚未完成
 	(function(){
 		website["dropdown"] = function(elem, opt_arr) {
 			var def = $.Deferred();
@@ -225,7 +195,7 @@ var website = window.website || {};
 				var tmp = [];
 				tmp.push("<div dropdown_ssid='"+ssid+"' ui_type='dropdown'>");
 				tmp.push("<div ui_type='dropdown_label' style='position: relative;z-index: 2;'>dropdown label</div>");
-				tmp.push("<div ui_type='dropdown_list'></div>");
+				tmp.push("<div ui_type='dropdown_list' style='display: none;position: absolute;'></div>");
 				tmp.push("</div>");
 				target = $(tmp.join(""));
 			})();
@@ -245,7 +215,8 @@ var website = window.website || {};
 				if(open_status) {
 					closeDropdown();
 				} else {
-					dd_list.addClass("show");
+					// dd_list.addClass("show");
+					dd_list.css("display", "block");
 					$("body").append(overlay);
 					overlay.on("click", function(){
 						closeDropdown();
@@ -254,7 +225,8 @@ var website = window.website || {};
 				}
 			});
 			function closeDropdown() {
-				dd_list.removeClass("show");
+				// dd_list.removeClass("show");
+				dd_list.css("display", "none");
 				$("div[dropdown_overlay='"+ssid+"']").remove();
 				open_status = false;
 			}

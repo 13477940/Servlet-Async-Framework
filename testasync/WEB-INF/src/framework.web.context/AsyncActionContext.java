@@ -6,9 +6,9 @@ import framework.observer.Bundle;
 import framework.observer.Handler;
 import framework.observer.Message;
 import framework.random.RandomServiceStatic;
+import framework.web.listener.AsyncWriteListener;
 import framework.web.multipart.FileItem;
 import framework.web.multipart.FileItemList;
-import framework.web.listener.AsyncWriteListener;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
@@ -28,6 +28,8 @@ import java.util.*;
 /**
  * 請求封裝層類別關係：
  * WebAppController > AsyncContextRunnable > AsyncActionContext
+ *
+ * 2020-04-16 修正 IE 與現代化瀏覽器下載 unicode 檔案名稱亂碼的問題
  */
 public class AsyncActionContext {
 
@@ -473,6 +475,8 @@ public class AsyncActionContext {
         // 如果指定為 isAttachment 則不管 MIME 是什麼都會被當作一般的檔案下載；
         // 若 isAttachment 為 false 則會依照瀏覽器自身決定能不能瀏覽該檔案類型，例如：pdf, json, html 等
         // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Disposition
+        // 解決 Content-Disposition 跨瀏覽器編碼的問題：
+        // https://blog.robotshell.org/2012/deal-with-http-header-encoding-for-file-download/
         HttpServletResponse response = ((HttpServletResponse) asyncContext.getResponse());
         {
             response.setContentType( fileMIME + ";charset=" + StandardCharsets.UTF_8.name() );
@@ -483,7 +487,9 @@ public class AsyncActionContext {
                 sbd.append("inline;filename=\"");
             }
             sbd.append(encodeFileName);
-            sbd.append("\"");
+            sbd.append("\";");
+            sbd.append("filename*=utf-8''"); // use for modern browser
+            sbd.append(encodeFileName);
             response.setHeader("Content-Disposition", sbd.toString());
             response.setHeader("Content-Length", String.valueOf(file.length()));
         }
@@ -738,36 +744,11 @@ public class AsyncActionContext {
      * 解決下載檔案時 Unicode 檔案名稱編碼
      */
     private String encodeOutputFileName(String fileName) {
-        HttpServletRequest request = ((HttpServletRequest) asyncContext.getRequest());
-        // 檢查瀏覽器是否為 Internet Explorer，如果是 MS-IE 體系的話要另外處理才不會中文亂碼
-        boolean isIE = false;
-        {
-            String userAgent = request.getHeader("user-agent");
-            if(null != userAgent && userAgent.length() > 0) {
-                try {
-                    if (userAgent.contains("Windows") && userAgent.contains("Edge")) isIE = true;
-                    if (userAgent.contains("Windows") && userAgent.contains("Trident")) isIE = true;
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        }
         String encodeFileName = null;
-        {
-            try {
-                if (isIE) {
-                    encodeFileName = java.net.URLEncoder.encode(fileName, StandardCharsets.UTF_8);
-                } else {
-                    String protocol = String.valueOf(request.getProtocol()).trim().toLowerCase();
-                    if (protocol.contains("http/2.0")) {
-                        encodeFileName = java.net.URLEncoder.encode(fileName, StandardCharsets.UTF_8);
-                    } else {
-                        encodeFileName = new String(fileName.getBytes(StandardCharsets.UTF_8), StandardCharsets.ISO_8859_1);
-                    }
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+        try {
+            encodeFileName = java.net.URLEncoder.encode(fileName, StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
         return encodeFileName;
     }

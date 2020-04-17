@@ -10,11 +10,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
 /**
- * TODO [ beta version, not used ]
- * implement by UrielTech.com TomLi.
- *
- * TODO Recommend Parser
- * https://github.com/Elopteryx/upload-parser
+ * [已廢棄，請改用 https://github.com/Elopteryx/upload-parser]
  *
  * 2019-07-04 發現有部分檔案可能造成解析錯誤，初步修復模塊化程式碼，增加可讀性
  * 2019-07-05 重構完成並修正可能發生的 byte 取碼處理錯誤問題

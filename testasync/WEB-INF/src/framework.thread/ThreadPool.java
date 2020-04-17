@@ -25,23 +25,21 @@ public class ThreadPool {
     }
 
     public void shutdown() {
-        {
-            // 實作完整回收 ExecutorService 方式
-            // http://blog.csdn.net/xueyepiaoling/article/details/61200270
-            if (null != worker && !worker.isShutdown()) {
-                // 設定 worker 已不能再接收新的請求
-                worker.shutdown();
-                try {
-                    // 設定一個 await 時限提供 thread 完成未完畢的工作的最後期限
-                    if (!worker.awaitTermination(3, TimeUnit.SECONDS)) {
-                        // 當回收時限到期時，強制中斷所有 Thread 執行
-                        worker.shutdownNow();
-                    }
-                } catch (Exception e) {
-                    // e.printStackTrace();
-                    // 回收時發生錯誤時亦強制關閉所有 thread
+        // 實作完整回收 ExecutorService 方式
+        // http://blog.csdn.net/xueyepiaoling/article/details/61200270
+        if (null != worker && !worker.isShutdown()) {
+            // 設定 worker 已不能再接收新的請求
+            worker.shutdown();
+            try {
+                // 設定一個 await 時限提供 thread 完成未完畢的工作的最後期限
+                if (!worker.awaitTermination(3, TimeUnit.SECONDS)) {
+                    // 當回收時限到期時，強制中斷所有 Thread 執行
                     worker.shutdownNow();
                 }
+            } catch (Exception e) {
+                // e.printStackTrace();
+                // 回收時發生錯誤時亦強制關閉所有 thread
+                worker.shutdownNow();
             }
         }
     }

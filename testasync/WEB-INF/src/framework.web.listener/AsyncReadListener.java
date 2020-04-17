@@ -17,6 +17,8 @@ import java.io.FileOutputStream;
 import java.lang.ref.WeakReference;
 
 /**
+ * [已廢棄，請改用 https://github.com/Elopteryx/upload-parser]
+ *
  * https://medium.com/@clu1022/%E6%B7%BA%E8%AB%87i-o-model-32da09c619e6
  * https://www.slideshare.net/SimoneBordet/servlet-31-async-io
  * https://openhome.cc/Gossip/ServletJSP/ReadListener.html

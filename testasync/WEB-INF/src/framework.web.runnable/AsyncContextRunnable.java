@@ -3,7 +3,6 @@ package framework.web.runnable;
 import com.alibaba.fastjson.JSONArray;
 import com.github.elopteryx.upload.PartOutput;
 import com.github.elopteryx.upload.UploadParser;
-import framework.random.RandomServiceStatic;
 import framework.setting.AppSetting;
 import framework.web.context.AsyncActionContext;
 import framework.web.executor.WebAppServiceExecutor;
@@ -105,48 +104,6 @@ public class AsyncContextRunnable implements Runnable {
     // 由於 Session 處理上傳進度值會影響伺服器效率，僅建議由前端處理上傳進度即可
     // 前端 AJAX 操作推薦採用 https://github.com/axios/axios
     private void parseFormData() {
-        /*
-        Handler asyncReadHandler = new Handler() {
-            @Override
-            public void handleMessage(Message m) {
-                super.handleMessage(m);
-                {
-                    FileItemList files = null;
-                    LinkedHashMap<String, String> params = new LinkedHashMap<>();
-                    {
-                        String key = m.getData().getString("key");
-                        if(null != m.getData().get(key)) {
-                            FileItemList fileItems = (FileItemList) m.getData().get(key);
-                            for (FileItem item : fileItems.prototype()) {
-                                if (item.isFormField()) {
-                                    params.put(item.getFieldName(), item.getContent());
-                                } else {
-                                    if(null == files) files = new FileItemList();
-                                    files.add(item);
-                                }
-                            }
-                        }
-                    }
-                    // upload done
-                    if(null == files || files.size() == 0) {
-                        webAppStartup(params, null);
-                    } else {
-                        webAppStartup(params, files);
-                    }
-                }
-            }
-        };
-        AsyncReadListener asyncReadListener = new AsyncReadListener.Builder()
-                .setServletContext(servletContext)
-                .setAsyncContext(asyncContext)
-                .setHandler(asyncReadHandler)
-                .build();
-        try {
-            asyncContext.getRequest().getInputStream().setReadListener(asyncReadListener);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }*/
-
         // Elopteryx/upload-parser
         // https://github.com/Elopteryx/upload-parser
         // 使用該模組解決原本 byte to byte 的無 Buffer 效率問題
@@ -165,27 +122,24 @@ public class AsyncContextRunnable implements Runnable {
             fileTmp.put("file", null);
             try {
                 UploadParser.newParser()
-                        .onPartBegin((context, byteBuffer) -> {
-                            File nowFile = new WeakReference<>( File.createTempFile(RandomServiceStatic.getInstance().getTimeHash(12), null, _targetFile) ).get();
-                            assert nowFile != null;
-                            nowFile.deleteOnExit();
-                            fileTmp.put("file", nowFile);
-                            // 快取清零，因小資料塞不滿 byteBuffer 會造成一堆 byte 0
-                            // https://stackoverflow.com/questions/17003164/byte-array-with-padding-of-null-bytes-at-the-end-how-to-efficiently-copy-to-sma
-                            byte[] byteArr = byteBuffer.array();
-                            byte[] fixByteArr;
+                        // https://github.com/Elopteryx/upload-parser/blob/master/upload-parser-core/src/main/java/com/github/elopteryx/upload/OnPartBegin.java
+                        .onPartBegin((context, buffer) -> {
+                            // multipart 內容檔案化
+                            String prefixName = "upload_temp_" + System.currentTimeMillis() + "_";
+                            File nowFile = new WeakReference<>(File.createTempFile(prefixName, null, _targetFile)).get();
                             {
-                                int i = byteArr.length - 1;
-                                while ( i >= 0 && byteArr[i] == 0 ) --i;
-                                fixByteArr = Arrays.copyOf(byteArr, i + 1);
+                                assert nowFile != null;
+                                nowFile.deleteOnExit();
+                                fileTmp.put("file", nowFile);
                             }
-                            // 開頭資料會先儲存在 byteBuffer，所以要先處理完 byteBuffer 內的資料才能確保檔案完整
-                            try (BufferedOutputStream bOut = new BufferedOutputStream(new FileOutputStream(nowFile))) {
-                                bOut.write(fixByteArr);
-                            } catch (Exception e) {
-                                e.printStackTrace();
+                            // 建立檔案輸出 OutputStream
+                            BufferedOutputStream bOut;
+                            {
+                                bOut = new WeakReference<>( new BufferedOutputStream(new FileOutputStream(nowFile)) ).get();
+                                assert bOut != null;
+                                bOut.write(buffer.array());
                             }
-                            return PartOutput.from(nowFile.toPath());
+                            return PartOutput.from(bOut);
                         })
                         .onPartEnd((context) -> {
                             String field_name = context.getCurrentPart().getName();
@@ -216,7 +170,8 @@ public class AsyncContextRunnable implements Runnable {
                             }
                         })
                         .onError((context, throwable) -> throwable.printStackTrace())
-                        .sizeThreshold( 1024 * 4 ) // buffer size
+                        .sizeThreshold( 0 ) // buffer 起始值（建議為 0，要不然會有 buffer 內容重複的問題）
+                        .maxBytesUsed( 1024 * 4 ) // max buffer size
                         .maxPartSize( Long.MAX_VALUE ) // 單個 form-data 項目大小限制
                         .maxRequestSize( Long.MAX_VALUE ) // 整體 request 大小限制
                         .setupAsyncParse( (HttpServletRequest) asyncContext.getRequest() );
