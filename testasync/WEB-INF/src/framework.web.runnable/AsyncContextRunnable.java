@@ -126,7 +126,7 @@ public class AsyncContextRunnable implements Runnable {
                         .onPartBegin((context, buffer) -> {
                             // multipart 內容檔案化
                             String prefixName = "upload_temp_" + System.currentTimeMillis() + "_";
-                            File nowFile = new WeakReference<>(File.createTempFile(prefixName, null, _targetFile)).get();
+                            File nowFile = new WeakReference<>( File.createTempFile(prefixName, null, _targetFile) ).get();
                             {
                                 assert nowFile != null;
                                 nowFile.deleteOnExit();

@@ -6,6 +6,7 @@ import framework.observer.Bundle;
 import framework.observer.Handler;
 import framework.observer.Message;
 import framework.random.RandomServiceStatic;
+import framework.setting.AppSetting;
 import framework.web.listener.AsyncWriteListener;
 import framework.web.multipart.FileItem;
 import framework.web.multipart.FileItemList;
@@ -350,6 +351,8 @@ public class AsyncActionContext {
                 String tmpRespName = HashServiceStatic.getInstance().stringToSHA256(RandomServiceStatic.getInstance().getTimeHash(6));
                 sbd.append(encodeOutputFileName(tmpRespName)).append(".txt");
                 sbd.append("\"");
+                sbd.append("filename*=utf-8''"); // use for modern browser
+                sbd.append(encodeOutputFileName(tmpRespName)).append(".txt");
             }
             response.setHeader("Content-Disposition", sbd.toString());
             response.setHeader("Content-Length", String.valueOf(content.getBytes(StandardCharsets.UTF_8).length));
@@ -380,6 +383,8 @@ public class AsyncActionContext {
                 String tmpRespName = HashServiceStatic.getInstance().stringToSHA256(RandomServiceStatic.getInstance().getTimeHash(6));
                 sbd.append(encodeOutputFileName(tmpRespName)).append(".json");
                 sbd.append("\"");
+                sbd.append("filename*=utf-8''"); // use for modern browser
+                sbd.append(encodeOutputFileName(tmpRespName)).append(".json");
             }
             response.setHeader("Content-Disposition", sbd.toString());
             response.setHeader("Content-Length", String.valueOf(obj.toJSONString().getBytes(StandardCharsets.UTF_8).length));
@@ -479,7 +484,9 @@ public class AsyncActionContext {
         // https://blog.robotshell.org/2012/deal-with-http-header-encoding-for-file-download/
         HttpServletResponse response = ((HttpServletResponse) asyncContext.getResponse());
         {
+            // ContentType
             response.setContentType( fileMIME + ";charset=" + StandardCharsets.UTF_8.name() );
+            // Content-Disposition
             StringBuilder sbd = new StringBuilder();
             if (isAttachment) {
                 sbd.append("attachment;filename=\"");
@@ -491,6 +498,7 @@ public class AsyncActionContext {
             sbd.append("filename*=utf-8''"); // use for modern browser
             sbd.append(encodeFileName);
             response.setHeader("Content-Disposition", sbd.toString());
+            // Content-Length
             response.setHeader("Content-Length", String.valueOf(file.length()));
         }
 
@@ -623,28 +631,29 @@ public class AsyncActionContext {
      * 這個檔案會被暫存至 Tomcat or Jetty 被關閉為止（deleteOnExit）
      */
     public File getRequestByteContent() {
-        File tomcat_temp = new File(servletContext.getAttribute(ServletContext.TEMPDIR).toString());
-        String dirSlash = System.getProperty("file.separator");
-        {
-            String hostOS = System.getProperty("os.name");
-            if (hostOS.toLowerCase().contains("windows")) {
-                dirSlash = "\\\\";
-            }
-        }
-        File tempFile;
+        File targetFile = null;
+        AppSetting appSetting = new AppSetting.Builder().build();
         try {
-            tempFile = File.createTempFile(
-                    RandomServiceStatic.getInstance().getTimeHash(3),
-                    null,
-                    new File(tomcat_temp.getPath() + dirSlash)
-            );
-            tempFile.deleteOnExit();
-            Files.copy(asyncContext.getRequest().getInputStream(), tempFile.toPath());
+            targetFile = new File(appSetting.getPathContext().getTempDirPath());
         } catch (Exception e) {
             e.printStackTrace();
-            tempFile = null;
         }
-        return tempFile;
+        File nowFile = null;
+        try {
+            String prefixName = "upload_temp_" + System.currentTimeMillis() + "_";
+            try {
+                nowFile = new WeakReference<>( File.createTempFile(prefixName, null, targetFile) ).get();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            assert nowFile != null;
+            nowFile.deleteOnExit();
+            Files.copy(asyncContext.getRequest().getInputStream(), nowFile.toPath());
+        } catch (Exception e) {
+            e.printStackTrace();
+            nowFile = null;
+        }
+        return nowFile;
     }
 
     /**
@@ -746,7 +755,12 @@ public class AsyncActionContext {
     private String encodeOutputFileName(String fileName) {
         String encodeFileName = null;
         try {
-            encodeFileName = java.net.URLEncoder.encode(fileName, StandardCharsets.UTF_8);
+            // https://www.ewdna.com/2008/11/urlencoder.html
+            // https://stackoverflow.com/questions/4737841/urlencoder-not-able-to-translate-space-character
+            // 轉碼後由 replace 修正編碼後空白加號問題（java 不會像 js 的 encodeURI 會自動處理空格為 %20）
+            encodeFileName = java.net.URLEncoder
+                    .encode(fileName, StandardCharsets.UTF_8)
+                    .replaceAll("\\+", "%20");
         } catch (Exception e) {
             e.printStackTrace();
         }

@@ -324,7 +324,6 @@ public class HttpClient {
      */
     public void postFormData(Handler handler) {
         String boundary = "jdk11hc_"+System.currentTimeMillis()+"_"+ RandomServiceStatic.getInstance().getLowerCaseRandomString(8);
-        System.out.println(boundary);
         LinkedHashMap<String, Object> bMap = new LinkedHashMap<>();
         if(null != parameters && parameters.size() > 0) {
             for (Map.Entry<String, String> param : parameters.entrySet()) {
@@ -512,7 +511,6 @@ public class HttpClient {
     }
 
     private void processFileResponse(LinkedHashMap<String, String> resp_header, InputStream resp_body, Handler handler) {
-        File tmpFile = null;
         boolean download_status = false;
         StringBuilder sbd = new StringBuilder();
         {
@@ -540,22 +538,24 @@ public class HttpClient {
             m.sendToTarget();
             return;
         }
+        // 由 InputStream 寫入至指定的檔案位置
+        File targetFile = null;
         try {
             String fileName = sbd.toString();
-            tmpFile = new File(tempDirPath+fileName);
-            if(tempFileDeleteOnExit) tmpFile.deleteOnExit();
+            targetFile = new File(tempDirPath+fileName);
+            if(tempFileDeleteOnExit) targetFile.deleteOnExit();
             // 當非檔案操作時可使用 inputStream.transferTo()，
             // 而有牽涉到檔案輸出入時要採用 Files.copy() 確保程式效率
             Files.copy(
                     new BufferedInputStream( resp_body ),
-                    tmpFile.toPath(),
+                    targetFile.toPath(),
                     StandardCopyOption.REPLACE_EXISTING
             );
             download_status = true;
         } catch (Exception e) {
             e.printStackTrace();
         }
-        if(null != tmpFile && download_status) {
+        if(null != targetFile && download_status) {
             Bundle b = new Bundle();
             b.put("status", "done");
             b.put("resp_type", "file");
@@ -571,9 +571,9 @@ public class HttpClient {
             }
             // 本地端暫存回傳值
             {
-                b.put("name", tmpFile.getName());
-                b.put("size", tmpFile.length());
-                b.put("path", tmpFile.getPath());
+                b.put("name", targetFile.getName());
+                b.put("size", targetFile.length());
+                b.put("path", targetFile.getPath());
             }
             Message m = handler.obtainMessage();
             m.setData(b);
