@@ -18,7 +18,7 @@
 							"<div style='padding: 15px 20px;color: #000;'>option 1</div>",
 							"<div style='padding: 15px 20px;color: #000;'>option 2</div>",
 							"<div style='padding: 15px 20px;color: #000;'>option 3</div>"
-						]
+						];
 						website.dropdown($("div[ui_key=btn_dropdown]"), dropdown_list).done(function(dropdown){
 							console.log(dropdown);
 						});
@@ -38,6 +38,12 @@
 				<div id="label_select_file" style="font-size: 1rem;line-height: 1.2rem;letter-spacing: 1px;word-break: break-all;"></div>
 				<div style="width: 20px;flex-shrink: 0;"></div>
 				<div><button id="btn_upload_submit" style="padding: 10px 20px 10px 20px;">上傳檔案</button></div>
+			</div>
+			<div style="height: 20px;"></div>
+			<div style="display: flex;align-items: center;">
+				<button ui_key="btn_test_get" style="padding: 10px 20px 10px 20px;">TestGet</button>
+				<div style="width: 20px;"></div>
+				<button ui_key="btn_test_post" style="padding: 10px 20px 10px 20px;">TestPost</button>
 			</div>
 			<div style="height: 20px;"></div>
 			<div><button ui_key="btn_open_dialog" style="padding: 10px 20px 10px 20px;">Open Dialog</button></div>

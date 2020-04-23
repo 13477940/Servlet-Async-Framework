@@ -61,7 +61,6 @@ var website = window.website || {};
 			// set listener
 			worker.addEventListener("message", workerMsgFn, false);
 			function workerMsgFn(e) {
-				// console.log(e.data);
 				def.resolve(e.data.data);
 				worker.terminate();
 			}

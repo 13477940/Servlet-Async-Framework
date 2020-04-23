@@ -65,6 +65,36 @@ var website = window.website || {};
 				openDialog();
 			});
 		})();
+		(function(){
+			$("button[ui_key=btn_test_get]").on("click", function(){
+				website.get({
+					url: "/testasync/index",
+					data: [
+						{ key: "a", value: "100" },
+						{ key: "b", value: "ABC" },
+						{ key: "c", value: "國字測試" },
+						{ key: "d", value: "/// //aaa// a//cc[]///" }
+					]
+				}).done(function(respd){
+					console.log(respd);
+				});
+			});
+		})();
+		(function(){
+			$("button[ui_key=btn_test_post]").on("click", function(){
+				website.post({
+					url: "/testasync/index",
+					data: [
+						{ key: "a", value: "100" },
+						{ key: "b", value: "ABC" },
+						{ key: "c", value: "國字測試" },
+						{ key: "d", value: "/// //aaa// a//cc[]///" }
+					]
+				}).done(function(respd){
+					console.log(respd);
+				});
+			});
+		})();
     };
 }());
 $(website["readyFn"]);

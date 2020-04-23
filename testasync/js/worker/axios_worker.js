@@ -18,43 +18,35 @@ function workerReady(e) {
 }
 
 (function(){
+	// get with application/x-www-form-urlencoded;charset=UTF-8
 	workerFn["get"] = function(reqObj) {
 		if(null != reqObj["data"] && false == Array.isArray(reqObj["data"])) {
 			console.error("data 參數必須使用 array 型態");
 			return;
 		}
-		var data = {};
+		var params = new URLSearchParams();
 		(function(){
 			var arr = reqObj["data"];
 			for(var index in arr) {
 				var obj = arr[index];
 				var key = obj["key"];
 				var value = obj["value"];
-				data[key] = value;
+				params.append(key, value);
 			}
 		})();
-		var axiosObj = {
+		var config = {
 			transformResponse: [(data) => { return data; }],
-			method: "get",
-			url: reqObj["url"],
-			params: data
+			params: params
 		};
-		axios(axiosObj).then(function (response) {
-			// console.log(response);
+		axios.get(reqObj["url"], config).then(function (response) {
 			var respObj = {
-				req_type: "get",
 				status: "done",
 				status_code: response.status,
-				status_text: response.statusText,
-				data: response.data,
-				headers: response.headers
-				// config: response.config
-				// request: response.request
+				data: response.data
 			};
 			self.postMessage(respObj);
 		}).catch(function (err) {
 			var respObj = {
-				req_type: "get",
 				status: "error",
 				error: err
 			};
@@ -64,43 +56,35 @@ function workerReady(e) {
 })();
 
 (function(){
+	// post form-data with application/x-www-form-urlencoded;charset=UTF-8
 	workerFn["post"] = function(reqObj) {
 		if(null != reqObj["data"] && false == Array.isArray(reqObj["data"])) {
 			console.error("data 參數必須使用 array 型態");
 			return;
 		}
-		var data = {};
+		// https://github.com/axios/axios#using-applicationx-www-form-urlencoded-format
+		var params = new URLSearchParams();
 		(function(){
 			var arr = reqObj["data"];
 			for(var index in arr) {
 				var obj = arr[index];
 				var key = obj["key"];
 				var value = obj["value"];
-				data[key] = value;
+				params.append(key, value);
 			}
 		})();
-		var axiosObj = {
-			transformResponse: [(data) => { return data; }],
-			method: "post",
-			url: reqObj["url"],
-			params: data
+		var config = {
+			transformResponse: [(data) => { return data; }]
 		};
-		axios(axiosObj).then(function(response) {
-			// console.log(response);
+		axios.post(reqObj["url"], params, config).then(function(response) {
 			var respObj = {
-				req_type: "post",
 				status: "done",
 				status_code: response.status,
-				status_text: response.statusText,
-				data: response.data,
-				headers: response.headers
-				// config: response.config
-				// request: response.request
+				data: response.data
 			};
 			self.postMessage(respObj);
-		}).catch(function(err) {
+		}).catch(function (err) {
 			var respObj = {
-				req_type: "post",
 				status: "error",
 				error: err
 			};
@@ -110,6 +94,7 @@ function workerReady(e) {
 })();
 
 (function(){
+	// post form-data with multipart/form-data
 	workerFn["post_form_data"] = function(reqObj) {
 		if(null != reqObj["data"] && false == Array.isArray(reqObj["data"])) {
 			console.error("data 參數必須使用 array 型態");
@@ -130,10 +115,8 @@ function workerReady(e) {
 			// maxContentLength: 20000000,
 			onUploadProgress: function(progressEvent) {
 				var percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-				var percentStr = String(percentCompleted);
-				// console.log("uploadPercent:"+percentStr+"%");
+				var percentStr = String(percentCompleted); // percent number
 				var respObj = {
-					req_type: "post_form_data",
 					status: "upload_progress",
 					progress_value: percentStr
 				};
@@ -142,21 +125,14 @@ function workerReady(e) {
 		};
 		// form-data 格式請使用 post method
 		axios.post(reqObj["url"], formData, config).then(function (response) {
-			// console.log(response);
 			var respObj = {
-				req_type: "post_form_data",
 				status: "done",
 				status_code: response.status,
-				status_text: response.statusText,
-				data: response.data,
-				headers: response.headers
-				// config: response.config
-				// request: response.request
+				data: response.data
 			};
 			self.postMessage(respObj);
 		}).catch(function (err) {
 			var respObj = {
-				req_type: "post_form_data",
 				status: "error",
 				error: err
 			};
