@@ -34,6 +34,7 @@ public class FileHandler extends RequestHandler {
         String path = requestContext.getParameters().get("path");
         JSONObject res = getDirContent(path);
         try {
+            // 如果是檔案則直接下載，若是資料夾則顯示其檔案列表
             if ("path_is_file".equals(res.getString("status"))) {
                 File file = new File(path);
                 requestContext.outputFileToResponse(path, file.getName(), null, false, new Handler(){

@@ -74,6 +74,9 @@ var website = window.website || {};
 						{ key: "b", value: "ABC" },
 						{ key: "c", value: "國字測試" },
 						{ key: "d", value: "/// //aaa// a//cc[]///" }
+					],
+					header: [
+						{ key: "my-auth", value: "aaabbbcccdddeeefffggg_hi" }
 					]
 				}).done(function(respd){
 					console.log(respd);

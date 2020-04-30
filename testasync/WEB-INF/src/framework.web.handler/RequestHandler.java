@@ -2,6 +2,13 @@ package framework.web.handler;
 
 import framework.web.context.AsyncActionContext;
 
+/**
+ * 每一個 RequestHandler 通常代表一個種類的請求處理集合，
+ * 藉由 checkIsMyJob() 實作檢查請求類型，
+ * 並由 AsyncActionContext 內容實際進行處理，
+ * 也可以在 RequestHandler 實例中實作子責任鏈，
+ * 由子責任鏈處理更複雜的請求內容
+ */
 public abstract class RequestHandler {
 
     private RequestHandler nextRequestHandler;

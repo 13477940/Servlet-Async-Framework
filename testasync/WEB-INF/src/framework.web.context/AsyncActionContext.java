@@ -31,6 +31,7 @@ import java.util.*;
  * WebAppController > AsyncContextRunnable > AsyncActionContext
  *
  * 2020-04-16 修正 IE 與現代化瀏覽器下載 unicode 檔案名稱亂碼的問題
+ * 2020-04-20 修正下載檔案名稱包含空格會被轉換為 + 符號的問題（因為 java 只有一種 URL Encode 模式）
  */
 public class AsyncActionContext {
 
@@ -648,7 +649,11 @@ public class AsyncActionContext {
             }
             assert nowFile != null;
             nowFile.deleteOnExit();
-            Files.copy(asyncContext.getRequest().getInputStream(), nowFile.toPath());
+            Files.copy(
+                    asyncContext.getRequest().getInputStream(),
+                    nowFile.toPath(),
+                    StandardCopyOption.REPLACE_EXISTING
+            );
         } catch (Exception e) {
             e.printStackTrace();
             nowFile = null;
@@ -779,7 +784,6 @@ public class AsyncActionContext {
         }
     }
 
-    @SuppressWarnings("UnusedReturnValue")
     public static class Builder {
 
         private ServletContext servletContext;

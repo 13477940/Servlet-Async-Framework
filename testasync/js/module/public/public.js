@@ -53,24 +53,32 @@ var website = window.website || {};
 				console.error("data 參數必須使用 array 型態");
 				return;
 			}
-			var worker = new Worker("/testasync/js/worker/axios_worker.js");
-			// if worker init error
-			worker.addEventListener("error", function(e){
-				console.log(e);
-			}, false);
-			// set listener
-			worker.addEventListener("message", workerMsgFn, false);
-			function workerMsgFn(e) {
-				def.resolve(e.data.data);
-				worker.terminate();
+			if(null != reqObj["header"] && false == Array.isArray(reqObj["header"])) {
+				def.reject();
+				console.error("header 參數必須使用 array 型態");
+				return;
 			}
+			var worker = new Worker("/testasync/js/worker/axios_worker.js");
+			(function(){
+				// if worker init error
+				worker.addEventListener("error", function(e){
+					console.log(e);
+				}, false);
+				// set listener
+				worker.addEventListener("message", workerMsgFn, false);
+				function workerMsgFn(e) {
+					def.resolve(e.data.data);
+					worker.terminate();
+				}
+			})();
 			// send init msg
 			(function(){
 				worker.postMessage({
 					reqObj: {
 						act: "get",
 						url: reqObj["url"],
-						data: reqObj["data"]
+						data: reqObj["data"],
+						header: reqObj["header"]
 					}
 				});
 			})();
@@ -86,25 +94,33 @@ var website = window.website || {};
 				console.error("data 參數必須使用 array 型態");
 				return;
 			}
-			var worker = new Worker("/testasync/js/worker/axios_worker.js");
-			// if worker init error
-			worker.addEventListener("error", function(e){
-				console.log(e);
-			}, false);
-			// set listener
-			worker.addEventListener("message", workerMsgFn, false);
-			function workerMsgFn(e) {
-				// console.log(e.data);
-				def.resolve(e.data.data);
-				worker.terminate();
+			if(null != reqObj["header"] && false == Array.isArray(reqObj["header"])) {
+				def.reject();
+				console.error("header 參數必須使用 array 型態");
+				return;
 			}
+			var worker = new Worker("/testasync/js/worker/axios_worker.js");
+			(function(){
+				// if worker init error
+				worker.addEventListener("error", function(e){
+					console.log(e);
+				}, false);
+				// set listener
+				worker.addEventListener("message", workerMsgFn, false);
+				function workerMsgFn(e) {
+					// console.log(e.data);
+					def.resolve(e.data.data);
+					worker.terminate();
+				}
+			})();
 			// send init msg
 			(function(){
 				worker.postMessage({
 					reqObj: {
 						act: "post",
 						url: reqObj["url"],
-						data: reqObj["data"]
+						data: reqObj["data"],
+						header: reqObj["header"]
 					}
 				});
 			})();
@@ -120,30 +136,38 @@ var website = window.website || {};
 				console.error("data 參數必須使用 array 型態");
 				return;
 			}
-			var worker = new Worker("/testasync/js/worker/axios_worker.js");
-			// if worker init error
-			worker.addEventListener("error", function(e){
-				console.log(e);
-			}, false);
-			// set listener
-			worker.addEventListener("message", workerMsgFn, false);
-			function workerMsgFn(e) {
-				var respObj = e.data;
-				if("upload_progress" == respObj["status"]) {
-					def.notify(respObj["progress_value"]);
-				}
-				if("done" == respObj["status"]) {
-					def.resolve(e.data.data);
-					worker.terminate();
-				}
+			if(null != reqObj["header"] && false == Array.isArray(reqObj["header"])) {
+				def.reject();
+				console.error("header 參數必須使用 array 型態");
+				return;
 			}
+			var worker = new Worker("/testasync/js/worker/axios_worker.js");
+			(function(){
+				// if worker init error
+				worker.addEventListener("error", function(e){
+					console.log(e);
+				}, false);
+				// set listener
+				worker.addEventListener("message", workerMsgFn, false);
+				function workerMsgFn(e) {
+					var respObj = e.data;
+					if("upload_progress" == respObj["status"]) {
+						def.notify(respObj["progress_value"]);
+					}
+					if("done" == respObj["status"]) {
+						def.resolve(e.data.data);
+						worker.terminate();
+					}
+				}
+			})();
 			// send init msg
 			(function(){
 				worker.postMessage({
 					reqObj: {
 						act: "post_form_data",
 						url: reqObj["url"],
-						data: reqObj["data"]
+						data: reqObj["data"],
+						header: reqObj["header"]
 					}
 				});
 			})();

@@ -32,8 +32,8 @@ public class UploadHandler extends RequestHandler {
         String uploadPath = new AppSetting.Builder().build().getPathContext().getUploadDirPath();
         FileItemList files = requestContext.getFiles();
         for (FileItem fi : files.prototype()) {
-            if(!fi.isFormField()) {
-                requestContext.writeFile(fi, uploadPath, String.valueOf(System.currentTimeMillis()), new Handler(){
+            if (!fi.isFormField()) {
+                requestContext.writeFile(fi, uploadPath, String.valueOf(System.currentTimeMillis()), new Handler() {
                     @Override
                     public void handleMessage(Message m) {
                         super.handleMessage(m);
@@ -46,7 +46,7 @@ public class UploadHandler extends RequestHandler {
             obj.put("status", "upload_done");
             obj.put("type", "file_upload");
             obj.put("params", requestContext.getParameters());
-            requestContext.printToResponse(obj.toJSONString(), new Handler(){
+            requestContext.printToResponse(obj.toJSONString(), new Handler() {
                 @Override
                 public void handleMessage(Message m) {
                     super.handleMessage(m);

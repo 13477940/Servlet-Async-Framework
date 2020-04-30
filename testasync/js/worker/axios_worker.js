@@ -1,6 +1,9 @@
 /*
 https://caniuse.com/#feat=webworkers
 https://github.com/axios/axios
+
+#2020-04-28 修正錯誤中斷點的回傳內容
+#2020-04-28 增加自定義 request header 的功能
 */
 
 "use strict"
@@ -21,7 +24,11 @@ function workerReady(e) {
 	// get with application/x-www-form-urlencoded;charset=UTF-8
 	workerFn["get"] = function(reqObj) {
 		if(null != reqObj["data"] && false == Array.isArray(reqObj["data"])) {
-			console.error("data 參數必須使用 array 型態");
+			var respObj = {
+				status: "error",
+				msg_zht: "data 參數必須使用 array 型態"
+			};
+			self.postMessage(respObj);
 			return;
 		}
 		var params = new URLSearchParams();
@@ -34,8 +41,27 @@ function workerReady(e) {
 				params.append(key, value);
 			}
 		})();
+		if(null != reqObj["header"] && false == Array.isArray(reqObj["header"])) {
+			var respObj = {
+				status: "error",
+				msg_zht: "header 參數必須使用 array 型態"
+			};
+			self.postMessage(respObj);
+			return;
+		}
+		var headers = {};
+		(function(){
+			var arr = reqObj["header"];
+			for(var index in arr) {
+				var obj = arr[index];
+				var key = obj["key"];
+				var value = obj["value"];
+				headers[key] = value;
+			}
+		})();
 		var config = {
-			transformResponse: [(data) => { return data; }],
+			transformResponse: [(data) => { return data; }], // 修正 response 回傳內容格式
+			headers: headers,
 			params: params
 		};
 		axios.get(reqObj["url"], config).then(function (response) {
@@ -57,9 +83,14 @@ function workerReady(e) {
 
 (function(){
 	// post form-data with application/x-www-form-urlencoded;charset=UTF-8
+	// https://medium.com/@jacobhsu/api-%E5%9B%9B%E7%A8%AE%E5%B8%B8%E8%A6%8B%E7%9A%84-post-%E6%8F%90%E4%BA%A4%E6%95%B8%E6%93%9A%E6%96%B9%E5%BC%8F-5d93ccea919d
 	workerFn["post"] = function(reqObj) {
 		if(null != reqObj["data"] && false == Array.isArray(reqObj["data"])) {
-			console.error("data 參數必須使用 array 型態");
+			var respObj = {
+				status: "error",
+				msg_zht: "data 參數必須使用 array 型態"
+			};
+			self.postMessage(respObj);
 			return;
 		}
 		// https://github.com/axios/axios#using-applicationx-www-form-urlencoded-format
@@ -73,8 +104,27 @@ function workerReady(e) {
 				params.append(key, value);
 			}
 		})();
+		if(null != reqObj["header"] && false == Array.isArray(reqObj["header"])) {
+			var respObj = {
+				status: "error",
+				msg_zht: "header 參數必須使用 array 型態"
+			};
+			self.postMessage(respObj);
+			return;
+		}
+		var headers = {};
+		(function(){
+			var arr = reqObj["header"];
+			for(var index in arr) {
+				var obj = arr[index];
+				var key = obj["key"];
+				var value = obj["value"];
+				headers[key] = value;
+			}
+		})();
 		var config = {
-			transformResponse: [(data) => { return data; }]
+			transformResponse: [(data) => { return data; }], // 修正 response 回傳內容格式
+			headers: headers
 		};
 		axios.post(reqObj["url"], params, config).then(function(response) {
 			var respObj = {
@@ -97,7 +147,11 @@ function workerReady(e) {
 	// post form-data with multipart/form-data
 	workerFn["post_form_data"] = function(reqObj) {
 		if(null != reqObj["data"] && false == Array.isArray(reqObj["data"])) {
-			console.error("data 參數必須使用 array 型態");
+			var respObj = {
+				status: "error",
+				msg_zht: "data 參數必須使用 array 型態"
+			};
+			self.postMessage(respObj);
 			return;
 		}
 		var formData = new FormData();
@@ -110,8 +164,27 @@ function workerReady(e) {
 				}
 			}
 		})();
+		if(null != reqObj["header"] && false == Array.isArray(reqObj["header"])) {
+			var respObj = {
+				status: "error",
+				msg_zht: "header 參數必須使用 array 型態"
+			};
+			self.postMessage(respObj);
+			return;
+		}
+		var headers = {};
+		(function(){
+			var arr = reqObj["header"];
+			for(var index in arr) {
+				var obj = arr[index];
+				var key = obj["key"];
+				var value = obj["value"];
+				headers[key] = value;
+			}
+		})();
 		var config = {
-			transformResponse: [(data) => { return data; }],
+			transformResponse: [(data) => { return data; }], // 修正 response 回傳內容格式
+			headers: headers,
 			// maxContentLength: 20000000,
 			onUploadProgress: function(progressEvent) {
 				var percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);

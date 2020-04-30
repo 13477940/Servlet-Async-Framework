@@ -181,10 +181,10 @@ public class AsyncContextRunnable implements Runnable {
         }
     }
 
-    // 處理 HttpRequest Parameters（使用 HashMap 因為參數通常對順序不敏感）
+    // 處理 HttpRequest Parameters
     private void parseParams() {
         LinkedHashMap<String, String> params = new LinkedHashMap<>();
-        for (Map.Entry<String, String[]> entry : asyncContext.getRequest().getParameterMap().entrySet()) {
+        for ( Map.Entry<String, String[]> entry : asyncContext.getRequest().getParameterMap().entrySet() ) {
             try {
                 String key = entry.getKey();
                 String[] values = entry.getValue();

@@ -28,10 +28,23 @@ public class ParameterHandler extends RequestHandler {
     }
 
     private void processReuqest() {
+        // process http request parameters
         JSONObject obj = new JSONObject();
         for(Map.Entry<String, String> entry : requestContext.getParameters().entrySet()) {
             obj.put(entry.getKey(), entry.getValue());
         }
+        // process http request headers
+        /*
+        {
+            JSONObject headers = new JSONObject();
+            Iterator<String> it = requestContext.getHttpRequest().getHeaderNames().asIterator();
+            while (it.hasNext()) {
+                String key = it.next();
+                String value = requestContext.getHttpRequest().getHeader(key);
+                headers.put(key, value);
+            }
+            obj.put("headers", headers);
+        }*/
         requestContext.printToResponse(obj.toJSONString(), new Handler(){
             @Override
             public void handleMessage(Message m) {
