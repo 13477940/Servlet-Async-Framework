@@ -435,6 +435,67 @@ public class HttpClient {
             };
         }
         // https://github.com/biezhi/java11-examples/blob/master/src/main/java/io/github/biezhi/java11/http/Example.java#L108
+        // TODO 要特別查驗一下是不是 Windows 及非 Linux 環境，
+        // TODO 會造成 HttpClient Async Response 發生無法正常關閉 client 錯誤
+        {
+            try {
+                HttpResponse<InputStream> resp = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
+                {
+                    // response header
+                    {
+                        LinkedHashMap<String, String> headers = new LinkedHashMap<>();
+                        for(Map.Entry<String, List<String>> entry : resp.headers().map().entrySet()) {
+                            String key = entry.getKey();
+                            List<String> value = entry.getValue();
+                            if(value.size() > 1) {
+                                int indx = 0;
+                                for(String str : entry.getValue()) {
+                                    if(0 == indx) {
+                                        headers.put(key, str);
+                                    } else {
+                                        headers.put(key+"_"+indx, str);
+                                    }
+                                    indx++;
+                                }
+                            } else {
+                                headers.put(key, value.get(0));
+                            }
+                        }
+                        {
+                            Bundle b = new Bundle();
+                            b.put("status", "header");
+                            b.put("status_code", String.valueOf(resp.statusCode()));
+                            b.put("headers", new WeakReference<>( headers ).get());
+                            if(headers.containsKey("content-type")) b.put("content_type", headers.get("content-type"));
+                            if(headers.containsKey("content-disposition")) b.put("content_disposition", headers.get("content-disposition"));
+                            Message m = tmp_handler.obtainMessage();
+                            m.setData(b);
+                            m.sendToTarget();
+                        }
+                    }
+                    // response body
+                    {
+                        Bundle b = new Bundle();
+                        b.put("status", "body");
+                        b.put("input_stream", resp.body());
+                        Message m = tmp_handler.obtainMessage();
+                        m.setData(b);
+                        m.sendToTarget();
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                {
+                    Bundle b = new Bundle();
+                    b.put("status", "exception");
+                    b.put("throwable", e);
+                    Message m = tmp_handler.obtainMessage();
+                    m.setData(b);
+                    m.sendToTarget();
+                }
+            }
+        }
+        /*
         client.sendAsync(request, HttpResponse.BodyHandlers.ofInputStream())
                 .whenCompleteAsync((resp, throwable) -> {
                     if(null == resp) {
@@ -492,6 +553,7 @@ public class HttpClient {
                     }
                 })
                 .join();
+         */
     }
 
     private void processTextResponse(LinkedHashMap<String, String> resp_header, InputStream resp_body, Handler handler) {

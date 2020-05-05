@@ -120,6 +120,7 @@ public class AsyncContextRunnable implements Runnable {
             LinkedHashMap<String, String> params = new LinkedHashMap<>();
             final HashMap<String, File> fileTmp = new HashMap<>();
             fileTmp.put("file", null);
+            int bMaxSize = 1024 * 16; // 2020-05-05 修正 buffer max size 限制
             try {
                 UploadParser.newParser()
                         // https://github.com/Elopteryx/upload-parser/blob/master/upload-parser-core/src/main/java/com/github/elopteryx/upload/OnPartBegin.java
@@ -171,7 +172,7 @@ public class AsyncContextRunnable implements Runnable {
                         })
                         .onError((context, throwable) -> throwable.printStackTrace())
                         .sizeThreshold( 0 ) // buffer 起始值（建議為 0，要不然會有 buffer 內容重複的問題）
-                        .maxBytesUsed( 1024 * 4 ) // max buffer size
+                        .maxBytesUsed( bMaxSize ) // max buffer size
                         .maxPartSize( Long.MAX_VALUE ) // 單個 form-data 項目大小限制
                         .maxRequestSize( Long.MAX_VALUE ) // 整體 request 大小限制
                         .setupAsyncParse( (HttpServletRequest) asyncContext.getRequest() );

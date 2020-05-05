@@ -63,6 +63,7 @@ public class AsyncWriteListener implements WriteListener {
      * 2019-06-17 修改 while 處理邏輯及中斷條件，解決 CPU 高使用率的問題
      * 2019-12-31 取消自旋鎖
      * 2020-04-13 修正 Buffer Size 為 inputStream.available() 自動取值
+     * 2020-05-05 修正 inputStream.available() 會達到物理記憶體最大值造成溢位的問題
      */
     @Override
     public void onWritePossible() {
@@ -97,7 +98,12 @@ public class AsyncWriteListener implements WriteListener {
             if(!out.isReady()) break;
             if(null == inputStream) break;
             try {
+                // 當使用 inputStream.available() 會使用到物理記憶體最大值
+                // 所以需要特別去注意這部分的調用值，應在之後設定一個極限值
+                // 保障系統物理記憶體空間的餘裕與穩定度
                 int bSize = inputStream.available();
+                int bMaxSize = 1024 * 16;
+                if ( bSize > bMaxSize ) bSize = bMaxSize;
                 byte[] buffer = new byte[ bSize ];
                 rLength = inputStream.read(buffer);
                 // if all byte process done

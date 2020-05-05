@@ -81,6 +81,7 @@ public class AsyncReadListener implements ReadListener {
      * 2019-12-31 取消自旋鎖
      * 2020-04-13 修正 while 判斷中斷邏輯
      * 2020-04-13 修正 Buffer Size 為 inputStream.available() 自動取值
+     * 2020-05-05 修正 inputStream.available() 會達到物理記憶體最大值造成溢位的問題
      */
     @Override
     public void onDataAvailable() {
@@ -89,7 +90,10 @@ public class AsyncReadListener implements ReadListener {
             int rLength;
             while ( inputStream.isReady() && !inputStream.isFinished() ) {
                 if(null == inputStream) break;
-                byte[] buffer = new byte[ inputStream.available() ];
+                int bSize = inputStream.available();
+                int bMaxSize = 1024 * 16;
+                if(bSize > bMaxSize) bSize = bMaxSize;
+                byte[] buffer = new byte[ bSize ];
                 rLength = inputStream.read(buffer);
                 if( 0 > rLength ) break;
                 if(null == outputStream) break;
