@@ -1,6 +1,7 @@
 package framework.http;
 
-import com.alibaba.fastjson.JSONObject;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import framework.observer.Bundle;
 import framework.observer.Handler;
 import framework.observer.Message;
@@ -40,6 +41,7 @@ import java.util.*;
  * 2020-03-24 增加 keepUrlSearchParams 參數，判斷是否需保留完整的參數網址
  * 2020-04-16 修正 post form-data 無法正常關閉連線的問題
  * 2020-04-17 修正語法細節及預設方法的使用方式
+ * 2020-05-20 使用 Gson 作為 JSON 處理套件
  */
 public class HttpClient {
 
@@ -280,7 +282,7 @@ public class HttpClient {
     /**
      * POST application/json
      */
-    public void postJSON(JSONObject obj, Handler handler) {
+    public void postJSON(JsonObject obj, Handler handler) {
         HttpRequest.Builder requestBuilder = HttpRequest.newBuilder();
         {
             // 設定 request header
@@ -295,7 +297,7 @@ public class HttpClient {
             // 設定 request parameters
             if (null != obj) {
                 // method POST
-                requestBuilder.POST(HttpRequest.BodyPublishers.ofString(obj.toJSONString(), StandardCharsets.UTF_8));
+                requestBuilder.POST(HttpRequest.BodyPublishers.ofString(new Gson().toJson(obj), StandardCharsets.UTF_8));
             } else {
                 // method POST
                 requestBuilder.POST(HttpRequest.BodyPublishers.noBody());
@@ -623,11 +625,11 @@ public class HttpClient {
             b.put("resp_type", "file");
             // http response header
             {
-                JSONObject obj = new JSONObject();
+                JsonObject obj = new JsonObject();
                 for(Map.Entry<String, String> entry : resp_header.entrySet()) {
-                    obj.put(entry.getKey(), entry.getValue());
+                    obj.addProperty(entry.getKey(), entry.getValue());
                 }
-                b.put("headers", obj.toJSONString());
+                b.put("headers", new Gson().toJson(obj));
                 if (resp_header.containsKey("content_type")) b.put("content_type", resp_header.get("content_type"));
                 if (resp_header.containsKey("content_disposition")) b.put("content_disposition", resp_header.get("content_disposition"));
             }
@@ -695,11 +697,11 @@ public class HttpClient {
             return this;
         }
 
-        public HttpClient.Builder setHeaders(JSONObject headers) {
+        public HttpClient.Builder setHeaders(JsonObject headers) {
             HashMap<String, String> map = new HashMap<>();
-            for(Map.Entry<String, Object> entry : headers.entrySet()) {
-                String key = entry.getKey();
-                String value = entry.getValue().toString();
+            for(Object keyObj : headers.keySet()) {
+                String key = String.valueOf(keyObj);
+                String value = headers.get(key).getAsString();
                 if(null == value) value = "";
                 map.put(key, value);
             }
@@ -734,11 +736,11 @@ public class HttpClient {
             return this;
         }
 
-        public HttpClient.Builder setParameters(JSONObject parameters) {
+        public HttpClient.Builder setParameters(JsonObject parameters) {
             LinkedHashMap<String, String> map = new LinkedHashMap<>();
-            for(Map.Entry<String, Object> entry : parameters.entrySet()) {
-                String key = entry.getKey();
-                String value = entry.getValue().toString();
+            for(Object keyObj : parameters.keySet()) {
+                String key = String.valueOf(keyObj);
+                String value = parameters.get(key).getAsString();
                 if(null == value) value = "";
                 map.put(key, value);
             }

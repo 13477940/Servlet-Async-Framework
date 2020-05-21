@@ -1,7 +1,7 @@
 package framework.web.session.service;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import framework.web.session.context.UserContext;
 import framework.web.session.pattern.UserMap;
 
@@ -60,23 +60,23 @@ public abstract class SessionService {
 
     public void setUserContext(HttpSession session, UserContext userContext) {
         if(null == userContext) return;
-        session.setAttribute(userContextTag, userContext.toJSONObject().toJSONString());
+        session.setAttribute(userContextTag, new Gson().toJson(userContext.toJSONObject()));
     }
 
     public UserContext getUserContext(HttpSession session) {
         if(null == session.getAttribute(userContextTag)) return null;
         String tmp = session.getAttribute(userContextTag).toString();
         if(null == tmp || tmp.length() == 0) return null;
-        JSONObject obj = JSON.parseObject(tmp);
+        JsonObject obj = new Gson().fromJson(tmp, JsonObject.class);
         return new UserContext.Builder()
                 .setHttpSession(session)
-                .setDataID(obj.getString("data_id"))
-                .setAccount(obj.getString("account"))
-                .setName(obj.getString("name"))
-                .setNickName(obj.getString("nickname"))
-                .setCategory(obj.getString("category"))
-                .setRemoteIP(obj.getString("remote_ip"))
-                .setExtenObj(obj.getJSONObject("exten_obj"))
+                .setDataID(obj.get("data_id").getAsString())
+                .setAccount(obj.get("account").getAsString())
+                .setName(obj.get("name").getAsString())
+                .setNickName(obj.get("nickname").getAsString())
+                .setCategory(obj.get("category").getAsString())
+                .setRemoteIP(obj.get("remote_ip").getAsString())
+                .setExtenObj(obj.get("exten_obj").getAsJsonObject())
                 .build();
     }
 

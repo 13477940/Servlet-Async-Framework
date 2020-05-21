@@ -1,7 +1,8 @@
 package framework.setting;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import framework.file.FileFinder;
 import framework.web.servlet.ServletContextStatic;
 
@@ -56,17 +57,17 @@ public class AppSetting {
         return this.pathContext;
     }
 
-    public JSONObject getConfig(String configDirName, String configFileName) {
+    public JsonObject getConfig(String configDirName, String configFileName) {
         return getConfig(new FileFinder.Builder().build().find(configDirName, configFileName));
     }
 
-    public JSONObject getConfig() {
+    public JsonObject getConfig() {
         FileFinder finder = new FileFinder.Builder().build();
         File file = finder.find(this.configDirName, this.configFileName);
         return getConfig(file);
     }
 
-    public JSONObject getConfig(String filePath) {
+    public JsonObject getConfig(String filePath) {
         File file = new File(filePath);
         if(file.exists()) {
             return getConfig(file);
@@ -81,15 +82,15 @@ public class AppSetting {
     }
 
     // getConfig 實作
-    public JSONObject getConfig(File file) {
-        JSONObject res = null;
+    public JsonObject getConfig(File file) {
+        JsonObject res = null;
         if(null != file) {
             if(file.exists()) {
                 String content = readFileText(file);
                 if (null != content && content.length() > 0) {
                     {
                         try {
-                            res = JSON.parseObject(content);
+                            res = new Gson().fromJson(content, JsonObject.class);
                         } catch (Exception e) {
                             e.printStackTrace();
                             res = null;
@@ -97,8 +98,8 @@ public class AppSetting {
                     }
                     if (null == res) {
                         try {
-                            res = new JSONObject();
-                            res.put("config", JSON.parseArray(content));
+                            res = new JsonObject();
+                            res.add("config", new Gson().fromJson(content, JsonArray.class));
                         } catch (Exception e) {
                             e.printStackTrace();
                             res = null;

@@ -1,6 +1,6 @@
 package framework.web.session.context;
 
-import com.alibaba.fastjson.JSONObject;
+import com.google.gson.JsonObject;
 import framework.time.TimeService;
 import framework.web.context.AsyncActionContext;
 
@@ -26,20 +26,20 @@ public class UserContext {
     private String nickName = null; // 使用者暱稱（自定義）
     private String category = null; // 使用者權限（自定義）
     private String remoteIP = null;
-    private JSONObject extenObj = null; // 延伸資訊用（自定義）
+    private JsonObject extenObj = null; // 延伸資訊用（自定義）
     private String createDate = null;
     private String createTime = null;
 
-    private UserContext(AsyncActionContext requestContext, String dataID, String account, String name, String nickName, String category, String remoteIP, JSONObject extenObj) {
+    private UserContext(AsyncActionContext requestContext, String dataID, String account, String name, String nickName, String category, String remoteIP, JsonObject extenObj) {
         this.requestContext = requestContext;
         initUserContext(requestContext.getHttpSession(), dataID, account, name, nickName, category, remoteIP, extenObj);
     }
 
-    private UserContext(HttpSession session, String dataID, String account, String name, String nickName, String category, String remoteIP, JSONObject extenObj) {
+    private UserContext(HttpSession session, String dataID, String account, String name, String nickName, String category, String remoteIP, JsonObject extenObj) {
         initUserContext(session, dataID, account, name, nickName, category, remoteIP, extenObj);
     }
 
-    private void initUserContext(HttpSession session, String dataID, String account, String name, String nickName, String category, String remoteIP, JSONObject extenObj) {
+    private void initUserContext(HttpSession session, String dataID, String account, String name, String nickName, String category, String remoteIP, JsonObject extenObj) {
         this.session = session;
         this.sessionID = session.getId();
         this.dataID = dataID;
@@ -92,22 +92,22 @@ public class UserContext {
     public String getCreateTime() {
         return createTime;
     }
-    public JSONObject getExtenObj() {
+    public JsonObject getExtenObj() {
         return extenObj;
     }
 
-    public JSONObject toJSONObject() {
-        JSONObject obj = new JSONObject();
-        obj.put("session_id", sessionID);
-        obj.put("data_id", dataID);
-        obj.put("account", account);
-        obj.put("name", name);
-        obj.put("nickname", nickName);
-        obj.put("category", category);
-        obj.put("remote_ip", remoteIP);
-        obj.put("create_date", createDate);
-        obj.put("create_time", createTime);
-        obj.put("exten_obj", extenObj);
+    public JsonObject toJSONObject() {
+        JsonObject obj = new JsonObject();
+        obj.addProperty("session_id", sessionID);
+        obj.addProperty("data_id", dataID);
+        obj.addProperty("account", account);
+        obj.addProperty("name", name);
+        obj.addProperty("nickname", nickName);
+        obj.addProperty("category", category);
+        obj.addProperty("remote_ip", remoteIP);
+        obj.addProperty("create_date", createDate);
+        obj.addProperty("create_time", createTime);
+        obj.add("exten_obj", extenObj);
         return obj;
     }
 
@@ -139,7 +139,7 @@ public class UserContext {
         private String nickName = null;
         private String category = null;
         private String remoteIP = null;
-        private JSONObject extenObj = null;
+        private JsonObject extenObj = null;
 
         public UserContext.Builder setAsyncActionContext(AsyncActionContext requestContext) {
             this.requestContext = requestContext;
@@ -181,7 +181,7 @@ public class UserContext {
             return this;
         }
 
-        public UserContext.Builder setExtenObj(JSONObject extenObj) {
+        public UserContext.Builder setExtenObj(JsonObject extenObj) {
             this.extenObj = extenObj;
             return this;
         }

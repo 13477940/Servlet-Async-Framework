@@ -1,6 +1,6 @@
 package app.handler;
 
-import com.alibaba.fastjson.JSONObject;
+import com.google.gson.JsonObject;
 import framework.observer.Handler;
 import framework.observer.Message;
 import framework.setting.AppSetting;
@@ -8,6 +8,8 @@ import framework.web.context.AsyncActionContext;
 import framework.web.handler.RequestHandler;
 import framework.web.multipart.FileItem;
 import framework.web.multipart.FileItemList;
+
+import java.util.Map;
 
 public class UploadHandler extends RequestHandler {
 
@@ -42,11 +44,17 @@ public class UploadHandler extends RequestHandler {
             }
         }
         {
-            JSONObject obj = new JSONObject();
-            obj.put("status", "upload_done");
-            obj.put("type", "file_upload");
-            obj.put("params", requestContext.getParameters());
-            requestContext.printToResponse(obj.toJSONString(), new Handler() {
+            JsonObject obj = new JsonObject();
+            obj.addProperty("status", "upload_done");
+            obj.addProperty("type", "file_upload");
+            JsonObject params = new JsonObject();
+            {
+                for(Map.Entry<String, String> param : requestContext.getParameters().entrySet()) {
+                    params.addProperty(param.getKey(), param.getValue());
+                }
+            }
+            obj.add("params", params);
+            requestContext.printToResponse(obj, new Handler() {
                 @Override
                 public void handleMessage(Message m) {
                     super.handleMessage(m);

@@ -1,8 +1,11 @@
 package framework.database.pattern;
 
-import com.alibaba.fastjson.JSONObject;
+import com.google.gson.JsonObject;
 
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
 /**
  * [data access object]
@@ -34,12 +37,12 @@ public class DataRow {
      * JSONObject to DataRow
      * 前端的空值會在 JavaScript 中轉換為空字串
      */
-    public DataRow(JSONObject obj) {
+    public DataRow(JsonObject obj) {
         this.instance = new LinkedHashMap<>();
-        for(Map.Entry<String, Object> entry : obj.entrySet()) {
-            String key = entry.getKey();
-            Object value = Objects.requireNonNullElse(entry.getValue(), "");
-            instance.put(key, value.toString());
+        for(Object keyObj : obj.keySet()) {
+            String key = String.valueOf(keyObj);
+            Object value = Objects.requireNonNullElse(obj.get(key).getAsString(), "");
+            instance.put(String.valueOf(key), value.toString());
         }
     }
 
@@ -82,13 +85,13 @@ public class DataRow {
     /**
      * DataRow 轉換為 JSONObject 型態
      */
-    public JSONObject toJSONObject() {
-        JSONObject obj = new JSONObject();
+    public JsonObject toJSONObject() {
+        JsonObject obj = new JsonObject();
         if(null == prototype()) return null;
         for(Map.Entry<String, String> entry : prototype().entrySet()) {
             String key = entry.getKey().toLowerCase(); // Key - LowerCase
             String value = Objects.requireNonNullElse(entry.getValue(), "");
-            obj.put(key, value);
+            obj.addProperty(key, value);
         }
         return obj;
     }

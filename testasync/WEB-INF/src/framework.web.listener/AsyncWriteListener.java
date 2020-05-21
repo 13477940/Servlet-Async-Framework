@@ -93,6 +93,7 @@ public class AsyncWriteListener implements WriteListener {
         }
         // 非同步模式之下將 inputStream 內容讀取並輸出至 ServletOutputStream
         int rLength;
+        int bMaxSize = 1024 * 16;
         while ( true ) {
             if(null == out) break;
             if(!out.isReady()) break;
@@ -102,7 +103,6 @@ public class AsyncWriteListener implements WriteListener {
                 // 所以需要特別去注意這部分的調用值，應在之後設定一個極限值
                 // 保障系統物理記憶體空間的餘裕與穩定度
                 int bSize = inputStream.available();
-                int bMaxSize = 1024 * 16;
                 if ( bSize > bMaxSize ) bSize = bMaxSize;
                 byte[] buffer = new byte[ bSize ];
                 rLength = inputStream.read(buffer);

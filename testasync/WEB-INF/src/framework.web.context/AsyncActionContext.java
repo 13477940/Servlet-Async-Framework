@@ -1,6 +1,7 @@
 package framework.web.context;
 
-import com.alibaba.fastjson.JSONObject;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import framework.hash.HashServiceStatic;
 import framework.observer.Bundle;
 import framework.observer.Handler;
@@ -338,6 +339,14 @@ public class AsyncActionContext {
     }
 
     /**
+     * 輸出 Gson JsonObject 至 Response
+     * 此方法會以 text/plain 格式回傳至前端
+     */
+    public void printToResponse(JsonObject jsonObject, Handler handler) {
+        printToResponse(new Gson().toJson(jsonObject), handler);
+    }
+
+    /**
      * 輸出純文本內容至 Response
      */
     public void printToResponse(String content, Handler handler) {
@@ -371,8 +380,9 @@ public class AsyncActionContext {
 
     /**
      * 輸出 JSON 格式的字串至 Response
+     * 此方法會以 application/json 格式回傳至前端
      */
-    public void outputJSONToResponse(JSONObject obj, Handler handler) {
+    public void outputJSONToResponse(JsonObject obj, Handler handler) {
         if(checkIsOutput()) return;
         HttpServletResponse response = ((HttpServletResponse) asyncContext.getResponse());
         // 因為採用 byte 輸出，如果沒有 Response Header 容易在瀏覽器端發生錯誤
@@ -388,13 +398,13 @@ public class AsyncActionContext {
                 sbd.append(encodeOutputFileName(tmpRespName)).append(".json");
             }
             response.setHeader("Content-Disposition", sbd.toString());
-            response.setHeader("Content-Length", String.valueOf(obj.toJSONString().getBytes(StandardCharsets.UTF_8).length));
+            response.setHeader("Content-Length", String.valueOf(new Gson().toJson(obj).getBytes(StandardCharsets.UTF_8).length));
         }
         // 使用 WriteListener 非同步輸出
         {
             AsyncWriteListener asyncWriteListener = new AsyncWriteListener.Builder()
                     .setAsyncActionContext(this)
-                    .setCharSequence(obj.toJSONString())
+                    .setCharSequence(new Gson().toJson(obj))
                     .setHandler(handler)
                     .build();
             setOutputWriteListener(asyncWriteListener);
@@ -537,11 +547,11 @@ public class AsyncActionContext {
             public void handleMessage(Message m) {
                 super.handleMessage(m);
                 {
-                    JSONObject obj = new JSONObject();
-                    obj.put("error_code", "404");
-                    obj.put("status", "invalid_request");
-                    obj.put("msg_zht", "無效的請求");
-                    AsyncActionContext.this.printToResponse(obj.toJSONString(), new Handler(){
+                    JsonObject obj = new JsonObject();
+                    obj.addProperty("error_code", "404");
+                    obj.addProperty("status", "invalid_request");
+                    obj.addProperty("msg_zht", "無效的請求");
+                    AsyncActionContext.this.printToResponse(new Gson().toJson(obj), new Handler(){
                         @Override
                         public void handleMessage(Message m) {
                             super.handleMessage(m);
@@ -570,12 +580,12 @@ public class AsyncActionContext {
             public void handleMessage(Message m) {
                 super.handleMessage(m);
                 {
-                    JSONObject obj = new JSONObject();
-                    obj.put("status", m.getData().getString("status"));
-                    obj.put("error_code", "500"); // server_side
-                    obj.put("msg", m.getData().getString("msg"));
-                    obj.put("msg_zht", m.getData().getString("msg_zht"));
-                    AsyncActionContext.this.printToResponse(obj.toJSONString(), new Handler(){
+                    JsonObject obj = new JsonObject();
+                    obj.addProperty("status", m.getData().getString("status"));
+                    obj.addProperty("error_code", "500"); // server_side
+                    obj.addProperty("msg", m.getData().getString("msg"));
+                    obj.addProperty("msg_zht", m.getData().getString("msg_zht"));
+                    AsyncActionContext.this.printToResponse(new Gson().toJson(obj), new Handler(){
                         @Override
                         public void handleMessage(Message m) {
                             super.handleMessage(m);

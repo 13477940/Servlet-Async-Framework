@@ -1,7 +1,7 @@
 package framework.web.session;
 
-import framework.web.session.service.SessionServiceStatic;
 import framework.web.session.service.SessionCounter;
+import framework.web.session.service.SessionServiceStatic;
 
 import javax.servlet.http.HttpSessionEvent;
 import javax.servlet.http.HttpSessionListener;

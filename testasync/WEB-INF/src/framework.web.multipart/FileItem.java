@@ -75,7 +75,7 @@ public class FileItem {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return new WeakReference<>(inputStream).get();
+        return new WeakReference<>( inputStream ).get();
     }
 
     public static class Builder {

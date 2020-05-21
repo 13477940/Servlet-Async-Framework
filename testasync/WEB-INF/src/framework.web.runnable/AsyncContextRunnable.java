@@ -1,8 +1,9 @@
 package framework.web.runnable;
 
-import com.alibaba.fastjson.JSONArray;
 import com.github.elopteryx.upload.PartOutput;
 import com.github.elopteryx.upload.UploadParser;
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
 import framework.setting.AppSetting;
 import framework.web.context.AsyncActionContext;
 import framework.web.executor.WebAppServiceExecutor;
@@ -191,9 +192,12 @@ public class AsyncContextRunnable implements Runnable {
                 String[] values = entry.getValue();
                 // if single key has more than one value, they will be add in JSONArray String.
                 if (values.length > 1) {
-                    JSONArray arr = new JSONArray();
-                    Collections.addAll(arr, values);
-                    params.put(key, arr.toJSONString());
+                    JsonArray arr = new JsonArray();
+                    // Collections.addAll(arr, values);
+                    for(String str : values) {
+                        arr.add(str);
+                    }
+                    params.put(key, new Gson().toJson(arr));
                 } else {
                     String value = values[0];
                     params.put(key, value);

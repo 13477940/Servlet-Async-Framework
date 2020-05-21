@@ -1,7 +1,7 @@
 package framework.web.session.pattern;
 
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONObject;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import framework.web.session.context.UserContext;
 
 import java.util.ArrayList;
@@ -45,10 +45,10 @@ public abstract class UserMap {
     /**
      * 轉型為 JSONArray
      */
-    public JSONArray toJSONArray() {
-        JSONArray arr = new JSONArray();
+    public JsonArray toJSONArray() {
+        JsonArray arr = new JsonArray();
         for (Entry<String, UserContext> entry : map.entrySet()) {
-            JSONObject obj = entry.getValue().toJSONObject();
+            JsonObject obj = entry.getValue().toJSONObject();
             arr.add(obj);
         }
         return arr;

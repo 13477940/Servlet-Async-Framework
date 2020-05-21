@@ -1,6 +1,7 @@
 package framework.database;
 
-import com.alibaba.fastjson.JSONObject;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import framework.database.pattern.DataTable;
 import framework.observer.Bundle;
 import framework.observer.Handler;
@@ -252,20 +253,20 @@ public class DatabaseAction {
         ArrayList<String> columns = getAllColumnName(rs);
         try (rs) {
             while(rs.next()) {
-                JSONObject row = new JSONObject();
+                JsonObject row = new JsonObject();
                 for (String col : columns) {
                     if(null == col) continue;
                     String key = col.toLowerCase();
                     String value = rs.getString(col);
-                    row.put(key, Objects.requireNonNullElse(value, ""));
+                    row.addProperty(key, Objects.requireNonNullElse(value, ""));
                 }
                 {
                     // 過程中每一列的回傳
                     Bundle b = new Bundle();
                     b.putString("organizer", "queryOnHandler");
                     b.putString("status", "data");
-                    b.putString("type", "JSONObject");
-                    b.putString("data", row.toJSONString());
+                    b.putString("type", "JsonObject");
+                    b.putString("data", new Gson().toJson(row));
                     Message m = handler.obtainMessage();
                     m.setData(b);
                     m.sendToTarget();

@@ -1,6 +1,6 @@
 package framework.database.pattern;
 
-import com.alibaba.fastjson.JSONArray;
+import com.google.gson.JsonArray;
 
 import java.lang.ref.WeakReference;
 import java.sql.ResultSet;
@@ -56,8 +56,8 @@ public class DataTable {
     /**
      * DataTable 轉換為 JSONArray 型態
      */
-    public JSONArray toJSONArray() {
-        JSONArray arr = new JSONArray();
+    public JsonArray toJSONArray() {
+        JsonArray arr = new JsonArray();
         for(DataRow row : prototype()) {
             arr.add(row.toJSONObject());
         }
@@ -86,7 +86,7 @@ public class DataTable {
             while(rs.next()) {
                 DataRow row = new DataRow();
                 for(String col : cols) {
-                    if(null == col) continue; // if key is null
+                    if(null == col || col.length() == 0) continue;
                     String key = col.toLowerCase();
                     String value = rs.getString(col);
                     row.put(key, Objects.requireNonNullElse(value, ""));
