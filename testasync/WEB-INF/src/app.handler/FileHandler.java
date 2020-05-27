@@ -14,12 +14,12 @@ public class FileHandler extends RequestHandler {
     private AsyncActionContext requestContext;
 
     @Override
-    public void startup(AsyncActionContext requestContext) {
-        this.requestContext = requestContext;
-        if(checkIsMyJob(requestContext)) {
+    public void startup(AsyncActionContext asyncActionContext) {
+        if(checkIsMyJob(asyncActionContext)) {
+            this.requestContext = asyncActionContext;
             processRequest();
         } else {
-            passToNext(requestContext);
+            this.passToNext(asyncActionContext);
         }
     }
 

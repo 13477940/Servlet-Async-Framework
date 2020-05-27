@@ -21,7 +21,7 @@ import java.nio.charset.StandardCharsets;
  */
 public class ResourceFileHandler extends RequestHandler {
 
-    private AsyncActionContext requestContext = null;
+    private AsyncActionContext requestContext;
 
     @Override
     public void startup(AsyncActionContext asyncActionContext) {

@@ -11,13 +11,13 @@ import java.util.Map;
 
 public class ParameterHandler extends RequestHandler {
 
-    private AsyncActionContext requestContext = null;
+    private AsyncActionContext requestContext;
 
     @Override
     public void startup(AsyncActionContext asyncActionContext) {
         if(checkIsMyJob(asyncActionContext)) {
             this.requestContext = asyncActionContext;
-            processReuqest();
+            processRequest();
         } else {
             this.passToNext(asyncActionContext);
         }
@@ -28,7 +28,7 @@ public class ParameterHandler extends RequestHandler {
         return asyncActionContext.getParameters().size() > 0;
     }
 
-    private void processReuqest() {
+    private void processRequest() {
         // process http request parameters
         JsonObject obj = new JsonObject();
         for(Map.Entry<String, String> entry : requestContext.getParameters().entrySet()) {

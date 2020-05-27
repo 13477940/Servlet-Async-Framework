@@ -16,12 +16,12 @@ public class PageHandler extends RequestHandler {
     private AsyncActionContext requestContext;
 
     @Override
-    public void startup(AsyncActionContext requestContext) {
-        this.requestContext = requestContext;
-        if(checkIsMyJob(requestContext)) {
+    public void startup(AsyncActionContext asyncActionContext) {
+        if(checkIsMyJob(asyncActionContext)) {
+            this.requestContext = asyncActionContext;
             processRequest();
         } else {
-            passToNext(requestContext);
+            this.passToNext(asyncActionContext);
         }
     }
 
@@ -87,7 +87,8 @@ public class PageHandler extends RequestHandler {
             requestContext.getHttpResponse().sendError(HttpServletResponse.SC_NOT_FOUND);
             if(null != handler) {
                 Bundle b = new Bundle();
-                b.putString("status", "done");
+                b.putString("status", "fail");
+                b.putString("error_code", "404");
                 b.putString("msg_zht", "沒有正確的指定頁面網址");
                 Message m = handler.obtainMessage();
                 m.setData(b);
