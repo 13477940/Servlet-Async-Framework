@@ -26,12 +26,13 @@ public abstract class ConnectorConfig {
                 res = "org.postgresql.Driver";
             } break;
             // https://docs.microsoft.com/zh-tw/sql/connect/jdbc/using-the-jdbc-driver?view=sql-server-ver15#making-a-simple-connection-to-a-database
-            case "mssql": {
+            case "mssql":
+            case "sqlserver": {
                 res = "com.microsoft.sqlserver.jdbc.SQLServerDriver";
             } break;
             default: {
                 try {
-                    throw new Exception("錯誤的資料庫類型，應為：sqlserver, postgresql, mysql, mariadb");
+                    throw new Exception("錯誤的資料庫類型(step1)，可用的類型：mysql, mariadb, postgresql, mssql, sqlserver");
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -57,22 +58,6 @@ public abstract class ConnectorConfig {
         String port = Objects.requireNonNullElse(DB_Port, "").trim();
         String dbName = Objects.requireNonNullElse(DB_Name, "").trim();
         switch(dbType) {
-            case "sqlserver": {
-                sbd.append("jdbc:sqlserver://");
-                sbd.append(ip);
-                sbd.append(":");
-                sbd.append(port);
-                sbd.append(";databaseName=");
-                sbd.append(dbName);
-            } break;
-            case "postgresql": {
-                sbd.append("jdbc:postgresql://");
-                sbd.append(ip);
-                sbd.append(":");
-                sbd.append(port);
-                sbd.append("/");
-                sbd.append(dbName);
-            } break;
             case "mysql": {
                 sbd.append("jdbc:mysql://");
                 sbd.append(ip);
@@ -112,9 +97,26 @@ public abstract class ConnectorConfig {
                 sbd.append("&useUnicode=true");
                 sbd.append("&CharacterEncoding=utf8mb4");
             } break;
+            case "postgresql": {
+                sbd.append("jdbc:postgresql://");
+                sbd.append(ip);
+                sbd.append(":");
+                sbd.append(port);
+                sbd.append("/");
+                sbd.append(dbName);
+            } break;
+            case "mssql":
+            case "sqlserver": {
+                sbd.append("jdbc:sqlserver://");
+                sbd.append(ip);
+                sbd.append(":");
+                sbd.append(port);
+                sbd.append(";databaseName=");
+                sbd.append(dbName);
+            } break;
             default: {
                 try {
-                    throw new Exception("錯誤的資料庫類型，應為：sqlserver, postgresql, mysql, mariadb");
+                    throw new Exception("錯誤的資料庫類型(step2)，可用的類型：mysql, mariadb, postgresql, mssql, sqlserver");
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

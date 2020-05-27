@@ -27,7 +27,7 @@ public class AppSetting {
     private final AppSetting.PathContext pathContext;
 
     private final String hostOS;
-    private String dirSlash;
+    private final String dirSlash;
 
     private AppSetting(String configDirName, String configFileName, String baseFileDirName, AppSetting.PathContext pathContext) {
         {
@@ -37,8 +37,11 @@ public class AppSetting {
             this.pathContext = pathContext;
         }
         this.hostOS = System.getProperty("os.name");
-        this.dirSlash = System.getProperty("file.separator");
-        if(hostOS.toLowerCase().contains("windows")) { this.dirSlash = "\\\\"; }
+        if ( hostOS.toLowerCase().contains("windows") ) {
+            this.dirSlash = "\\\\";
+        } else {
+            this.dirSlash = System.getProperty("file.separator");
+        }
     }
 
     public File getBaseFileDir() {
