@@ -8,7 +8,7 @@ It's a tomcat(or jetty) webapp for processing asynchronous http request task sim
 ＊伺服器端檔案瀏覽及下載（File Explore & Download）<br>
 ＊HTTP Parameters 封裝處理，方便調用（Easy to use HTTP Parameters）<br>
 ＊實作類似於 Android Handler 功能處理後端非同步任務（Android Handler Instance for Servlet AsyncTask）<br>
-＊簡易型的 JDK HttpClient 功能
+＊簡易型的 JDK HttpClient 功能（Simplified JDK HttpClient）
 
 # Require
 * Java OpenJDK 8+(recommend use LTS version or Latest version)
@@ -36,21 +36,27 @@ complie src/java after put source code file to tomcat/webapps/testasync.<br>
 if compile done to startup tomcat.<br>
 <br>
 ＊Index(Form-Data Request Test):
-<pre><code>http://ip:port/testasync/</code></pre>
+```
+http://ip:port/testasync/
+```
 ＊Page Request(Parameters Test):
-<pre><code>http://ip:port/testasync/service?page=test</code></pre>
+```
+http://ip:port/testasync/service?page=test
+```
 ＊File Request(File Explore & Download):
-<pre><code>http://ip:port/testasync/service?file=value</code></pre>
+```
+http://ip:port/testasync/service?file=value
+```
 
 # Compile Command
 Windows OS:
-```bash
+```
 cd tomcat\webapps\testasync\WEB-INF\
 javac -cp ..\..\..\tomcat\lib\*;.\lib\*;.\classes\; -d .\classes -encoding utf-8 .\src\*\*.java
 ```
 
 Unix / Linux / Mac OS:
-```bash
+```
 cd tomcat/webapps/testasync/WEB-INF/
 javac -cp ../../../tomcat/lib/*:./lib/*:./classes/: -d ./classes -encoding utf-8 ./src/*/*.java
 ```
