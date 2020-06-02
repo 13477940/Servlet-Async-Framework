@@ -385,6 +385,7 @@ public class AsyncActionContext {
     public void outputJSONToResponse(JsonObject obj, Handler handler) {
         if(checkIsOutput()) return;
         HttpServletResponse response = ((HttpServletResponse) asyncContext.getResponse());
+        final String outputString = new Gson().toJson(obj);
         // 因為採用 byte 輸出，如果沒有 Response Header 容易在瀏覽器端發生錯誤
         {
             response.setContentType("application/json;charset="+StandardCharsets.UTF_8.name());
@@ -398,13 +399,13 @@ public class AsyncActionContext {
                 sbd.append(encodeOutputFileName(tmpRespName)).append(".json");
             }
             response.setHeader("Content-Disposition", sbd.toString());
-            response.setHeader("Content-Length", String.valueOf(new Gson().toJson(obj).getBytes(StandardCharsets.UTF_8).length));
+            response.setHeader("Content-Length", String.valueOf( outputString.getBytes(StandardCharsets.UTF_8).length ));
         }
         // 使用 WriteListener 非同步輸出
         {
             AsyncWriteListener asyncWriteListener = new AsyncWriteListener.Builder()
                     .setAsyncActionContext(this)
-                    .setCharSequence(new Gson().toJson(obj))
+                    .setCharSequence(outputString)
                     .setHandler(handler)
                     .build();
             setOutputWriteListener(asyncWriteListener);
@@ -429,7 +430,7 @@ public class AsyncActionContext {
             }
             return;
         }
-        File file = new File(path);
+        final File file = new File(path);
         if(!file.exists()) {
             {
                 Bundle b = new Bundle();

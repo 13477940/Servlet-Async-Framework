@@ -1,6 +1,5 @@
 package framework.thread;
 
-import java.lang.ref.WeakReference;
 import java.util.concurrent.*;
 
 /**
@@ -21,12 +20,12 @@ public class ThreadPool {
     }
 
     public ExecutorService getInstance() {
-        return new WeakReference<>( this.worker ).get();
+        return worker;
     }
 
+    // 實作完整回收 ExecutorService 方式
+    // http://blog.csdn.net/xueyepiaoling/article/details/61200270
     public void shutdown() {
-        // 實作完整回收 ExecutorService 方式
-        // http://blog.csdn.net/xueyepiaoling/article/details/61200270
         if (null != worker && !worker.isShutdown()) {
             // 設定 worker 已不能再接收新的請求
             worker.shutdown();
@@ -44,6 +43,7 @@ public class ThreadPool {
         }
     }
 
+    // 初始化 ThreadPool
     private void initExecutorService(Integer corePoolSize, Integer maximumPoolSize, Integer keepAliveTime, TimeUnit timeUnit, Integer blockingQueueSize) {
         if(null == corePoolSize && null == maximumPoolSize && null == keepAliveTime && null == timeUnit && null == blockingQueueSize) {
             this.worker = Executors.newCachedThreadPool();

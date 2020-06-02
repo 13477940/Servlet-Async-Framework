@@ -68,15 +68,32 @@ public abstract class SessionService {
         String tmp = session.getAttribute(userContextTag).toString();
         if(null == tmp || tmp.length() == 0) return null;
         JsonObject obj = new Gson().fromJson(tmp, JsonObject.class);
+        // 設定預設值
+        String data_id = null;
+        String account = null;
+        String name = null;
+        String nickname = null;
+        String category = null;
+        String remote_ip = null;
+        JsonObject exten_obj = null;
+        {
+            if(null != obj.get("data_id")) data_id = obj.get("data_id").getAsString();
+            if(null != obj.get("account")) account = obj.get("account").getAsString();
+            if(null != obj.get("name")) name = obj.get("name").getAsString();
+            if(null != obj.get("nickname")) nickname = obj.get("nickname").getAsString();
+            if(null != obj.get("category")) category = obj.get("category").getAsString();
+            if(null != obj.get("remote_ip")) remote_ip = obj.get("remote_ip").getAsString();
+            if(null != obj.get("exten_obj")) exten_obj = obj.get("exten_obj").getAsJsonObject();
+        }
         return new UserContext.Builder()
                 .setHttpSession(session)
-                .setDataID(obj.get("data_id").getAsString())
-                .setAccount(obj.get("account").getAsString())
-                .setName(obj.get("name").getAsString())
-                .setNickName(obj.get("nickname").getAsString())
-                .setCategory(obj.get("category").getAsString())
-                .setRemoteIP(obj.get("remote_ip").getAsString())
-                .setExtenObj(obj.get("exten_obj").getAsJsonObject())
+                .setDataID(data_id)
+                .setAccount(account)
+                .setName(name)
+                .setNickName(nickname)
+                .setCategory(category)
+                .setRemoteIP(remote_ip)
+                .setExtenObj(exten_obj)
                 .build();
     }
 

@@ -64,8 +64,8 @@ public class WebAppServiceExecutor {
         // 建立新實例，因為是由 ArrayList 實作所以經過 foreach 取出時順序是不變的
         for (RequestHandler rawHandler : handlers) {
             try {
-                RequestHandler newHandler = new WeakReference<>( rawHandler.getClass().getConstructor().newInstance() ).get();
-                runHandlers.add(newHandler);
+                RequestHandler newHandler = rawHandler.getClass().getConstructor().newInstance();
+                runHandlers.add( new WeakReference<>( newHandler ).get() );
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -79,7 +79,7 @@ public class WebAppServiceExecutor {
                 prevHandler = runHandler;
             }
         }
-        return runHandlers;
+        return new WeakReference<>( runHandlers ).get();
     }
 
 }

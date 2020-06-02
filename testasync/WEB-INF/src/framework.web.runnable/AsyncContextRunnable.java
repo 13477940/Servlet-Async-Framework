@@ -123,7 +123,10 @@ public class AsyncContextRunnable implements Runnable {
             fileTmp.put("file", null);
             int bMaxSize = 1024 * 16; // 2020-05-05 修正 buffer max size 限制
             try {
-                UploadParser.newParser()
+                UploadParser uploadParser = new WeakReference<>( UploadParser.newParser() ).get();
+                {
+                    assert uploadParser != null;
+                    uploadParser
                         // https://github.com/Elopteryx/upload-parser/blob/master/upload-parser-core/src/main/java/com/github/elopteryx/upload/OnPartBegin.java
                         .onPartBegin((context, buffer) -> {
                             // multipart 內容檔案化
@@ -177,6 +180,7 @@ public class AsyncContextRunnable implements Runnable {
                         .maxPartSize( Long.MAX_VALUE ) // 單個 form-data 項目大小限制
                         .maxRequestSize( Long.MAX_VALUE ) // 整體 request 大小限制
                         .setupAsyncParse( (HttpServletRequest) asyncContext.getRequest() );
+                }
             } catch (Exception e) {
                 e.printStackTrace();
             }

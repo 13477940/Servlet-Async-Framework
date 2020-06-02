@@ -69,6 +69,7 @@ public class AsyncWriteListener implements WriteListener {
     public void onWritePossible() {
         // 檢查 AsyncContext 是否可用
         if(requestContext.isComplete()) {
+            closeStream(); // close inputStream
             Bundle b = new Bundle();
             b.putString("status", "fail");
             b.putString("msg", "can't output with completed async context");
@@ -89,6 +90,7 @@ public class AsyncWriteListener implements WriteListener {
         try {
             out = new WeakReference<>( requestContext.getAsyncContext().getResponse().getOutputStream() ).get();
         } catch (Exception e) {
+            closeStream(); // close inputStream
             if(devMode) { e.printStackTrace(); }
         }
         // 非同步模式之下將 inputStream 內容讀取並輸出至 ServletOutputStream
@@ -118,6 +120,7 @@ public class AsyncWriteListener implements WriteListener {
                     }
                     break;
                 }
+                // output buffer content
                 out.write(buffer, 0, rLength);
             } catch (Exception e) {
                 if(devMode) { e.printStackTrace(); }

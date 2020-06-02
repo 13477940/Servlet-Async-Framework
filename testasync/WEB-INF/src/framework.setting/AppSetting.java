@@ -10,6 +10,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
+import java.lang.ref.WeakReference;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
@@ -221,7 +222,7 @@ public class AppSetting {
                     }
                 }
             }
-            return new AppSetting(this.configDirName, this.configFileName, this.baseFileDirName, this.pathContext);
+            return new WeakReference<>( new AppSetting(this.configDirName, this.configFileName, this.baseFileDirName, this.pathContext) ).get();
         }
     }
 

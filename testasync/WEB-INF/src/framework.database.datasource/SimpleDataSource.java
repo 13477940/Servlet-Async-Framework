@@ -42,7 +42,7 @@ public class SimpleDataSource extends ConnectorConfig implements ConnectionPool 
     @Override
     public Connection getConnection() {
         initPool();
-        Connection conn = null;
+        Connection cacheConn = null;
         try {
             Class.forName(getDriverClassName(dbContext.getDB_Type()));
             String connectURI = getConnectURI(
@@ -51,20 +51,27 @@ public class SimpleDataSource extends ConnectorConfig implements ConnectionPool 
                     dbContext.getDB_Port(),
                     dbContext.getDB_Name()
             );
-            conn = new WeakReference<>(
-                    DriverManager.getConnection(connectURI, dbContext.getDB_ACC(), dbContext.getDB_PWD())
-            ).get();
-            if(null != conn) {
-                conn.setAutoCommit(false); // AutoCommit
+            Connection conn = DriverManager.getConnection(connectURI, dbContext.getDB_ACC(), dbContext.getDB_PWD());
+            if(null == conn) {
+                try {
+                    throw new Exception("資料庫連接建立發生錯誤");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            cacheConn = new WeakReference<>( conn ).get();
+            {
+                assert cacheConn != null;
+                cacheConn.setAutoCommit(false); // AutoCommit
                 HashMap<String, Object> connObj = new HashMap<>();
                 connObj.put("time", String.valueOf(System.currentTimeMillis()));
-                connObj.put("connection", conn);
+                connObj.put("connection", cacheConn);
                 pool.add(connObj);
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return conn;
+        return cacheConn;
     }
 
     @Override
