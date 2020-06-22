@@ -50,11 +50,10 @@ public class WebAppController extends HttpServlet {
             // 設置為 0 時表示非同步處理中無逾時限制(ms)
             asyncContext.setTimeout(0);
         }
-        // Servlet Context
+        // ServletContext
+        // https://openhome.cc/Gossip/ServletJSP/ServletContext.html
         {
-            if(null == ServletContextStatic.getInstance()) {
-                ServletContextStatic.setInstance( new WeakReference<>( getServletContext() ).get() );
-            }
+            ServletContextStatic.setInstance(getServletConfig().getServletContext());
         }
         // Process Async Request
         AsyncContextRunnable asyncContextRunnable = new AsyncContextRunnable.Builder()

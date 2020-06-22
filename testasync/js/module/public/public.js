@@ -208,7 +208,7 @@ var website = window.website || {};
 			return tmp.join('');
 		}
 	})();
-	// Dropdown：尚未完成
+	// Dropdown：beta
 	(function(){
 		website["dropdown"] = function(elem, opt_arr) {
 			var def = $.Deferred();
@@ -218,7 +218,7 @@ var website = window.website || {};
 				var tmp = [];
 				tmp.push("<div dropdown_ssid='"+ssid+"' ui_type='dropdown'>");
 				tmp.push("<div ui_type='dropdown_label' style='position: relative;z-index: 2;'>dropdown label</div>");
-				tmp.push("<div ui_type='dropdown_list' style='display: none;position: absolute;'></div>");
+				tmp.push("<div ui_type='dropdown_list' style='display: none;position: absolute;max-height: 400px;'></div>");
 				tmp.push("</div>");
 				target = $(tmp.join(""));
 			})();

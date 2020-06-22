@@ -178,7 +178,8 @@ public class AppSetting {
                     if(null != classLoader) {
                         URL url = classLoader.getResource("");
                         if(null != url) {
-                            if( url.getPath().contains("WEB-INF") ) {
+                            // 確認執行於 Servlet Container 環境之中
+                            if(url.getPath().contains("WEB-INF")) {
                                 this.appName = ServletContextStatic.getInstance().getServletContextName();
                             }
                         }
@@ -222,7 +223,8 @@ public class AppSetting {
                     }
                 }
             }
-            return new WeakReference<>( new AppSetting(this.configDirName, this.configFileName, this.baseFileDirName, this.pathContext) ).get();
+            AppSetting appSetting = new AppSetting(this.configDirName, this.configFileName, this.baseFileDirName, this.pathContext);
+            return new WeakReference<>( appSetting ).get();
         }
     }
 

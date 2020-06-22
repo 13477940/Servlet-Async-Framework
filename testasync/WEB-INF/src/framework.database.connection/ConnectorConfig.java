@@ -80,6 +80,8 @@ public abstract class ConnectorConfig {
                 sbd.append("&zeroDateTimeBehavior=CONVERT_TO_NULL");
                 sbd.append("&serverTimezone=CST");
                 sbd.append("&useServerPrepStmts=true");
+                // https://blog.csdn.net/Yuriey/article/details/80423504
+                sbd.append("&allowPublicKeyRetrieval=true");
             } break;
             case "mariadb": {
                 sbd.append("jdbc:mariadb://");

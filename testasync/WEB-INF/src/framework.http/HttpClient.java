@@ -227,7 +227,7 @@ public class HttpClient {
             if(null != conn_timeout) clientBuilder.connectTimeout(conn_timeout);
         }
         // build & run
-        HttpRequest request = new WeakReference<>( requestBuilder.build() ).get();
+        HttpRequest request = requestBuilder.build();
         java.net.http.HttpClient client = new WeakReference<>( clientBuilder.build() ).get();
         assert null != client;
         asyncRequest(client, request, handler);
@@ -274,7 +274,7 @@ public class HttpClient {
             if(null != conn_timeout) clientBuilder.connectTimeout(conn_timeout);
         }
         // build & run
-        HttpRequest request = new WeakReference<>( requestBuilder.build() ).get();
+        HttpRequest request = requestBuilder.build();
         java.net.http.HttpClient client = new WeakReference<>( clientBuilder.build() ).get();
         assert null != client;
         asyncRequest(client, request, handler);
@@ -314,7 +314,7 @@ public class HttpClient {
             if(null != conn_timeout) clientBuilder.connectTimeout(conn_timeout);
         }
         // build & run
-        HttpRequest request = new WeakReference<>( requestBuilder.build() ).get();
+        HttpRequest request = requestBuilder.build();
         java.net.http.HttpClient client = new WeakReference<>( clientBuilder.build() ).get();
         assert null != client;
         asyncRequest(client, request, handler);
@@ -352,7 +352,7 @@ public class HttpClient {
             if(null != conn_timeout) clientBuilder.connectTimeout(conn_timeout);
         }
         // build & run
-        HttpRequest request = new WeakReference<>( requestBuilder.build() ).get();
+        HttpRequest request = requestBuilder.build();
         java.net.http.HttpClient client = new WeakReference<>( clientBuilder.build() ).get();
         assert client != null;
         asyncRequest(client, request, handler);
@@ -466,7 +466,7 @@ public class HttpClient {
                             Bundle b = new Bundle();
                             b.put("status", "header");
                             b.put("status_code", String.valueOf(resp.statusCode()));
-                            b.put("headers", new WeakReference<>( headers ).get());
+                            b.put("headers", headers);
                             if(headers.containsKey("content-type")) b.put("content_type", headers.get("content-type"));
                             if(headers.containsKey("content-disposition")) b.put("content_disposition", headers.get("content-disposition"));
                             Message m = tmp_handler.obtainMessage();

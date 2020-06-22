@@ -3,6 +3,7 @@ package framework.text;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
+import java.lang.ref.WeakReference;
 
 /**
  * 簡易純文字檔案寫入工具
@@ -23,7 +24,7 @@ public class TextFileWriter {
             // 內容是否為 append 模式決定在於 FileWriter 而不是 BufferedWriter
             // 此 append 模式影響到第一次寫入時的狀態，意即開檔後是清除重寫還是接續內容寫入
             fileWriter = new FileWriter(targetFile, isAppend);
-            bufferedWriter = new BufferedWriter(fileWriter);
+            bufferedWriter = new WeakReference<>( new BufferedWriter(fileWriter) ).get();
         } catch (Exception e) {
             e.printStackTrace();
         }

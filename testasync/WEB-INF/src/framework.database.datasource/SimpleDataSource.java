@@ -25,7 +25,7 @@ public class SimpleDataSource extends ConnectorConfig implements ConnectionPool 
     private ArrayList<HashMap<String, Object>> pool = null;
     private ExecutorService worker = null;
     private Boolean runTag = false;
-    private long maxActiveSecond = (1000*1800); // 連結最長的存活時間(ms)限制，預設值
+    private long maxActiveSecond = ( 1000 * 180 ); // 連結最長的存活時間(ms)限制，預設值
 
     private SimpleDataSource(ConnectContext dbContext) {
         if(null == dbContext) {
@@ -92,11 +92,20 @@ public class SimpleDataSource extends ConnectorConfig implements ConnectionPool 
             pool.clear();
         }
         {
-            worker.shutdown();
-            try {
-                worker.shutdownNow();
-            } catch (Exception e) {
-                // e.printStackTrace();
+            if (null != worker && !worker.isShutdown()) {
+                // 設定 worker 已不能再接收新的請求
+                worker.shutdown();
+                try {
+                    // 設定一個 await 時限提供 thread 完成未完畢的工作的最後期限
+                    if (!worker.awaitTermination(3, TimeUnit.SECONDS)) {
+                        // 當回收時限到期時，強制中斷所有 Thread 執行
+                        worker.shutdownNow();
+                    }
+                } catch (Exception e) {
+                    // e.printStackTrace();
+                    // 回收時發生錯誤時亦強制關閉所有 thread
+                    worker.shutdownNow();
+                }
             }
         }
     }
@@ -140,8 +149,7 @@ public class SimpleDataSource extends ConnectorConfig implements ConnectionPool 
                     }
                 }
                 try {
-                    TimeUnit.MINUTES.sleep(10);
-                    // Thread.sleep(1000 * 60 * 10);
+                    TimeUnit.SECONDS.sleep(180);
                 } catch (Exception e) {
                     // e.printStackTrace();
                 }
@@ -154,7 +162,7 @@ public class SimpleDataSource extends ConnectorConfig implements ConnectionPool 
      * 可以減少使用者學習 ConnectContext 所有內容的成本
      */
     public static class Builder {
-        private ConnectContext dbContext = new SimpleConnContext();
+        private final ConnectContext dbContext = new SimpleConnContext();
 
         public SimpleDataSource.Builder setAccount(String account) {
             this.dbContext.setDB_ACC(account);
