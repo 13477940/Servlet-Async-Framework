@@ -22,13 +22,15 @@ It's a tomcat(or jetty) webapp for processing asynchronous http request task sim
   * <a href="https://github.com/Elopteryx/upload-parser">Elopteryx/upload-parser</a>
 
 # Optional
-<a href="https://stackoverflow.com/questions/6981564/why-must-the-jdbc-driver-be-put-in-tomcat-home-lib-folder/7198049#7198049">Why must the JDBC driver be put in TOMCAT_HOME/lib folder?</a><br>
-
-* tomcat/lib/ -> put supported JDBC lib for access database
+* Database JDBC
   * <a href="https://github.com/MariaDB/mariadb-connector-j">MariaDB</a>
   * <a href="https://github.com/mysql/mysql-connector-j">MySQL</a>
   * <a href="https://github.com/pgjdbc/pgjdbc">PostgreSQL</a>
   * <a href="https://github.com/Microsoft/mssql-jdbc">MSSQL</a>
+* OkHttp（need Kotlin Standard Library）- for use HttpClient
+  * <a href="https://mvnrepository.com/artifact/org.jetbrains.kotlin/kotlin-stdlib">Kotlin Standard Library</a>
+  * <a href="https://mvnrepository.com/artifact/com.squareup.okhttp3/okhttp">OkHttp</a>
+  * <a href="https://mvnrepository.com/artifact/com.squareup.okio/okio">OkIO</a>
 
 # Getting Started
 放置檔案內容到 tomcat/webapps/testasync 之中，並進行編譯，編譯完成後，即可啟動 Tomcat。<br>
