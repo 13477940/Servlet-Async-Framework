@@ -3,7 +3,7 @@
 	<head>
 		<meta charset="utf-8" />
 		<meta name="description" content="" />
-		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 		<title>Test Async</title>
 		<link rel="stylesheet" href="/testasync/css/module/controller/controller.css">
 		<script src="/testasync/js/module/controller/controller.js"></script>
@@ -31,6 +31,30 @@
 						});
 					})();
 				};
+				(function(){
+					function asyncTest() {
+						setTimeout(function(){
+							var reqObj = {
+								url: "/testasync/index?act=test",
+								header: [
+									{"Content-Type":"text/plain"}
+								],
+								text: "abcdefg"
+							};
+							website.post_json(reqObj)
+							.done(function(respd){
+								console.log(respd);
+							});
+						}, 1000);
+					}
+					asyncTest();
+					/*
+					setTimeout(function(){
+						for(var i = 0, len = 4000; i < len; i++) {
+							asyncTest();
+						}
+					}, 1000);*/
+				})();
 			})();
 		</script>
 	</head>

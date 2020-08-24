@@ -9,6 +9,9 @@ import framework.web.handler.RequestHandler;
 import java.util.Iterator;
 import java.util.Map;
 
+/**
+ * 請求參數取得範例
+ */
 public class ParameterHandler extends RequestHandler {
 
     private AsyncActionContext requestContext;
@@ -29,6 +32,15 @@ public class ParameterHandler extends RequestHandler {
     }
 
     private void processRequest() {
+        // 重複使用測試
+        System.out.println(requestContext.getRequestTextContent());
+        // JsonObject test = new Gson().fromJson(requestContext.getRequestTextContent(), JsonObject.class);
+        // System.out.println(test.get("events").getAsJsonArray().get(0).getAsJsonObject().get("postback").getAsJsonObject().get("data").getAsString());
+        // System.out.println(new Gson().toJson(test));
+        // System.out.println(requestContext.getRequestTextContent());
+        // System.out.println(requestContext.getRequestByteContent());
+        // System.out.println(requestContext.getRequestByteContent());
+
         // process http request parameters
         JsonObject obj = new JsonObject();
         for(Map.Entry<String, String> entry : requestContext.getParameters().entrySet()) {

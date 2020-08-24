@@ -33,9 +33,6 @@ import java.util.*;
  * 基於 java.net.http.HttpClient 的功能實作封裝
  * 並模擬類似 OkHttp 方式處理
  *
- * for old jdk version use: https://github.com/square/okhttp
- * https://mvnrepository.com/artifact/com.squareup.okhttp3/okhttp
- *
  * 2019-12-18 修正檔案下載處理的行為與回傳值可自定義處理的內容
  * 2020-02-25 刪除 AppSetting 引用，下載檔案時請自行指定暫存路徑
  * 2020-03-16 更換 LinkedHashMap 為基礎，維持使用者傳入的參數順序
@@ -43,8 +40,9 @@ import java.util.*;
  * 2020-04-16 修正 post form-data 無法正常關閉連線的問題
  * 2020-04-17 修正語法細節及預設方法的使用方式
  * 2020-05-20 使用 Gson 作為 JSON 處理套件
+ * 2020-07-07 TODO 目前會有 cpu 高使用率的問題，不建議使用
  */
-public class HttpClient {
+class HttpClient {
 
     private String url;
     private String getParamsStr;
@@ -55,11 +53,10 @@ public class HttpClient {
     private String tempDirPath; // 自定義下載暫存資料夾路徑
     // private String tempDirName = "http_client_temp";
     private final boolean tempFileDeleteOnExit;
+    private final Duration conn_timeout;
 
     private final java.net.http.HttpClient.Version httpVersion = java.net.http.HttpClient.Version.HTTP_2; // default
     private final java.net.http.HttpClient.Redirect httpRedirect = java.net.http.HttpClient.Redirect.NORMAL; // default
-
-    private final Duration conn_timeout;
 
     // 建構子
     private HttpClient(
@@ -223,7 +220,7 @@ public class HttpClient {
         {
             clientBuilder.version(httpVersion);
             clientBuilder.followRedirects(httpRedirect);
-            // clientBuilder.executor(ThreadPoolStatic.getInstance());
+            clientBuilder.executor(ThreadPoolStatic.getInstance());
             if(null != conn_timeout) clientBuilder.connectTimeout(conn_timeout);
         }
         // build & run
@@ -270,7 +267,7 @@ public class HttpClient {
         {
             clientBuilder.version(httpVersion);
             clientBuilder.followRedirects(httpRedirect);
-            // clientBuilder.executor(ThreadPoolStatic.getInstance());
+            clientBuilder.executor(ThreadPoolStatic.getInstance());
             if(null != conn_timeout) clientBuilder.connectTimeout(conn_timeout);
         }
         // build & run
@@ -310,7 +307,7 @@ public class HttpClient {
         {
             clientBuilder.version(httpVersion);
             clientBuilder.followRedirects(httpRedirect);
-            // clientBuilder.executor(ThreadPoolStatic.getInstance());
+            clientBuilder.executor(ThreadPoolStatic.getInstance());
             if(null != conn_timeout) clientBuilder.connectTimeout(conn_timeout);
         }
         // build & run
@@ -348,7 +345,7 @@ public class HttpClient {
         {
             clientBuilder.version(httpVersion);
             clientBuilder.followRedirects(httpRedirect);
-            // clientBuilder.executor(ThreadPoolStatic.getInstance());
+            clientBuilder.executor(ThreadPoolStatic.getInstance());
             if(null != conn_timeout) clientBuilder.connectTimeout(conn_timeout);
         }
         // build & run
@@ -438,7 +435,7 @@ public class HttpClient {
             };
         }
         // https://github.com/biezhi/java11-examples/blob/master/src/main/java/io/github/biezhi/java11/http/Example.java#L108
-        ThreadPoolStatic.getInstance().execute(() -> {
+        ThreadPoolStatic.execute(() -> {
             try {
                 HttpResponse<InputStream> resp = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
                 {
@@ -752,9 +749,6 @@ public class HttpClient {
             return this;
         }
 
-        /**
-         * 設定下載檔案的暫存資料夾名稱
-         */
         public HttpClient.Builder setConnectionTimeout(Duration duration) {
             this.conn_timeout = duration;
             return this;

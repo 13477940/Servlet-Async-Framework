@@ -44,136 +44,6 @@ var website = window.website || {};
 			return website.randomString();
 		}
 	})();
-	// AJAX - GET x-www-form-urlencoded
-	(function(){
-		website["get"] = function(reqObj){
-			var def = $.Deferred();
-			if(null != reqObj["data"] && false == Array.isArray(reqObj["data"])) {
-				def.reject();
-				console.error("data 參數必須使用 array 型態");
-				return;
-			}
-			if(null != reqObj["header"] && false == Array.isArray(reqObj["header"])) {
-				def.reject();
-				console.error("header 參數必須使用 array 型態");
-				return;
-			}
-			var worker = new Worker("/testasync/js/worker/axios_worker.js");
-			(function(){
-				// if worker init error
-				worker.addEventListener("error", function(e){
-					console.log(e);
-				}, false);
-				// set listener
-				worker.addEventListener("message", workerMsgFn, false);
-				function workerMsgFn(e) {
-					def.resolve(e.data.data);
-					worker.terminate();
-				}
-			})();
-			// send init msg
-			(function(){
-				worker.postMessage({
-					reqObj: {
-						act: "get",
-						url: reqObj["url"],
-						data: reqObj["data"],
-						header: reqObj["header"]
-					}
-				});
-			})();
-			return def;
-		};
-	})();
-	// AJAX - POST x-www-form-urlencoded
-	(function(){
-		website["post"] = function(reqObj){
-			var def = $.Deferred();
-			if(null != reqObj["data"] && false == Array.isArray(reqObj["data"])) {
-				def.reject();
-				console.error("data 參數必須使用 array 型態");
-				return;
-			}
-			if(null != reqObj["header"] && false == Array.isArray(reqObj["header"])) {
-				def.reject();
-				console.error("header 參數必須使用 array 型態");
-				return;
-			}
-			var worker = new Worker("/testasync/js/worker/axios_worker.js");
-			(function(){
-				// if worker init error
-				worker.addEventListener("error", function(e){
-					console.log(e);
-				}, false);
-				// set listener
-				worker.addEventListener("message", workerMsgFn, false);
-				function workerMsgFn(e) {
-					// console.log(e.data);
-					def.resolve(e.data.data);
-					worker.terminate();
-				}
-			})();
-			// send init msg
-			(function(){
-				worker.postMessage({
-					reqObj: {
-						act: "post",
-						url: reqObj["url"],
-						data: reqObj["data"],
-						header: reqObj["header"]
-					}
-				});
-			})();
-			return def;
-		};
-	})();
-	// AJAX - POST Form Data Multipart
-	(function(){
-		website["post_form_data"] = function(reqObj){
-			var def = $.Deferred();
-			if(null != reqObj["data"] && false == Array.isArray(reqObj["data"])) {
-				def.reject();
-				console.error("data 參數必須使用 array 型態");
-				return;
-			}
-			if(null != reqObj["header"] && false == Array.isArray(reqObj["header"])) {
-				def.reject();
-				console.error("header 參數必須使用 array 型態");
-				return;
-			}
-			var worker = new Worker("/testasync/js/worker/axios_worker.js");
-			(function(){
-				// if worker init error
-				worker.addEventListener("error", function(e){
-					console.log(e);
-				}, false);
-				// set listener
-				worker.addEventListener("message", workerMsgFn, false);
-				function workerMsgFn(e) {
-					var respObj = e.data;
-					if("upload_progress" == respObj["status"]) {
-						def.notify(respObj["progress_value"]);
-					}
-					if("done" == respObj["status"]) {
-						def.resolve(e.data.data);
-						worker.terminate();
-					}
-				}
-			})();
-			// send init msg
-			(function(){
-				worker.postMessage({
-					reqObj: {
-						act: "post_form_data",
-						url: reqObj["url"],
-						data: reqObj["data"],
-						header: reqObj["header"]
-					}
-				});
-			})();
-			return def;
-		};
-	})();
 	// Dialog
 	(function(){
 		website["dialog"] = function(initObj) {
@@ -261,6 +131,349 @@ var website = window.website || {};
 					list: dd_list
 				};
 				def.resolve(respObj);
+			})();
+			return def;
+		};
+	})();
+})();
+
+// AXIOS
+(function(){
+	// ajax - get
+	(function(){
+		website["get"] = function(reqObj) {
+			var def = $.Deferred();
+			// req header
+			if(null != reqObj["header"] && false == Array.isArray(reqObj["header"])) {
+				console.error("header 參數必須使用 array 型態");
+				def.reject();
+				return;
+			}
+			var headers = {};
+			(function(){
+				var arr = reqObj["header"];
+				for(var index in arr) {
+					var obj = arr[index];
+					var key = obj["key"];
+					var value = obj["value"];
+					headers[key] = value;
+				}
+			})();
+			// req params
+			if(null != reqObj["data"] && false == Array.isArray(reqObj["data"])) {
+				console.error("data 參數必須使用 array 型態");
+				def.reject();
+				return;
+			}
+			// https://github.com/axios/axios#using-applicationx-www-form-urlencoded-format
+			var params = new URLSearchParams();
+			(function(){
+				var arr = reqObj["data"];
+				for(var index in arr) {
+					var obj = arr[index];
+					var key = obj["key"];
+					var value = obj["value"];
+					params.append(key, value);
+				}
+			})();
+			var config = {
+				transformResponse: [(data) => { return data; }], // 修正 response 回傳內容格式
+				headers: headers,
+				params: params
+			};
+			axios.get(reqObj["url"], config).then(function (response) {
+				var respObj = {
+					status: "done",
+					status_code: response.status,
+					data: response.data
+				};
+				// def.resolve(respObj);
+				def.resolve(respObj.data); // 舊格式僅回傳內容
+			}).catch(function (err) {
+				def.reject(err);
+			});
+			return def;
+		};
+	})();
+	// ajax - post
+	(function(){
+		website["post"] = function(reqObj) {
+			var def = $.Deferred();
+			// req header
+			if(null != reqObj["header"] && false == Array.isArray(reqObj["header"])) {
+				console.error("header 參數必須使用 array 型態");
+				def.reject();
+				return;
+			}
+			var headers = {};
+			(function(){
+				var arr = reqObj["header"];
+				for(var index in arr) {
+					var obj = arr[index];
+					var key = obj["key"];
+					var value = obj["value"];
+					headers[key] = value;
+				}
+			})();
+			// req params
+			if(null != reqObj["data"] && false == Array.isArray(reqObj["data"])) {
+				console.error("data 參數必須使用 array 型態");
+				def.reject();
+				return;
+			}
+			// https://github.com/axios/axios#using-applicationx-www-form-urlencoded-format
+			var params = new URLSearchParams();
+			(function(){
+				var arr = reqObj["data"];
+				for(var index in arr) {
+					var obj = arr[index];
+					var key = obj["key"];
+					var value = obj["value"];
+					params.append(key, value);
+				}
+			})();
+			var config = {
+				transformResponse: [(data) => { return data; }], // 修正 response 回傳內容格式
+				headers: headers
+			};
+			axios.post(reqObj["url"], params, config).then(function(response) {
+				var respObj = {
+					status: "done",
+					status_code: response.status,
+					data: response.data
+				};
+				// def.resolve(respObj);
+				def.resolve(respObj.data); // 舊格式僅回傳內容
+			}).catch(function (err) {
+				def.reject(err);
+			});
+			return def;
+		};
+	})();
+	// ajax - post json string body(testing)
+	(function(){
+		website["post_json"] = function(reqObj) {
+			var def = $.Deferred();
+			// req header
+			if(null != reqObj["header"] && false == Array.isArray(reqObj["header"])) {
+				console.error("header 參數必須使用 array 型態");
+				def.reject();
+				return;
+			}
+			var headers = {};
+			(function(){
+				var arr = reqObj["header"];
+				for(var index in arr) {
+					var obj = arr[index];
+					var key = obj["key"];
+					var value = obj["value"];
+					headers[key] = value;
+				}
+			})();
+			var config = {
+				transformResponse: [(data) => { return data; }], // 修正 response 回傳內容格式
+				headers: headers
+			};
+			axios.post(reqObj["url"], reqObj["text"]).then(function(response) {
+				var respObj = {
+					status: "done",
+					status_code: response.status,
+					data: response.data
+				};
+				// def.resolve(respObj);
+				def.resolve(respObj.data); // 舊格式僅回傳內容
+			}).catch(function (err) {
+				def.reject(err);
+			});
+			return def;
+		};
+	})();
+	// ajax - post form-data multipart
+	(function(){
+		website["post_form_data"] = function(reqObj) {
+			var def = $.Deferred();
+			// req header
+			if(null != reqObj["header"] && false == Array.isArray(reqObj["header"])) {
+				console.error("header 參數必須使用 array 型態");
+				def.reject();
+				return;
+			}
+			var headers = {};
+			(function(){
+				var arr = reqObj["header"];
+				for(var index in arr) {
+					var obj = arr[index];
+					var key = obj["key"];
+					var value = obj["value"];
+					headers[key] = value;
+				}
+			})();
+			// req params
+			if(null != reqObj["data"] && false == Array.isArray(reqObj["data"])) {
+				console.error("data 參數必須使用 array 型態");
+				def.reject();
+				return;
+			}
+			var formData = new FormData();
+			(function(){
+				if(null != reqObj["data"]) {
+					var arr = reqObj["data"];
+					for(var index in arr) {
+						var obj = arr[index];
+						formData.append(obj["key"], obj["value"]);
+					}
+				}
+			})();
+			var config = {
+				transformResponse: [(data) => { return data; }], // 修正 response 回傳內容格式
+				headers: headers,
+				// maxContentLength: 20000000,
+				onUploadProgress: function(progressEvent) {
+					var percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+					var percentStr = String(percentCompleted); // percent number
+					var respObj = {
+						status: "upload_progress",
+						progress_value: percentStr
+					};
+					self.postMessage(respObj);
+				}
+			};
+			// form-data 格式請使用 post method
+			axios.post(reqObj["url"], formData, config).then(function (response) {
+				var respObj = {
+					status: "done",
+					status_code: response.status,
+					data: response.data
+				};
+				// def.resolve(respObj);
+				def.resolve(respObj.data); // 舊格式僅回傳內容
+			}).catch(function (err) {
+				def.reject(err);
+			});
+			return def;
+		};
+	})();
+	// ajax - get x-www-form-urlencoded(by url) - worker
+	(function(){
+		website["get_worker"] = function(reqObj){
+			var def = $.Deferred();
+			if(null != reqObj["data"] && false == Array.isArray(reqObj["data"])) {
+				def.reject();
+				console.error("data 參數必須使用 array 型態");
+				return;
+			}
+			if(null != reqObj["header"] && false == Array.isArray(reqObj["header"])) {
+				def.reject();
+				console.error("header 參數必須使用 array 型態");
+				return;
+			}
+			var worker = new Worker("/rfid_site/js/worker/axios_worker.js");
+			// if worker init error
+			worker.addEventListener("error", function(e){
+				console.log(e);
+			}, false);
+			// set listener
+			worker.addEventListener("message", workerMsgFn, false);
+			function workerMsgFn(e) {
+				// console.log(e.data);
+				def.resolve(e.data.data);
+				worker.terminate();
+			}
+			// send init msg
+			(function(){
+				worker.postMessage({
+					reqObj: {
+						act: "get",
+						url: reqObj["url"],
+						data: reqObj["data"],
+						header: reqObj["header"]
+					}
+				});
+			})();
+			return def;
+		};
+	})();
+	// ajax - post x-www-form-urlencoded(by body) - worker
+	(function(){
+		website["post_worker"] = function(reqObj){
+			var def = $.Deferred();
+			if(null != reqObj["data"] && false == Array.isArray(reqObj["data"])) {
+				def.reject();
+				console.error("data 參數必須使用 array 型態");
+				return;
+			}
+			if(null != reqObj["header"] && false == Array.isArray(reqObj["header"])) {
+				def.reject();
+				console.error("header 參數必須使用 array 型態");
+				return;
+			}
+			var worker = new Worker("/rfid_site/js/worker/axios_worker.js");
+			// if worker init error
+			worker.addEventListener("error", function(e){
+				console.log(e);
+			}, false);
+			// set listener
+			worker.addEventListener("message", workerMsgFn, false);
+			function workerMsgFn(e) {
+				// console.log(e.data);
+				def.resolve(e.data.data); // 舊格式僅回傳 response 內容
+				worker.terminate();
+			}
+			// send init msg
+			(function(){
+				worker.postMessage({
+					reqObj: {
+						act: "post",
+						url: reqObj["url"],
+						data: reqObj["data"],
+						header: reqObj["header"]
+					}
+				});
+			})();
+			return def;
+		};
+	})();
+	// ajax - post form-data multipart - worker
+	(function(){
+		website["post_form_data_worker"] = function(reqObj){
+			var def = $.Deferred();
+			if(null != reqObj["data"] && false == Array.isArray(reqObj["data"])) {
+				def.reject();
+				console.error("data 參數必須使用 array 型態");
+				return;
+			}
+			if(null != reqObj["header"] && false == Array.isArray(reqObj["header"])) {
+				def.reject();
+				console.error("header 參數必須使用 array 型態");
+				return;
+			}
+			var worker = new Worker("/rfid_site/js/worker/axios_worker.js");
+			// if worker init error
+			worker.addEventListener("error", function(e){
+				console.log(e);
+			}, false);
+			// set listener
+			worker.addEventListener("message", workerMsgFn, false);
+			function workerMsgFn(e) {
+				var respObj = e.data;
+				if("upload_progress" == respObj["status"]) {
+					def.notify(respObj["progress_value"]);
+				}
+				if("done" == respObj["status"]) {
+					def.resolve(e.data.data);
+					worker.terminate();
+				}
+			}
+			// send init msg
+			(function(){
+				worker.postMessage({
+					reqObj: {
+						act: "post_form_data",
+						url: reqObj["url"],
+						data: reqObj["data"],
+						header: reqObj["header"]
+					}
+				});
 			})();
 			return def;
 		};

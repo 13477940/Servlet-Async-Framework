@@ -11,6 +11,9 @@ import framework.web.multipart.FileItemList;
 
 import java.util.Map;
 
+/**
+ * 請求檔案上傳範例
+ */
 public class UploadHandler extends RequestHandler {
 
     private AsyncActionContext requestContext;

@@ -16,8 +16,7 @@ import java.nio.charset.StandardCharsets;
 /**
  * ResourceFileHandler 會先處理所有具有副檔名格式的 URL，
  * 所以要注意之後的 handler 是否需要處理具有副檔名的 URL，
- * 如果需要另外處理請由此處寫入避開的判斷原則才能正常傳遞請求。
- * - 修正 URL UTF-8 字串的問題
+ * 若需要另外處理請由此處寫入避開的判斷原則才能正常傳遞請求。
  */
 public class ResourceFileHandler extends RequestHandler {
 

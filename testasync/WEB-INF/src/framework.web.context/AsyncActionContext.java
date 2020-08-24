@@ -8,6 +8,7 @@ import framework.observer.Handler;
 import framework.observer.Message;
 import framework.random.RandomServiceStatic;
 import framework.setting.AppSetting;
+import framework.text.TextFileWriter;
 import framework.web.listener.AsyncWriteListener;
 import framework.web.multipart.FileItem;
 import framework.web.multipart.FileItemList;
@@ -16,9 +17,7 @@ import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.InputStream;
+import java.io.*;
 import java.lang.ref.WeakReference;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
@@ -56,6 +55,9 @@ public class AsyncActionContext {
     private String asyncStatus = "onProcess"; // 該請求的 AsyncContext 狀態目前為何
     private boolean isComplete = false; // 這個 AsyncContext 是否已被 complete
     private boolean isOutput = false; // 限制每個 AsyncContext 只能輸出一次資料的機制
+
+    private File temp_file_req_text = null; // 暫存的請求內容純文字檔
+    private File temp_file_req_byte = null; // 暫存的請求內容二進位檔
 
     private AsyncActionContext(ServletContext servletContext, ServletConfig servletConfig, AsyncContext asyncContext) {
         this.servletContext = servletContext;
@@ -625,12 +627,41 @@ public class AsyncActionContext {
     /**
      * 若是 Request 為 text/plain, application/json 等上傳格式，
      * 可由此方法將 InputStream 內容轉換為 String 的型態
+     *
+     * #200806 修正因 stream 模式造成重複取值會為空值的問題
      */
     public String getRequestTextContent() {
+        // 如果已建立過暫存檔案
         String res = null;
+        if(null != temp_file_req_text) {
+            try {
+                BufferedInputStream bis = new BufferedInputStream(new FileInputStream(temp_file_req_text));
+                res = new String(bis.readAllBytes(), StandardCharsets.UTF_8);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return res;
+        }
+        // 第一次建立暫存檔案
+        AppSetting appSetting = new AppSetting.Builder().build();
+        {
+            temp_file_req_text = new File(appSetting.getPathContext().getTempDirPath()+"temp_txt_"+RandomServiceStatic.getInstance().getTimeHash(8));
+            try {
+                temp_file_req_text.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            temp_file_req_text.deleteOnExit(); // temp file
+        }
+        TextFileWriter textFileWriter = new TextFileWriter.Builder()
+                .setTargetFile(temp_file_req_text)
+                .setIsAppend(true)
+                .build();
         try {
             BufferedInputStream bis = new BufferedInputStream(asyncContext.getRequest().getInputStream());
             res = new String(bis.readAllBytes(), StandardCharsets.UTF_8);
+            textFileWriter.write(res);
+            textFileWriter.close();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -641,8 +672,11 @@ public class AsyncActionContext {
      * 若是 Request 為純檔案傳輸（image/jpeg, image/png...），
      * 可由此方法將 InputStream 內容轉換為 File 的型態，
      * 這個檔案會被暫存至 Tomcat or Jetty 被關閉為止（deleteOnExit）
+     *
+     * #200806 修正因 stream 模式造成重複取值會為空值的問題
      */
     public File getRequestByteContent() {
+        if(null != temp_file_req_byte) return temp_file_req_byte;
         File targetFile = null;
         AppSetting appSetting = new AppSetting.Builder().build();
         try {
@@ -665,11 +699,11 @@ public class AsyncActionContext {
                     nowFile.toPath(),
                     StandardCopyOption.REPLACE_EXISTING
             );
+            temp_file_req_byte = nowFile;
         } catch (Exception e) {
             e.printStackTrace();
-            nowFile = null;
         }
-        return nowFile;
+        return temp_file_req_byte;
     }
 
     /**

@@ -10,7 +10,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
-import java.lang.ref.WeakReference;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
@@ -19,6 +18,9 @@ import java.nio.charset.StandardCharsets;
  * 在運行 Tomcat 的 WebApp 中會直接藉由 WEB-INF 資料夾作為定位點，
  * 非 Tomcat 環境中則需要由使用者自行創建一個 baseFileDir 作為定位點。
  * 要注意 AppSetting 於多層次的 jar 檔封裝後可能會有路徑無法取得的問題發生。
+ *
+ * TODO #200818 由於一直發生 AppSetting 錯誤，所以將此 Class 拆分及重構
+ * TODO SettingLoader, PathContext，自身功能仍維持
  */
 public class AppSetting {
 
@@ -178,6 +180,7 @@ public class AppSetting {
                     if(null != classLoader) {
                         URL url = classLoader.getResource("");
                         if(null != url) {
+                            // TODO 可靠度測試點
                             // 確認執行於 Servlet Container 環境之中
                             if(url.getPath().contains("WEB-INF")) {
                                 this.appName = ServletContextStatic.getInstance().getServletContextName();
@@ -223,8 +226,7 @@ public class AppSetting {
                     }
                 }
             }
-            AppSetting appSetting = new AppSetting(this.configDirName, this.configFileName, this.baseFileDirName, this.pathContext);
-            return new WeakReference<>( appSetting ).get();
+            return new AppSetting(this.configDirName, this.configFileName, this.baseFileDirName, this.pathContext);
         }
     }
 

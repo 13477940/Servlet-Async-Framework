@@ -11,6 +11,9 @@ import framework.web.handler.RequestHandler;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 
+/**
+ * 路徑判斷與頁面檔回傳範例
+ */
 public class PageHandler extends RequestHandler {
 
     private AsyncActionContext requestContext;

@@ -9,6 +9,9 @@ import framework.web.handler.RequestHandler;
 
 import java.io.File;
 
+/**
+ * 檔案下載範例
+ */
 public class FileHandler extends RequestHandler {
 
     private AsyncActionContext requestContext;

@@ -53,7 +53,14 @@ public class WebAppController extends HttpServlet {
         // ServletContext
         // https://openhome.cc/Gossip/ServletJSP/ServletContext.html
         {
-            ServletContextStatic.setInstance(getServletConfig().getServletContext());
+            if(null == getServletContext()) {
+                try {
+                    throw new Exception("目前無法正常執行 Servlet 任務，請檢查 getServletContext() 為空值的原因");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            ServletContextStatic.setInstance( new WeakReference<>( getServletContext() ).get() );
         }
         // Process Async Request
         AsyncContextRunnable asyncContextRunnable = new AsyncContextRunnable.Builder()
@@ -61,7 +68,7 @@ public class WebAppController extends HttpServlet {
                 .setServletConfig( new WeakReference<>( getServletConfig() ).get() )
                 .setAsyncContext( new WeakReference<>( asyncContext ).get() )
                 .build();
-        ThreadPoolStatic.getInstance().execute(asyncContextRunnable);
+        ThreadPoolStatic.execute(asyncContextRunnable);
     }
 
     // 內容編碼設定
