@@ -1,57 +1,57 @@
 * {
-    margin: 0px;
-    padding: 0px;
-    outline: none;
-    box-sizing: border-box;
+	margin: 0px;
+	padding: 0px;
+	outline: none;
+	box-sizing: border-box;
 }
 html {
-    font-size: 16px; /* 決定 rem 起始值 */
+	font-size: 16px; /* 決定 rem 起始值 */
 }
 img {
-    display: block; /* 修正圖片區塊下方會產生幽靈空白的問題 */
+	display: block; /* 修正圖片區塊下方會產生幽靈空白的問題 */
 }
 
 /*
-    Dropdown
-    https://www.w3schools.com/howto/howto_js_dropdown.asp
+	Dropdown
+	https://www.w3schools.com/howto/howto_js_dropdown.asp
 */
 div[ui_type="dropdown"] {
-    background-color: #3498DB;
-    color: white;
-    font-size: 16px;
-    border: none;
-    cursor: pointer;
-    position: relative;
+	background-color: #3498DB;
+	color: white;
+	font-size: 16px;
+	border: none;
+	cursor: pointer;
+	position: relative;
 }
 div[ui_type=dropdown_label] {
-    background-color: #3498DB;
-    color: white;
-    padding: 16px;
-    font-size: 16px;
-    border: none;
-    cursor: pointer;
+	background-color: #3498DB;
+	color: white;
+	padding: 16px;
+	font-size: 16px;
+	border: none;
+	cursor: pointer;
 }
 div[ui_type=dropdown_lable]:hover, div[ui_type=dropdown_lable]:focus {
-    background-color: #2980B9;
+	background-color: #2980B9;
 }
 div[ui_type=dropdown_list] {
-    display: none;
-    position: absolute;
-    background-color: #f1f1f1;
-    min-width: 160px;
-    overflow: auto;
-    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-    z-index: 1;
+	display: none;
+	position: absolute;
+	background-color: #f1f1f1;
+	min-width: 160px;
+	overflow: auto;
+	box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+	z-index: 1;
 }
 div[ui_type=dropdown_list].show {
-    display: block;
+	display: block;
 }
 div[ui_type=dropdown_opt] {
-    color: black;
-    padding: 12px 16px;
-    text-decoration: none;
-    display: block;
+	color: black;
+	padding: 12px 16px;
+	text-decoration: none;
+	display: block;
 }
 div[ui_type=dropdown_opt]:hover {
-    background-color: #ddd;
+	background-color: #ddd;
 }
