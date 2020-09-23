@@ -4,7 +4,7 @@ import framework.file.FileFinder;
 import framework.observer.Bundle;
 import framework.observer.Handler;
 import framework.observer.Message;
-import framework.setting.AppSetting;
+import framework.setting.PathContext;
 import framework.web.context.AsyncActionContext;
 import framework.web.handler.RequestHandler;
 
@@ -37,7 +37,7 @@ public class PageHandler extends RequestHandler {
     }
 
     private void processRequest() {
-        String dirSlash = new AppSetting.Builder().build().getDirSlash();
+        String dirSlash = new PathContext(this.getClass(), "testasync").getDirSlash();
         switch (requestContext.getUrlPath()) {
             case "/":
             case "/index": {
