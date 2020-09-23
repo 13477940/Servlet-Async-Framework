@@ -32,22 +32,9 @@ public class ParameterHandler extends RequestHandler {
     }
 
     private void processRequest() {
-        // 重複使用測試
-        System.out.println(requestContext.getRequestTextContent());
-        // JsonObject test = new Gson().fromJson(requestContext.getRequestTextContent(), JsonObject.class);
-        // System.out.println(test.get("events").getAsJsonArray().get(0).getAsJsonObject().get("postback").getAsJsonObject().get("data").getAsString());
-        // System.out.println(new Gson().toJson(test));
-        // System.out.println(requestContext.getRequestTextContent());
-        // System.out.println(requestContext.getRequestByteContent());
-        // System.out.println(requestContext.getRequestByteContent());
-
-        // process http request parameters
         JsonObject obj = new JsonObject();
-        for(Map.Entry<String, String> entry : requestContext.getParameters().entrySet()) {
-            obj.addProperty(entry.getKey(), entry.getValue());
-        }
-        // process http request headers
-        // addHeaderValues(obj);
+        addHeaderValues(obj);
+        addParamValues(obj);
         requestContext.printToResponse(obj, new Handler(){
             @Override
             public void handleMessage(Message m) {
@@ -55,6 +42,14 @@ public class ParameterHandler extends RequestHandler {
                 requestContext.complete();
             }
         });
+    }
+
+    private void addParamValues(JsonObject obj) {
+        JsonObject params = new JsonObject();
+        for(Map.Entry<String, String> entry : requestContext.getParameters().entrySet()) {
+            params.addProperty(entry.getKey(), entry.getValue());
+        }
+        obj.add("params", params);
     }
 
     private void addHeaderValues(JsonObject obj) {

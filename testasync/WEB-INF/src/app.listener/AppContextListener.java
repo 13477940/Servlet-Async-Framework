@@ -1,7 +1,6 @@
 package app.listener;
 
 import app.handler.*;
-import framework.thread.ThreadPoolStatic;
 import framework.web.executor.WebAppServicePoolStatic;
 
 import javax.servlet.ServletContextEvent;
@@ -19,8 +18,6 @@ public class AppContextListener implements ServletContextListener {
     }
 
     @Override
-    public void contextDestroyed(ServletContextEvent servletContextEvent) {
-        ThreadPoolStatic.shutdown();
-    }
+    public void contextDestroyed(ServletContextEvent servletContextEvent) {}
 
 }
