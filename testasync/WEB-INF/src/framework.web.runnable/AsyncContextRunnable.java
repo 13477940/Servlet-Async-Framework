@@ -73,7 +73,7 @@ public class AsyncContextRunnable implements Runnable {
         if(null == asyncContext.getRequest().getContentType()) {
             parseParams();
         } else {
-            String contentType = asyncContext.getRequest().getContentType();
+            String contentType = asyncContext.getRequest().getContentType().toLowerCase();
             switch (contentType) {
                 case "application/x-www-form-urlencoded": {
                     proc_urlencoded_body();
