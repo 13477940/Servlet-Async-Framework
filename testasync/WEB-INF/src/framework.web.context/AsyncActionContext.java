@@ -135,7 +135,7 @@ public class AsyncActionContext {
     /**
      * 回傳 HttpRequest Parameter Keys
      * 要注意 tomcat 環境中會依照使用者傳遞的參數順序，而 jetty 並不會依照使用者傳遞的順序
-     * 如果需要驗證傳遞內容的功能，則應該採用 base64-url-safe-withoutPadding 儲存內容去溝通
+     * 如果需要驗證傳遞內容的功能，則應該採用 base64-url-safe 配合 JSON 格式儲存內容去溝通
      */
     public ArrayList<String> getParameterKeys() {
         return Collections.list(this.asyncContext.getRequest().getParameterNames());

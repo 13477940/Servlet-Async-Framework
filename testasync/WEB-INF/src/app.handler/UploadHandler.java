@@ -3,7 +3,7 @@ package app.handler;
 import com.google.gson.JsonObject;
 import framework.observer.Handler;
 import framework.observer.Message;
-import framework.setting.AppSetting;
+import framework.setting.PathContext;
 import framework.web.context.AsyncActionContext;
 import framework.web.handler.RequestHandler;
 import framework.web.multipart.FileItem;
@@ -34,16 +34,18 @@ public class UploadHandler extends RequestHandler {
     }
 
     private void processRequest() {
-        String uploadPath = new AppSetting.Builder().build().getPathContext().getUploadDirPath();
-        FileItemList files = requestContext.getFiles();
-        for (FileItem fi : files.prototype()) {
-            if (!fi.isFormField()) {
-                requestContext.writeFile(fi, uploadPath, String.valueOf(System.currentTimeMillis()), new Handler() {
-                    @Override
-                    public void handleMessage(Message m) {
-                        super.handleMessage(m);
-                    }
-                });
+        String uploadPath = new PathContext(this.getClass(), "testasync").getUploadDirPath();
+        if(null != requestContext.getFiles()) {
+            FileItemList files = requestContext.getFiles();
+            for (FileItem fi : files.prototype()) {
+                if (!fi.isFormField()) {
+                    requestContext.writeFile(fi, uploadPath, String.valueOf(System.currentTimeMillis()), new Handler() {
+                        @Override
+                        public void handleMessage(Message m) {
+                            super.handleMessage(m);
+                        }
+                    });
+                }
             }
         }
         {
@@ -52,8 +54,10 @@ public class UploadHandler extends RequestHandler {
             obj.addProperty("type", "file_upload");
             JsonObject params = new JsonObject();
             {
-                for(Map.Entry<String, String> param : requestContext.getParameters().entrySet()) {
-                    params.addProperty(param.getKey(), param.getValue());
+                if(null != requestContext.getParameters()) {
+                    for (Map.Entry<String, String> param : requestContext.getParameters().entrySet()) {
+                        params.addProperty(param.getKey(), param.getValue());
+                    }
                 }
             }
             obj.add("params", params);

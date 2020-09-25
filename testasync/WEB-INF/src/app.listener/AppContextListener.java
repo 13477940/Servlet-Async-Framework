@@ -15,6 +15,7 @@ public class AppContextListener implements ServletContextListener {
         WebAppServicePoolStatic.getInstance().addHandler(new FileHandler());
         WebAppServicePoolStatic.getInstance().addHandler(new UploadHandler());
         WebAppServicePoolStatic.getInstance().addHandler(new ParameterHandler());
+        WebAppServicePoolStatic.getInstance().addHandler(new SessionHandler());
     }
 
     @Override

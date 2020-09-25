@@ -28,6 +28,7 @@ public class ParameterHandler extends RequestHandler {
 
     @Override
     protected boolean checkIsMyJob(AsyncActionContext asyncActionContext) {
+        if("session".equals(asyncActionContext.getParameters().get("act"))) return false;
         return asyncActionContext.getParameters().size() > 0;
     }
 
@@ -35,6 +36,7 @@ public class ParameterHandler extends RequestHandler {
         JsonObject obj = new JsonObject();
         addHeaderValues(obj);
         addParamValues(obj);
+        // System.out.println(new Gson().toJson(obj));
         requestContext.printToResponse(obj, new Handler(){
             @Override
             public void handleMessage(Message m) {

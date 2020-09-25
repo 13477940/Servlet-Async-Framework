@@ -4,6 +4,8 @@ import com.github.elopteryx.upload.PartOutput;
 import com.github.elopteryx.upload.UploadParser;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
+import framework.observer.Handler;
+import framework.observer.Message;
 import framework.setting.AppSetting;
 import framework.web.context.AsyncActionContext;
 import framework.web.executor.WebAppServiceExecutor;
@@ -17,11 +19,14 @@ import javax.servlet.AsyncContext;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.lang.ref.WeakReference;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.*;
 
@@ -63,13 +68,36 @@ public class AsyncContextRunnable implements Runnable {
         processRequest();
     }
 
-    // 前端請求處理起始點
+    // proc request by Content-Type header value
     private void processRequest() {
-        String contentType = String.valueOf(asyncContext.getRequest().getContentType());
-        if(contentType.contains("multipart/form-data")) {
-            parseFormData();
-        } else {
+        if(null == asyncContext.getRequest().getContentType()) {
             parseParams();
+        } else {
+            String contentType = asyncContext.getRequest().getContentType();
+            switch (contentType) {
+                case "application/x-www-form-urlencoded": {
+                    proc_urlencoded_body();
+                } break;
+                case "multipart/form-data": {
+                    parseFormData();
+                } break;
+                /*
+                case "application/octet-stream": {
+                    proc_octet_stream();
+                } break;
+                case "application/json": */
+                default: {
+                    // webAppStartup(null, null);
+                    // 將非標準格式的 HTTP Request 皆列為 bad request
+                    response400(new Handler(){
+                        @Override
+                        public void handleMessage(Message m) {
+                            super.handleMessage(m);
+                            requestContext.complete();
+                        }
+                    });
+                } break;
+            }
         }
     }
 
@@ -134,7 +162,7 @@ public class AsyncContextRunnable implements Runnable {
                             File nowFile = new WeakReference<>( File.createTempFile(prefixName, null, _targetFile) ).get();
                             {
                                 assert nowFile != null;
-                                nowFile.deleteOnExit();
+                                nowFile.deleteOnExit(); // when close webapp
                                 fileTmp.put("file", nowFile);
                             }
                             // 建立檔案輸出 OutputStream
@@ -224,6 +252,118 @@ public class AsyncContextRunnable implements Runnable {
                     SessionServiceStatic.getInstance().setUserContext(session, userContext);
                     SessionServiceStatic.getInstance().addUser(session, userContext);
                 }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    // proc application/x-www-form-urlencoded
+    private void proc_urlencoded_body() {
+        String param_str = requestContext.getRequestTextContent();
+        String mode = "key"; // 'key' or 'value' mode, default is key
+        LinkedHashMap<String, String> params = new LinkedHashMap<>();
+        if(null == param_str || param_str.length() == 0) {
+            webAppStartup(params, null);
+            return;
+        }
+        // proc request content value
+        String now_key = null;
+        {
+            StringBuilder sbd = new StringBuilder(); // char pool
+            int now_param_index = 0;
+            for(int i = 0, len = param_str.length(); i < len; i++) {
+                String str = String.valueOf(param_str.charAt(i)); // by word
+                switch (str) {
+                    // value
+                    case "=": {
+                        // key is over
+                        {
+                            now_key = URLDecoder.decode(sbd.toString(), StandardCharsets.UTF_8);
+                            params.put(now_key, "");
+                        }
+                        // next
+                        mode = "value";
+                        sbd.delete(0, sbd.length());
+                    } break;
+                    // key
+                    case "&": {
+                        // value is over
+                        {
+                            params.put(now_key, URLDecoder.decode(sbd.toString(), StandardCharsets.UTF_8));
+                        }
+                        // next
+                        mode = "key";
+                        sbd.delete(0, sbd.length());
+                        now_param_index++;
+                    } break;
+                    default: {
+                        switch (mode) {
+                            case "key":
+                            case "value": {
+                                sbd.append(str);
+                            } break;
+                        }
+                    } break;
+                }
+            }
+            // flush
+            {
+                switch (mode) {
+                    case "key": {
+                        now_key = URLDecoder.decode(sbd.toString(), StandardCharsets.UTF_8);
+                        params.put(now_key, "");
+                    } break;
+                    case "value": {
+                        params.put(now_key, URLDecoder.decode(sbd.toString(), StandardCharsets.UTF_8));
+                    } break;
+                }
+            }
+        }
+        webAppStartup(params, null);
+    }
+
+    // proc application/octet-stream - single file byte
+    private void proc_octet_stream() {
+        File file = requestContext.getRequestByteContent();
+        FileItemList fileItemList = new FileItemList();
+        if(null == file) {
+            try {
+                throw new Exception("不是有效的二進位檔案內容");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return;
+        }
+        String file_content_type = "application/octet-stream";
+        {
+            try {
+                file_content_type = Files.probeContentType(file.toPath());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        // add to FileItemList
+        {
+            FileItem fileItem = new FileItem.Builder()
+                    .setFile(file)
+                    .setContentType(file_content_type)
+                    .setName(file.getName())
+                    .setSize(file.length())
+                    .setIsFormField(false)
+                    .setFieldName(file.getName())
+                    .build();
+            fileItemList.add(fileItem);
+        }
+        webAppStartup(null, fileItemList);
+    }
+
+    // return bad request
+    private void response400(Handler handler) {
+        try {
+            requestContext.getHttpResponse().sendError(HttpServletResponse.SC_BAD_REQUEST);
+            if(null != handler) {
+                handler.obtainMessage().sendToTarget();
             }
         } catch (Exception e) {
             e.printStackTrace();
