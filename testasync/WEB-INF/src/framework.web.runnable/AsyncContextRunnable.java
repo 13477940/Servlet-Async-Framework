@@ -70,34 +70,52 @@ public class AsyncContextRunnable implements Runnable {
 
     // proc request by Content-Type header value
     private void processRequest() {
-        if(null == asyncContext.getRequest().getContentType()) {
+        String content_type = asyncContext.getRequest().getContentType();
+        // from browser
+        if(null == content_type || content_type.length() == 0) {
             parseParams();
-        } else {
-            String contentType = asyncContext.getRequest().getContentType().toLowerCase();
-            switch (contentType) {
-                case "application/x-www-form-urlencoded": {
-                    proc_urlencoded_body();
-                } break;
-                case "multipart/form-data": {
-                    parseFormData();
-                } break;
-                /*
-                case "application/octet-stream": {
-                    proc_octet_stream();
-                } break;
-                case "application/json": */
-                default: {
-                    // webAppStartup(null, null);
-                    // 將非標準格式的 HTTP Request 皆列為 bad request
-                    response400(new Handler(){
-                        @Override
-                        public void handleMessage(Message m) {
-                            super.handleMessage(m);
-                            requestContext.complete();
-                        }
-                    });
-                } break;
-            }
+            return;
+        }
+        String _content_type = content_type.toLowerCase();
+        // structured http request
+        if(_content_type.contains("application/x-www-form-urlencoded")) {
+            proc_urlencoded_body();
+            return;
+        }
+        // structured http request
+        if(_content_type.contains("multipart/form-data")) {
+            parseFormData();
+            return;
+        }
+        // for GraphQL, JSON
+        if(_content_type.contains("application/json")) {
+            parseParams();
+            return;
+        }
+        // for XML
+        if(_content_type.contains("application/xml")) {
+            parseParams();
+            return;
+        }
+        // for YAML
+        if(_content_type.contains("text/yaml")) {
+            parseParams();
+            return;
+        }
+        // for EDN
+        if(_content_type.contains("application/edn")) {
+            parseParams();
+            return;
+        }
+        // unstructured http request to 'error 400 bad request'
+        {
+            response400(new Handler(){
+                @Override
+                public void handleMessage(Message m) {
+                    super.handleMessage(m);
+                    requestContext.complete();
+                }
+            });
         }
     }
 
