@@ -1,8 +1,7 @@
 package framework.thread;
 
-import java.lang.ref.WeakReference;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.Executors;
 
 /**
  * ThreadPoolStatic
@@ -17,8 +16,11 @@ public class ThreadPoolStatic {
     private ThreadPoolStatic() {}
 
     public static ExecutorService getInstance() {
-        if(null == threadPool) initNewThreadPool();
-        return new WeakReference<>( threadPool.getInstance() ).get();
+        // TODO 目前實測用自行創建的 ThreadPool 會有假死問題！
+        // if(null == threadPool) initNewThreadPool();
+        // return new WeakReference<>( threadPool.getInstance() ).get();
+        return Executors.newCachedThreadPool();
+        // return Executors.newSingleThreadExecutor();
     }
 
     /**
@@ -49,11 +51,11 @@ public class ThreadPoolStatic {
     private static class DefaultThreadPool {
         ThreadPool getThreadPool() {
             return new ThreadPool.Builder()
-                    .setCorePoolSize(10) // 常駐 Thread 數量
-                    .setMaximumPoolSize(128) // 可同時執行的 Thread 數量
-                    .setKeepAliveTime(30)
-                    .setTimeUnit(TimeUnit.SECONDS)
-                    .setBlockingQueueSize(5000) // 事件排程池的限制數量
+                    .setCorePoolSize(32) // 常駐 Thread 數量
+                    .setMaximumPoolSize(256) // 可同時執行的 Thread 數量
+                    // .setKeepAliveTime(30)
+                    // .setTimeUnit(TimeUnit.SECONDS)
+                    .setBlockingQueueSize(4096) // 事件排程池的限制數量
                     .build();
         }
     }

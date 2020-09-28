@@ -165,6 +165,28 @@ public class AsyncContextRunnable implements Runnable {
             final File _targetFile = targetFile;
             FileItemList fileItemList = new FileItemList();
             LinkedHashMap<String, String> params = new LinkedHashMap<>();
+            {
+                for ( Map.Entry<String, String[]> entry : asyncContext.getRequest().getParameterMap().entrySet() ) {
+                    try {
+                        String key = entry.getKey();
+                        String[] values = entry.getValue();
+                        // if single key has more than one value, they will be add in JSONArray String.
+                        if (values.length > 1) {
+                            JsonArray arr = new JsonArray();
+                            // Collections.addAll(arr, values);
+                            for(String str : values) {
+                                arr.add(str);
+                            }
+                            params.put(key, new Gson().toJson(arr));
+                        } else {
+                            String value = values[0];
+                            params.put(key, value);
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
             final HashMap<String, File> fileTmp = new HashMap<>();
             fileTmp.put("file", null);
             int bMaxSize = 1024 * 16; // 2020-05-05 修正 buffer max size 限制
@@ -281,6 +303,28 @@ public class AsyncContextRunnable implements Runnable {
         String param_str = requestContext.getRequestTextContent();
         String mode = "key"; // 'key' or 'value' mode, default is key
         LinkedHashMap<String, String> params = new LinkedHashMap<>();
+        {
+            for ( Map.Entry<String, String[]> entry : asyncContext.getRequest().getParameterMap().entrySet() ) {
+                try {
+                    String key = entry.getKey();
+                    String[] values = entry.getValue();
+                    // if single key has more than one value, they will be add in JSONArray String.
+                    if (values.length > 1) {
+                        JsonArray arr = new JsonArray();
+                        // Collections.addAll(arr, values);
+                        for(String str : values) {
+                            arr.add(str);
+                        }
+                        params.put(key, new Gson().toJson(arr));
+                    } else {
+                        String value = values[0];
+                        params.put(key, value);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
         if(null == param_str || param_str.length() == 0) {
             webAppStartup(params, null);
             return;
@@ -289,12 +333,13 @@ public class AsyncContextRunnable implements Runnable {
         String now_key = null;
         {
             StringBuilder sbd = new StringBuilder(); // char pool
-            int now_param_index = 0;
             for(int i = 0, len = param_str.length(); i < len; i++) {
                 String str = String.valueOf(param_str.charAt(i)); // by word
                 switch (str) {
                     // value
                     case "=": {
+                        // if duplicate
+                        if("value".equals(mode)) continue;
                         // key is over
                         {
                             now_key = URLDecoder.decode(sbd.toString(), StandardCharsets.UTF_8);
@@ -306,6 +351,8 @@ public class AsyncContextRunnable implements Runnable {
                     } break;
                     // key
                     case "&": {
+                        // if duplicate
+                        if("key".equals(mode)) continue;
                         // value is over
                         {
                             params.put(now_key, URLDecoder.decode(sbd.toString(), StandardCharsets.UTF_8));
@@ -313,7 +360,6 @@ public class AsyncContextRunnable implements Runnable {
                         // next
                         mode = "key";
                         sbd.delete(0, sbd.length());
-                        now_param_index++;
                     } break;
                     default: {
                         switch (mode) {
