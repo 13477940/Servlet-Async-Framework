@@ -32,6 +32,10 @@ public class PageHandler extends RequestHandler {
     protected boolean checkIsMyJob(AsyncActionContext asyncActionContext) {
         if(asyncActionContext.isFileAction()) return false;
         if(null != asyncActionContext.getResourceExtension()) return false; // 排除資源類請求
+        // if json form body
+        if(asyncActionContext.getHeaders().containsKey("content-type")) {
+            if (asyncActionContext.getHeaders().get("content-type").contains("application/json")) return false;
+        }
         if("page".equals(asyncActionContext.getParameters().get("page"))) return true;
         return asyncActionContext.getParameters().size() == 0;
     }

@@ -8,129 +8,77 @@ import framework.observer.Message;
 import framework.random.RandomServiceStatic;
 import framework.thread.ThreadPoolStatic;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.WeakReference;
 import java.net.URI;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.*;
 
 /**
- * [required openJDK 11+]
+ * [required JDK 11+]
  * https://docs.oracle.com/en/java/javase/11/docs/api/java.net.http/java/net/http/HttpClient.html
  * http://openjdk.java.net/groups/net/httpclient/intro.html
  * https://golb.hplar.ch/2019/01/java-11-http-client.html
  *
- * implement by UrielTech.com TomLi
- * 基於 java.net.http.HttpClient 的功能實作封裝
- * 並模擬類似 OkHttp 方式處理
- *
- * 2019-12-18 修正檔案下載處理的行為與回傳值可自定義處理的內容
- * 2020-02-25 刪除 AppSetting 引用，下載檔案時請自行指定暫存路徑
- * 2020-03-16 更換 LinkedHashMap 為基礎，維持使用者傳入的參數順序
- * 2020-03-24 增加 keepUrlSearchParams 參數，判斷是否需保留完整的參數網址
- * 2020-04-16 修正 post form-data 無法正常關閉連線的問題
- * 2020-04-17 修正語法細節及預設方法的使用方式
- * 2020-05-20 使用 Gson 作為 JSON 處理套件
- * 2020-07-07 TODO 目前會有 cpu 高使用率的問題，不建議使用
+ * get(only_url_params),
+ * post(x-www-form-urlencoded)
+ * post(application/json)
+ * post(multipart/form-data)
+ * -> response(text/file)
  */
-class HttpClient {
+public class JdkHttpClient {
 
-    private String url;
-    private String getParamsStr;
-    private final HashMap<String, String> headers;
+    private final String url;
+    private final LinkedHashMap<String, String> headers;
     private final LinkedHashMap<String, String> parameters;
     private final LinkedHashMap<String, File> files;
+
     private final boolean alwaysDownload;
     private String tempDirPath; // 自定義下載暫存資料夾路徑
-    // private String tempDirName = "http_client_temp";
     private final boolean tempFileDeleteOnExit;
     private final Duration conn_timeout;
+    private final boolean insecure_https;
 
-    private final java.net.http.HttpClient.Version httpVersion = java.net.http.HttpClient.Version.HTTP_2; // default
-    private final java.net.http.HttpClient.Redirect httpRedirect = java.net.http.HttpClient.Redirect.NORMAL; // default
+    private final HttpClient.Version httpVersion = HttpClient.Version.HTTP_2; // default
+    private final HttpClient.Redirect httpRedirect = HttpClient.Redirect.NORMAL; // default
 
-    // 建構子
-    private HttpClient(
+    private String resp_encoding = StandardCharsets.UTF_8.name();
+
+    // init
+    private JdkHttpClient(
             String url,
-            HashMap<String, String> headers,
+            LinkedHashMap<String, String> headers,
             LinkedHashMap<String, String> parameters,
             LinkedHashMap<String, File> files,
+            Boolean insecure_https,
             Boolean alwaysDownload,
             Boolean tempFileDeleteOnExit,
             String tempDirPath,
             String tempDirName,
-            Boolean keepUrlSearchParams,
-            Duration conn_timeout
+            Duration conn_timeout,
+            String resp_encoding
     ) {
-        this.url = null;
-        {
-            // 是否具有 UrlSearchParams
-            if(url.contains("?")) {
-                String[] tmp = url.split("\\?");
-                url = tmp[0];
-                getParamsStr = tmp[1];
-            }
-            // 是否為正式的 Url Path
-            StringBuilder sbd = new StringBuilder();
-            if(url.contains("://")) {
-                String[] tmpSch = url.split("://");
-                sbd.append(tmpSch[0]);
-                sbd.append("://");
-                String[] tmp = tmpSch[1].split("/");
-                boolean isDomain = true;
-                for(String str : tmp) {
-                    if(isDomain) {
-                        // example http://localhost:8080/testasync/index
-                        if(str.contains(":")) {
-                            String[] pStr = str.split(":");
-                            String pDomain = pStr[0];
-                            String pNumber = pStr[1];
-                            sbd.append(URLEncoder.encode(pStr[0], StandardCharsets.UTF_8));
-                            sbd.append(":").append(pNumber);
-                        } else {
-                            sbd.append(URLEncoder.encode(str, StandardCharsets.UTF_8));
-                        }
-                        isDomain = false;
-                    } else {
-                        sbd.append("/").append(URLEncoder.encode(str, StandardCharsets.UTF_8));
-                    }
-                }
-            } else {
-                sbd.append("http://"); // default scheme
-                String[] tmp = url.split("/");
-                boolean isDomain = true;
-                for(String str : tmp) {
-                    if(isDomain) {
-                        sbd.append(URLEncoder.encode(str, StandardCharsets.UTF_8));
-                        isDomain = false;
-                    } else {
-                        sbd.append("/").append(URLEncoder.encode(str, StandardCharsets.UTF_8));
-                    }
-                }
-            }
-            // 是否需保留原始網址（非正規情況時，可能只處理網址內容）
-            if(Objects.requireNonNullElse(keepUrlSearchParams, false)) {
-                if(null != getParamsStr && getParamsStr.length() > 0) {
-                    this.url = sbd.toString() + "?" + getParamsStr;
-                } else {
-                    this.url = sbd.toString();
-                }
-            } else {
-                this.url = sbd.toString();
-            }
-        }
+        this.url = url;
         this.headers = headers;
         this.parameters = parameters;
         this.files = files;
+        this.insecure_https = Objects.requireNonNullElse(insecure_https, false);
         this.alwaysDownload = Objects.requireNonNullElse(alwaysDownload, false);
         this.tempFileDeleteOnExit = Objects.requireNonNullElse(tempFileDeleteOnExit, true);
         this.conn_timeout = conn_timeout;
@@ -141,11 +89,16 @@ class HttpClient {
                 this.tempDirPath = this.tempDirPath + tempDirName;
             }
         }
+        // resp_encoding
+        {
+            if(null != resp_encoding) {
+                this.resp_encoding = resp_encoding;
+            }
+        }
     }
 
     /**
-     * GET application/x-www-form-urlencoded
-     * GET 僅具有 Authorization 及 Header 夾帶能力，
+     * GET 不具有 body，僅具有 Authorization 及 Header 夾帶能力，
      * 其他資料由網址後的參數夾帶進行附加，要注意 URI Encoding 的使用範圍
      */
     public void get(Handler handler) {
@@ -158,48 +111,24 @@ class HttpClient {
                 }
             }
             // 設定 Parameters
-            StringBuilder sbd = new StringBuilder();
-            sbd.append(url);
-            if (null != parameters && parameters.size() > 0) {
-                boolean isFirst = true;
-                for (Map.Entry<String, String> params : parameters.entrySet()) {
-                    if(isFirst) { sbd.append("?"); isFirst = false;} else { sbd.append("&"); }
-                    sbd.append(URLEncoder.encode(params.getKey(), StandardCharsets.UTF_8));
-                    sbd.append("=");
-                    sbd.append(URLEncoder.encode(params.getValue(), StandardCharsets.UTF_8));
-                }
-            } else {
-                boolean mode = true; // t = key, f = value;
-                LinkedHashMap<String, String> map = new LinkedHashMap<>();
-                StringBuilder tmp = new StringBuilder();
-                String prevKey = null;
-                if(null != getParamsStr && getParamsStr.length() > 0) {
-                    for (int i = 0, len = getParamsStr.length(); i < len; i++) {
-                        String s = String.valueOf(getParamsStr.charAt(i));
-                        if (mode && s.equals("=")) {
-                            prevKey = tmp.toString();
-                            map.put(prevKey, "");
-                            tmp.delete(0, tmp.length());
-                            mode = false;
-                            continue;
-                        }
-                        if (!mode && s.equals("&")) {
-                            map.put(prevKey, tmp.toString());
-                            tmp.delete(0, tmp.length());
-                            mode = true;
-                            continue;
-                        }
-                        tmp.append(s);
-                        if (i == getParamsStr.length() - 1) {
-                            map.put(prevKey, tmp.toString());
-                            tmp.delete(0, tmp.length());
-                        }
+            LinkedHashMap<String, String> _params;
+            {
+                _params = parse_url_parameter(this.url);
+                if(null != this.parameters && this.parameters.size() > 0) {
+                    // 若有重複的 key 以 params map 值為主
+                    for (Map.Entry<String, String> params : this.parameters.entrySet()) {
+                        _params.put(params.getKey(), params.getValue());
                     }
                 }
-                if(map.size() > 0) {
+            }
+            // 建立正規化 parameter string 於請求網址後
+            StringBuilder sbd = new StringBuilder();
+            {
+                sbd.append(parse_url_domain(this.url));
+                if (null != _params && _params.size() > 0) {
                     boolean isFirst = true;
-                    for (Map.Entry<String, String> params : map.entrySet()) {
-                        if(isFirst) {
+                    for (Map.Entry<String, String> params : _params.entrySet()) {
+                        if (isFirst) {
                             sbd.append("?");
                             isFirst = false;
                         } else {
@@ -216,16 +145,17 @@ class HttpClient {
             // 設定請求 URI
             requestBuilder.uri(URI.create(sbd.toString()));
         }
-        java.net.http.HttpClient.Builder clientBuilder = java.net.http.HttpClient.newBuilder();
+        HttpClient.Builder clientBuilder = HttpClient.newBuilder();
         {
             clientBuilder.version(httpVersion);
             clientBuilder.followRedirects(httpRedirect);
             clientBuilder.executor(ThreadPoolStatic.getInstance());
             if(null != conn_timeout) clientBuilder.connectTimeout(conn_timeout);
+            if(insecure_https) clientBuilder.sslContext(get_insecure_ssl_context());
         }
         // build & run
         HttpRequest request = requestBuilder.build();
-        java.net.http.HttpClient client = new WeakReference<>( clientBuilder.build() ).get();
+        HttpClient client = new WeakReference<>( clientBuilder.build() ).get();
         assert null != client;
         asyncRequest(client, request, handler);
     }
@@ -236,7 +166,7 @@ class HttpClient {
     public void post(Handler handler) {
         HttpRequest.Builder requestBuilder = HttpRequest.newBuilder();
         {
-            // 設定 request header
+            // request header
             if (null != headers && headers.size() > 0) {
                 for (Map.Entry<String, String> header : headers.entrySet()) {
                     requestBuilder.setHeader(header.getKey(), header.getValue());
@@ -244,35 +174,45 @@ class HttpClient {
             }
             // 採用 post 預設方法必須是 application/x-www-form-urlencoded 的方式夾帶參數
             requestBuilder.setHeader("Content-Type","application/x-www-form-urlencoded;charset=utf-8");
-            // 設定 request parameters
-            if (null != parameters && parameters.size() > 0) {
+        }
+        {
+            // request parameter
+            LinkedHashMap<String, String> _params;
+            {
+                _params = parse_url_parameter(this.url);
+                if(null != this.parameters && this.parameters.size() > 0) {
+                    // 若有重複的 key 以 params map 值為主
+                    for (Map.Entry<String, String> params : this.parameters.entrySet()) {
+                        _params.put(params.getKey(), params.getValue());
+                    }
+                }
+            }
+            if (null != _params && _params.size() > 0) {
                 StringBuilder sbd = new StringBuilder();
                 boolean isFirst = true;
-                for (Map.Entry<String, String> params : parameters.entrySet()) {
+                for (Map.Entry<String, String> params : _params.entrySet()) {
                     if(isFirst) { isFirst = false; } else { sbd.append("&"); }
                     sbd.append(URLEncoder.encode(params.getKey(), StandardCharsets.UTF_8));
                     sbd.append("=");
                     sbd.append(URLEncoder.encode(params.getValue(), StandardCharsets.UTF_8));
                 }
-                // method POST
                 requestBuilder.POST(HttpRequest.BodyPublishers.ofString(sbd.toString(), StandardCharsets.UTF_8));
             } else {
-                // method POST
                 requestBuilder.POST(HttpRequest.BodyPublishers.noBody());
             }
-            // 設定請求 URI
-            requestBuilder.uri(URI.create(this.url));
+            requestBuilder.uri(URI.create(parse_url_domain(this.url)));
         }
-        java.net.http.HttpClient.Builder clientBuilder = java.net.http.HttpClient.newBuilder();
+        HttpClient.Builder clientBuilder = HttpClient.newBuilder();
         {
             clientBuilder.version(httpVersion);
             clientBuilder.followRedirects(httpRedirect);
             clientBuilder.executor(ThreadPoolStatic.getInstance());
             if(null != conn_timeout) clientBuilder.connectTimeout(conn_timeout);
+            if(insecure_https) clientBuilder.sslContext(get_insecure_ssl_context());
         }
         // build & run
         HttpRequest request = requestBuilder.build();
-        java.net.http.HttpClient client = new WeakReference<>( clientBuilder.build() ).get();
+        HttpClient client = new WeakReference<>( clientBuilder.build() ).get();
         assert null != client;
         asyncRequest(client, request, handler);
     }
@@ -283,7 +223,7 @@ class HttpClient {
     public void postJSON(JsonObject obj, Handler handler) {
         HttpRequest.Builder requestBuilder = HttpRequest.newBuilder();
         {
-            // 設定 request header
+            // request header
             if (null != headers && headers.size() > 0) {
                 for (Map.Entry<String, String> header : headers.entrySet()) {
                     requestBuilder.setHeader(header.getKey(), header.getValue());
@@ -292,44 +232,51 @@ class HttpClient {
             // 如果採用 post 預設方法必須是 application/x-www-form-urlencoded 的方式夾帶參數
             // 此方法則採用 raw 內容方式夾帶 JSON 字串
             requestBuilder.setHeader("Content-Type","application/json;charset=utf-8");
-            // 設定 request parameters
             if (null != obj) {
-                // method POST
                 requestBuilder.POST(HttpRequest.BodyPublishers.ofString(new Gson().toJson(obj), StandardCharsets.UTF_8));
             } else {
-                // method POST
                 requestBuilder.POST(HttpRequest.BodyPublishers.noBody());
             }
-            // 設定請求 URI
-            requestBuilder.uri(URI.create(this.url));
+            requestBuilder.uri(URI.create(parse_url_domain(this.url)));
         }
-        java.net.http.HttpClient.Builder clientBuilder = java.net.http.HttpClient.newBuilder();
+        HttpClient.Builder clientBuilder = HttpClient.newBuilder();
         {
             clientBuilder.version(httpVersion);
             clientBuilder.followRedirects(httpRedirect);
             clientBuilder.executor(ThreadPoolStatic.getInstance());
             if(null != conn_timeout) clientBuilder.connectTimeout(conn_timeout);
+            if(insecure_https) clientBuilder.sslContext(get_insecure_ssl_context());
         }
         // build & run
         HttpRequest request = requestBuilder.build();
-        java.net.http.HttpClient client = new WeakReference<>( clientBuilder.build() ).get();
+        HttpClient client = new WeakReference<>( clientBuilder.build() ).get();
         assert null != client;
         asyncRequest(client, request, handler);
     }
 
     /**
      * POST multipart/form-data
-     *
-     * 2020-04-16 修正檔案上傳效能及非正常關閉的問題
      */
     public void postFormData(Handler handler) {
         String boundary = "jdk11hc_"+System.currentTimeMillis()+"_"+ RandomServiceStatic.getInstance().getLowerCaseRandomString(8);
         LinkedHashMap<String, Object> bMap = new LinkedHashMap<>();
-        if(null != parameters && parameters.size() > 0) {
-            for (Map.Entry<String, String> param : parameters.entrySet()) {
+        // 設定 Parameters
+        LinkedHashMap<String, String> _params;
+        {
+            _params = parse_url_parameter(this.url);
+            if(null != this.parameters && this.parameters.size() > 0) {
+                // 若有重複的 key 以 params map 值為主
+                for (Map.Entry<String, String> params : this.parameters.entrySet()) {
+                    _params.put(params.getKey(), params.getValue());
+                }
+            }
+        }
+        if(null != _params && _params.size() > 0) {
+            for (Map.Entry<String, String> param : _params.entrySet()) {
                 bMap.put(param.getKey(), param.getValue());
             }
         }
+        // 設定 Files
         if(null != files && files.size() > 0) {
             for (Map.Entry<String, File> file : files.entrySet()) {
                 bMap.put(file.getKey(), file.getValue());
@@ -337,62 +284,37 @@ class HttpClient {
         }
         HttpRequest.Builder requestBuilder = HttpRequest.newBuilder();
         {
-            requestBuilder.uri(URI.create(this.url));
+            // request header
+            if (null != headers && headers.size() > 0) {
+                for (Map.Entry<String, String> header : headers.entrySet()) {
+                    requestBuilder.setHeader(header.getKey(), header.getValue());
+                }
+            }
+        }
+        {
+            requestBuilder.uri(URI.create(parse_url_domain(this.url)));
             requestBuilder.header("Content-Type", "multipart/form-data;boundary=" + boundary);
             requestBuilder.POST(ofMimeMultipartData(bMap, boundary));
         }
-        java.net.http.HttpClient.Builder clientBuilder = java.net.http.HttpClient.newBuilder();
+        HttpClient.Builder clientBuilder = HttpClient.newBuilder();
         {
             clientBuilder.version(httpVersion);
             clientBuilder.followRedirects(httpRedirect);
             clientBuilder.executor(ThreadPoolStatic.getInstance());
             if(null != conn_timeout) clientBuilder.connectTimeout(conn_timeout);
+            if(insecure_https) clientBuilder.sslContext(get_insecure_ssl_context());
         }
         // build & run
         HttpRequest request = requestBuilder.build();
-        java.net.http.HttpClient client = new WeakReference<>( clientBuilder.build() ).get();
+        HttpClient client = new WeakReference<>( clientBuilder.build() ).get();
         assert client != null;
         asyncRequest(client, request, handler);
     }
 
     /**
-     * https://golb.hplar.ch/2019/01/java-11-http-client.html
-     * https://github.com/ralscha/blog2019/blob/master/java11httpclient/client/src/main/java/ch/rasc/httpclient/File.java
-     *
-     * 2020-04-16 modify by UrielTech.com TomLi
-     */
-    private static HttpRequest.BodyPublisher ofMimeMultipartData(Map<String, Object> data, String boundary) {
-        var byteArrays = new ArrayList<byte[]>();
-        byte[] separator = ("--" + boundary + "\r\nContent-Disposition: form-data; name=").getBytes(StandardCharsets.UTF_8);
-        for ( Map.Entry<String, Object> entry : data.entrySet() ) {
-            byteArrays.add(separator);
-            if ( entry.getValue() instanceof File ) {
-                var path = ((File) entry.getValue()).toPath();
-                String mimeType = null;
-                try {
-                    mimeType = Files.probeContentType(path);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                byteArrays.add(("\"" + entry.getKey() + "\"; filename=\"" + path.getFileName()+ "\"\r\nContent-Type: " + mimeType + "\r\n\r\n").getBytes(StandardCharsets.UTF_8));
-                try {
-                    byteArrays.add(Files.readAllBytes(path));
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                byteArrays.add("\r\n".getBytes(StandardCharsets.UTF_8));
-            } else {
-                byteArrays.add(("\"" + entry.getKey() + "\"\r\n\r\n" + entry.getValue() + "\r\n").getBytes(StandardCharsets.UTF_8));
-            }
-        }
-        byteArrays.add(("--" + boundary + "--").getBytes(StandardCharsets.UTF_8));
-        return HttpRequest.BodyPublishers.ofByteArrays(byteArrays);
-    }
-
-    /**
      * 藉由非同步方式處理 Response
      */
-    private void asyncRequest(java.net.http.HttpClient client, HttpRequest request, Handler handler) {
+    private void asyncRequest(HttpClient client, HttpRequest request, Handler handler) {
         Handler tmp_handler;
         {
             LinkedHashMap<String, String> resp_header = new LinkedHashMap<>();
@@ -417,7 +339,7 @@ class HttpClient {
                         if(null == contentType || contentType.length() == 0) {
                             processTextResponse(resp_header, resp_body, handler);
                         } else {
-                            if(contentType.contains("text/") || contentType.contains("application/json")) {
+                            if(contentType.contains("text/") || contentType.contains("application/json") || contentType.contains("application/x-msdownload")) {
                                 if(alwaysDownload) {
                                     processFileResponse(resp_header, resp_body, handler);
                                 } else {
@@ -434,65 +356,64 @@ class HttpClient {
                 }
             };
         }
-        // https://github.com/biezhi/java11-examples/blob/master/src/main/java/io/github/biezhi/java11/http/Example.java#L108
-        ThreadPoolStatic.execute(() -> {
-            try {
-                HttpResponse<InputStream> resp = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
-                {
-                    // response header
-                    {
-                        LinkedHashMap<String, String> headers = new LinkedHashMap<>();
-                        for(Map.Entry<String, List<String>> entry : resp.headers().map().entrySet()) {
-                            String key = entry.getKey();
-                            List<String> value = entry.getValue();
-                            if(value.size() > 1) {
-                                int indx = 0;
-                                for(String str : entry.getValue()) {
-                                    if(0 == indx) {
-                                        headers.put(key, str);
+        {
+            client.sendAsync(request, HttpResponse.BodyHandlers.ofInputStream())
+                    .whenCompleteAsync((resp_input_stream, throw_opt) -> {
+                        if(null != throw_opt) {
+                            throw_opt.printStackTrace();
+                            {
+                                Bundle b = new Bundle();
+                                b.put("status", "exception");
+                                b.put("throwable", throw_opt);
+                                Message m = tmp_handler.obtainMessage();
+                                m.setData(b);
+                                m.sendToTarget();
+                            }
+                        } else {
+                            // proc resp header
+                            {
+                                LinkedHashMap<String, String> headers = new LinkedHashMap<>();
+                                for (Map.Entry<String, List<String>> entry : resp_input_stream.headers().map().entrySet()) {
+                                    String key = entry.getKey();
+                                    List<String> value = entry.getValue();
+                                    if (value.size() > 1) {
+                                        int indx = 0;
+                                        for (String str : entry.getValue()) {
+                                            if (0 == indx) {
+                                                headers.put(key, str);
+                                            } else {
+                                                headers.put(key + "_" + indx, str);
+                                            }
+                                            indx++;
+                                        }
                                     } else {
-                                        headers.put(key+"_"+indx, str);
+                                        headers.put(key, value.get(0));
                                     }
-                                    indx++;
                                 }
-                            } else {
-                                headers.put(key, value.get(0));
+                                {
+                                    Bundle b = new Bundle();
+                                    b.put("status", "header");
+                                    b.put("status_code", String.valueOf(resp_input_stream.statusCode()));
+                                    b.put("headers", headers);
+                                    if(headers.containsKey("content-type")) b.put("content_type", headers.get("content-type"));
+                                    if(headers.containsKey("content-disposition")) b.put("content_disposition", headers.get("content-disposition"));
+                                    Message m = tmp_handler.obtainMessage();
+                                    m.setData(b);
+                                    m.sendToTarget();
+                                }
+                            }
+                            // proc resp body
+                            {
+                                Bundle b = new Bundle();
+                                b.put("status", "body");
+                                b.put("input_stream", resp_input_stream.body());
+                                Message m = tmp_handler.obtainMessage();
+                                m.setData(b);
+                                m.sendToTarget();
                             }
                         }
-                        {
-                            Bundle b = new Bundle();
-                            b.put("status", "header");
-                            b.put("status_code", String.valueOf(resp.statusCode()));
-                            b.put("headers", headers);
-                            if(headers.containsKey("content-type")) b.put("content_type", headers.get("content-type"));
-                            if(headers.containsKey("content-disposition")) b.put("content_disposition", headers.get("content-disposition"));
-                            Message m = tmp_handler.obtainMessage();
-                            m.setData(b);
-                            m.sendToTarget();
-                        }
-                    }
-                    // response body
-                    {
-                        Bundle b = new Bundle();
-                        b.put("status", "body");
-                        b.put("input_stream", resp.body());
-                        Message m = tmp_handler.obtainMessage();
-                        m.setData(b);
-                        m.sendToTarget();
-                    }
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-                {
-                    Bundle b = new Bundle();
-                    b.put("status", "exception");
-                    b.put("throwable", e);
-                    Message m = tmp_handler.obtainMessage();
-                    m.setData(b);
-                    m.sendToTarget();
-                }
-            }
-        });
+                    });
+        }
     }
 
     private void processTextResponse(LinkedHashMap<String, String> resp_header, InputStream resp_body, Handler handler) {
@@ -501,7 +422,7 @@ class HttpClient {
         if(resp_header.containsKey("content_type")) b.put("content_type", resp_header.get("content_type"));
         b.put("resp_type", "text");
         try( BufferedInputStream bis = new BufferedInputStream( resp_body ) ) {
-            b.put("data", new String(bis.readAllBytes(), StandardCharsets.UTF_8));
+            b.put("data", new String(bis.readAllBytes(), resp_encoding));
         } catch (Exception e) {
             b.put("status", "fail");
             e.printStackTrace();
@@ -588,29 +509,184 @@ class HttpClient {
         }
     }
 
+    /**
+     * https://golb.hplar.ch/2019/01/java-11-http-client.html
+     * https://github.com/ralscha/blog2019/blob/master/java11httpclient/client/src/main/java/ch/rasc/httpclient/File.java
+     */
+    private static HttpRequest.BodyPublisher ofMimeMultipartData(Map<String, Object> data, String boundary) {
+        var byteArrays = new ArrayList<byte[]>();
+        byte[] separator = ("--" + boundary + "\r\nContent-Disposition: form-data; name=").getBytes(StandardCharsets.UTF_8);
+        for ( Map.Entry<String, Object> entry : data.entrySet() ) {
+            byteArrays.add(separator);
+            if ( entry.getValue() instanceof File ) {
+                var path = ((File) entry.getValue()).toPath();
+                String mimeType = null;
+                try {
+                    mimeType = Files.probeContentType(path);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                byteArrays.add(("\"" + entry.getKey() + "\"; filename=\"" + path.getFileName()+ "\"\r\nContent-Type: " + mimeType + "\r\n\r\n").getBytes(StandardCharsets.UTF_8));
+                try {
+                    byteArrays.add(Files.readAllBytes(path));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                byteArrays.add("\r\n".getBytes(StandardCharsets.UTF_8));
+            } else {
+                byteArrays.add(("\"" + entry.getKey() + "\"\r\n\r\n" + entry.getValue() + "\r\n").getBytes(StandardCharsets.UTF_8));
+            }
+        }
+        byteArrays.add(("--" + boundary + "--").getBytes(StandardCharsets.UTF_8));
+        return HttpRequest.BodyPublishers.ofByteArrays(byteArrays);
+    }
+
+    /**
+     * 解析網址夾帶的參數內容（正規的 URL 參數內容要是 URL encoding 格式）
+     * https://developer.mozilla.org/en-US/docs/Glossary/percent-encoding
+     */
+    private LinkedHashMap<String, String> parse_url_parameter(String url) {
+        if(null == url || url.length() == 0) return null; // is error url
+        int start_index = url.indexOf("?");
+        if( -1 == start_index ) return new LinkedHashMap<>(); // is empty map
+        String param_str = url.substring(start_index + 1); // +1 skip '?'
+        String mode = "key"; // 'key' or 'value' mode, default is key
+        LinkedHashMap<String, String> params = new LinkedHashMap<>();
+        // proc request content value
+        String now_key = null;
+        {
+            StringBuilder sbd = new StringBuilder(); // char pool
+            for(int i = 0, len = param_str.length(); i < len; i++) {
+                String str = String.valueOf(param_str.charAt(i)); // by word
+                switch (str) {
+                    // value
+                    case "=": {
+                        // if duplicate
+                        if("value".equals(mode)) continue;
+                        // key is over
+                        {
+                            now_key = URLDecoder.decode(sbd.toString(), StandardCharsets.UTF_8);
+                            params.put(now_key, "");
+                        }
+                        // next
+                        mode = "value";
+                        sbd.delete(0, sbd.length());
+                    } break;
+                    // key
+                    case "&": {
+                        // if duplicate
+                        if("key".equals(mode)) continue;
+                        // value is over
+                        {
+                            params.put(now_key, URLDecoder.decode(sbd.toString(), StandardCharsets.UTF_8));
+                        }
+                        // next
+                        mode = "key";
+                        sbd.delete(0, sbd.length());
+                    } break;
+                    default: {
+                        switch (mode) {
+                            case "key":
+                            case "value": {
+                                sbd.append(str);
+                            } break;
+                        }
+                    } break;
+                }
+            }
+            // flush
+            {
+                switch (mode) {
+                    case "key": {
+                        now_key = URLDecoder.decode(sbd.toString(), StandardCharsets.UTF_8);
+                        params.put(now_key, "");
+                    } break;
+                    case "value": {
+                        params.put(now_key, URLDecoder.decode(sbd.toString(), StandardCharsets.UTF_8));
+                    } break;
+                }
+            }
+        }
+        return params;
+    }
+
+    /**
+     * JDK HttpClient 忽略 HTTPS 證書驗證實作
+     * https://stackoverflow.com/a/5308658
+     */
+    private SSLContext get_insecure_ssl_context() {
+        SSLContext sslContext = null;
+        try {
+            sslContext = SSLContext.getInstance("TLS");
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+        {
+            try {
+                assert sslContext != null;
+                sslContext.init(null, new TrustManager[]{
+                        new X509TrustManager() {
+                            public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+                                return null;
+                            }
+
+                            public void checkClientTrusted(
+                                    java.security.cert.X509Certificate[] certs, String authType) {
+                            }
+
+                            public void checkServerTrusted(
+                                    java.security.cert.X509Certificate[] certs, String authType) {
+                            }
+                        }
+                }, new SecureRandom());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return sslContext;
+    }
+
+    /**
+     * 解析網址為僅網域的格式，去除後面的參數夾帶
+     */
+    private String parse_url_domain(String url) {
+        String domain;
+        {
+            int index = url.indexOf("?");
+            if (-1 < index) {
+                domain = url.substring(0, index);
+            } else {
+                domain = url;
+            }
+            // set default scheme
+            if(!domain.contains("http://") && !domain.contains("https://")) {
+                domain = "http://" + domain;
+            }
+        }
+        return domain;
+    }
+
     public static class Builder {
 
         private String url = null;
-        private HashMap<String, String> headers = null;
+        private LinkedHashMap<String, String> headers = null;
         private LinkedHashMap<String, String> parameters = null;
         private LinkedHashMap<String, File> files = null;
-        private Boolean alwaysDownload = false; // default
-        private Boolean tempFileDeleteOnExit = true; // default
-
+        private Boolean alwaysDownload = false;
+        private Boolean tempFileDeleteOnExit = true;
         private String tempDirPath = null;
         private String tempDirName = null;
+        private Duration conn_timeout = null;
+        private Boolean insecure_https = false;
+        private String resp_encoding = StandardCharsets.UTF_8.name();
 
-        private Boolean keepUrlSearchParams = null;
-
-        private Duration conn_timeout = null; // default
-
-        public HttpClient.Builder setUrl(String url) {
+        public JdkHttpClient.Builder setUrl(String url) {
             this.url = url;
             return this;
         }
 
-        public HttpClient.Builder setHeaders(LinkedHashMap<String, String> headers) {
-            HashMap<String, String> map = new HashMap<>();
+        public JdkHttpClient.Builder setHeaders(LinkedHashMap<String, String> headers) {
+            LinkedHashMap<String, String> map = new LinkedHashMap<>();
             for(Map.Entry<String, String> entry : headers.entrySet()) {
                 String key = entry.getKey();
                 String value = entry.getValue();
@@ -621,8 +697,8 @@ class HttpClient {
             return this;
         }
 
-        public HttpClient.Builder setHeaders(HashMap<String, String> headers) {
-            HashMap<String, String> map = new HashMap<>();
+        public JdkHttpClient.Builder setHeaders(HashMap<String, String> headers) {
+            LinkedHashMap<String, String> map = new LinkedHashMap<>();
             for(Map.Entry<String, String> entry : headers.entrySet()) {
                 String key = entry.getKey();
                 String value = entry.getValue();
@@ -633,8 +709,8 @@ class HttpClient {
             return this;
         }
 
-        public HttpClient.Builder setHeaders(JsonObject headers) {
-            HashMap<String, String> map = new HashMap<>();
+        public JdkHttpClient.Builder setHeaders(JsonObject headers) {
+            LinkedHashMap<String, String> map = new LinkedHashMap<>();
             for(Object keyObj : headers.keySet()) {
                 String key = String.valueOf(keyObj);
                 String value = headers.get(key).getAsString();
@@ -645,7 +721,7 @@ class HttpClient {
             return this;
         }
 
-        public HttpClient.Builder setParameters(LinkedHashMap<String, String> parameters) {
+        public JdkHttpClient.Builder setParameters(LinkedHashMap<String, String> parameters) {
             LinkedHashMap<String, String> map = new LinkedHashMap<>();
             for(Map.Entry<String, String> entry : parameters.entrySet()) {
                 String key = entry.getKey();
@@ -657,10 +733,7 @@ class HttpClient {
             return this;
         }
 
-        /**
-         * from HashMap 將不保證參數順序
-         */
-        public HttpClient.Builder setParameters(HashMap<String, String> parameters) {
+        public JdkHttpClient.Builder setParameters(HashMap<String, String> parameters) {
             LinkedHashMap<String, String> map = new LinkedHashMap<>();
             for(Map.Entry<String, String> entry : parameters.entrySet()) {
                 String key = entry.getKey();
@@ -672,7 +745,7 @@ class HttpClient {
             return this;
         }
 
-        public HttpClient.Builder setParameters(JsonObject parameters) {
+        public JdkHttpClient.Builder setParameters(JsonObject parameters) {
             LinkedHashMap<String, String> map = new LinkedHashMap<>();
             for(Object keyObj : parameters.keySet()) {
                 String key = String.valueOf(keyObj);
@@ -684,7 +757,7 @@ class HttpClient {
             return this;
         }
 
-        public HttpClient.Builder setFiles(LinkedHashMap<String, File> files) {
+        public JdkHttpClient.Builder setFiles(LinkedHashMap<String, File> files) {
             LinkedHashMap<String, File> map = new LinkedHashMap<>();
             for(Map.Entry<String, File> entry : files.entrySet()) {
                 String key = entry.getKey();
@@ -695,7 +768,7 @@ class HttpClient {
             return this;
         }
 
-        public HttpClient.Builder setFiles(HashMap<String, File> files) {
+        public JdkHttpClient.Builder setFiles(HashMap<String, File> files) {
             LinkedHashMap<String, File> map = new LinkedHashMap<>();
             for(Map.Entry<String, File> entry : files.entrySet()) {
                 String key = entry.getKey();
@@ -710,7 +783,7 @@ class HttpClient {
          * 是否將 Response 作為檔案內容下載，並以檔案格式進行操作，
          * 預設為 false，因為大部分的 HTTP 請求會被由純文字內容回應
          */
-        public HttpClient.Builder setAlwaysDownload(Boolean alwaysDownload) {
+        public JdkHttpClient.Builder setAlwaysDownload(Boolean alwaysDownload) {
             this.alwaysDownload = alwaysDownload;
             return this;
         }
@@ -719,7 +792,7 @@ class HttpClient {
          * 設定由 HttpClient 下載的暫存檔案長期存放原則，
          * 若為 false 則表示主程式結束時仍持續保留暫存檔案
          */
-        public HttpClient.Builder setTempFileDelete(Boolean deleteOnExit) {
+        public JdkHttpClient.Builder setTempFileDelete(Boolean deleteOnExit) {
             if(null != deleteOnExit) this.tempFileDeleteOnExit = deleteOnExit;
             return this;
         }
@@ -727,7 +800,7 @@ class HttpClient {
         /**
          * 設定下載檔案的暫存資料夾路徑
          */
-        public HttpClient.Builder setTempDirPath(String tempDirPath) {
+        public JdkHttpClient.Builder setTempDirPath(String tempDirPath) {
             this.tempDirPath = tempDirPath;
             return this;
         }
@@ -735,37 +808,45 @@ class HttpClient {
         /**
          * 設定下載檔案的暫存資料夾名稱
          */
-        public HttpClient.Builder setTempDirName(String tempDirName) {
+        public JdkHttpClient.Builder setTempDirName(String tempDirName) {
             this.tempDirName = tempDirName;
             return this;
         }
 
-        /**
-         * https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams
-         * 是否維持網址夾帶 URLSearchParams
-         */
-        public HttpClient.Builder setKeepUrlSearchParams(boolean keepUrlSearchParams) {
-            this.keepUrlSearchParams = keepUrlSearchParams;
-            return this;
-        }
-
-        public HttpClient.Builder setConnectionTimeout(Duration duration) {
+        public JdkHttpClient.Builder setConnectionTimeout(Duration duration) {
             this.conn_timeout = duration;
             return this;
         }
 
-        public HttpClient build() {
-            return new HttpClient(
+        /**
+         * 設定 true 表示不檢查 HTTPS 證書正確性，預設為 false
+         */
+        public JdkHttpClient.Builder setInsecureHttps(Boolean insecure_https) {
+            this.insecure_https = insecure_https;
+            return this;
+        }
+
+        /**
+         * 設定回傳內容的編碼（串接傳統非 UTF-8 環境）
+         */
+        public JdkHttpClient.Builder setResponseEncoding(String charsets_name) {
+            this.resp_encoding = charsets_name;
+            return this;
+        }
+
+        public JdkHttpClient build() {
+            return new JdkHttpClient(
                     this.url,
                     this.headers,
                     this.parameters,
                     this.files,
+                    this.insecure_https,
                     this.alwaysDownload,
                     this.tempFileDeleteOnExit,
                     this.tempDirPath,
                     this.tempDirName,
-                    this.keepUrlSearchParams,
-                    this.conn_timeout
+                    this.conn_timeout,
+                    this.resp_encoding
             );
         }
 

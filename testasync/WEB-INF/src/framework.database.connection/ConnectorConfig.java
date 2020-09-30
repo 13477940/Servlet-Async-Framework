@@ -22,6 +22,7 @@ public abstract class ConnectorConfig {
                 res = "org.mariadb.jdbc.Driver";
             } break;
             // https://jdbc.postgresql.org/documentation/81/load.html
+            case "postgres":
             case "postgresql": {
                 res = "org.postgresql.Driver";
             } break;
@@ -80,7 +81,7 @@ public abstract class ConnectorConfig {
                 sbd.append("&zeroDateTimeBehavior=CONVERT_TO_NULL");
                 sbd.append("&serverTimezone=CST");
                 sbd.append("&useServerPrepStmts=true");
-                // https://blog.csdn.net/Yuriey/article/details/80423504
+                // https://segmentfault.com/a/1190000021870318
                 sbd.append("&allowPublicKeyRetrieval=true");
             } break;
             case "mariadb": {
@@ -94,11 +95,15 @@ public abstract class ConnectorConfig {
                     sbd.append("?useSSL=false");
                 } else {
                     sbd.append("?useSSL=true");
+                    // 若需要使用 server 端的 rsa public key 則要為 false
+                    // 但設定為 false 需要注意是否可能具有中間人攻擊的機率（未經過 VPN 時）
                     sbd.append("&verifyServerCertificate=false");
                 }
                 sbd.append("&useUnicode=true");
+                // 指定完整版的 unicode utf8mb4
                 sbd.append("&CharacterEncoding=utf8mb4");
             } break;
+            case "postgres":
             case "postgresql": {
                 sbd.append("jdbc:postgresql://");
                 sbd.append(ip);

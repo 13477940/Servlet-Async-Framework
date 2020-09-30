@@ -1,5 +1,7 @@
 package app.handler;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import framework.observer.Handler;
 import framework.observer.Message;
@@ -29,6 +31,10 @@ public class ParameterHandler extends RequestHandler {
     @Override
     protected boolean checkIsMyJob(AsyncActionContext asyncActionContext) {
         if("session".equals(asyncActionContext.getParameters().get("act"))) return false;
+        // proc json
+        if(asyncActionContext.getHeaders().containsKey("content-type")) {
+            if (asyncActionContext.getHeaders().get("content-type").contains("application/json")) return true;
+        }
         return asyncActionContext.getParameters().size() > 0;
     }
 
@@ -47,11 +53,34 @@ public class ParameterHandler extends RequestHandler {
     }
 
     private void addParamValues(JsonObject obj) {
-        JsonObject params = new JsonObject();
-        for(Map.Entry<String, String> entry : requestContext.getParameters().entrySet()) {
-            params.addProperty(entry.getKey(), entry.getValue());
+        if(requestContext.getHeaders().containsKey("content-type")) {
+            if (requestContext.getHeaders().get("content-type").contains("application/json")) {
+                // you can parse url and json content both
+                JsonObject params = new JsonObject();
+                for(Map.Entry<String, String> entry : requestContext.getParameters().entrySet()) {
+                    params.addProperty(entry.getKey(), entry.getValue());
+                }
+                {
+                    JsonObject parseObj = new Gson().fromJson(requestContext.getRequestTextContent(), JsonObject.class);
+                    for(Map.Entry<String, JsonElement> entry : parseObj.entrySet()) {
+                        params.add(entry.getKey(), entry.getValue());
+                    }
+                }
+                obj.add("params", params);
+            } else {
+                JsonObject params = new JsonObject();
+                for(Map.Entry<String, String> entry : requestContext.getParameters().entrySet()) {
+                    params.addProperty(entry.getKey(), entry.getValue());
+                }
+                obj.add("params", params);
+            }
+        } else {
+            JsonObject params = new JsonObject();
+            for(Map.Entry<String, String> entry : requestContext.getParameters().entrySet()) {
+                params.addProperty(entry.getKey(), entry.getValue());
+            }
+            obj.add("params", params);
         }
-        obj.add("params", params);
     }
 
     private void addHeaderValues(JsonObject obj) {
