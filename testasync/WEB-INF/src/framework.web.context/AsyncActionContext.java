@@ -645,13 +645,14 @@ public class AsyncActionContext {
         // 第一次建立暫存檔案
         AppSetting appSetting = new AppSetting.Builder().build();
         {
+            boolean file_create_status = false;
             temp_file_req_text = new File(appSetting.getPathContext().getTempDirPath()+"temp_txt_"+RandomServiceStatic.getInstance().getTimeHash(8));
             try {
-                temp_file_req_text.createNewFile();
+                file_create_status = temp_file_req_text.createNewFile();
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            temp_file_req_text.deleteOnExit(); // temp file
+            if(file_create_status) temp_file_req_text.deleteOnExit(); // temp file
         }
         TextFileWriter textFileWriter = new TextFileWriter.Builder()
                 .setTargetFile(temp_file_req_text)

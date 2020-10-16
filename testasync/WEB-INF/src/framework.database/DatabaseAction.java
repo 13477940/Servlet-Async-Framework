@@ -26,6 +26,7 @@ public class DatabaseAction {
      * SQL 指令字串, Connection, ArrayList（確保順序）, AutoCommit Status
      */
     public DatabaseAction(String sql, Connection conn, ArrayList<String> parameters, boolean autoCommit) {
+        // check connection status
         if(null == conn) {
             try {
                 throw new Exception("資料庫連接為空值");
@@ -45,8 +46,18 @@ public class DatabaseAction {
                 return;
             }
         }
+        // setting autocommit status
         this.autoCommit = autoCommit;
-        // 設定 PreparedStatement
+        {
+            try {
+                if(!this.conn.isClosed()) {
+                    this.conn.setAutoCommit(this.autoCommit);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        // init PreparedStatement
         {
             try {
                 PreparedStatement preState = new WeakReference<>( conn.prepareStatement(sql) ).get();

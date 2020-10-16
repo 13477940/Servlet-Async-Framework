@@ -1,74 +1,79 @@
 <!doctype html>
-<html>
-	<head>
-		<meta charset="utf-8" />
-		<meta name="description" content="" />
-		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-		<title>Test Async</title>
-		<link rel="stylesheet" href="/testasync/css/module/controller/controller.css">
-		<script src="/testasync/js/module/controller/controller.js"></script>
-		<script>
-			"use strict"
-			var website = window.website || {};
-			(function(){
-				website["ready"] = function(){
-					// dropdown demo
-					(function(){
-						var dropdown_list = [
-							"<div style='padding: 15px 20px;color: #000;'>option 1</div>",
-							"<div style='padding: 15px 20px;color: #000;'>option 2</div>",
-							"<div style='padding: 15px 20px;color: #000;'>option 3</div>",
-							"<div style='padding: 15px 20px;color: #000;'>option 4</div>",
-							"<div style='padding: 15px 20px;color: #000;'>option 5</div>"
-						];
-						website.dropdown($("div[ui_key=btn_dropdown]"), dropdown_list).done(function(dropdown){
-							console.log(dropdown);
-						});
-					})();
-				};
-				(function(){
-					function asyncTest() {
-						setTimeout(function(){
-							var reqObj = {
-								url: "/testasync/index?act=test",
-								header: [
-									{"Content-Type":"text/plain"}
-								],
-								text: "abcdefg"
-							};
-							website.post_json(reqObj)
-							.done(function(respd){
-								console.log(respd);
-							});
-						}, 1000);
-					}
-					asyncTest();
-				})();
-			})();
-		</script>
-	</head>
-	<body>
-		<div style="padding: 20px;">
-			<div>TEST PAGE</div>
-			<div style="height: 20px;"></div>
-			<div style="display: flex;align-items: center;">
-				<div style="display: none;"><input id="upfile" type="file" /></div>
-				<div><button id="btn_select_file" style="padding: 10px 20px 10px 20px;">選擇檔案</button></div>
-				<div style="width: 20px;flex-shrink: 0;"></div>
-				<div id="label_select_file" style="font-size: 1rem;line-height: 1.2rem;letter-spacing: 1px;word-break: break-all;"></div>
-				<div style="width: 20px;flex-shrink: 0;"></div>
-				<div><button id="btn_upload_submit" style="padding: 10px 20px 10px 20px;">上傳檔案</button></div>
-			</div>
-			<div style="height: 20px;"></div>
-			<div style="display: flex;align-items: center;">
-				<button ui_key="btn_test_get" style="padding: 10px 20px 10px 20px;">TestGet</button>
-				<div style="width: 20px;"></div>
-				<button ui_key="btn_test_post" style="padding: 10px 20px 10px 20px;">TestPost</button>
-			</div>
-			<div style="height: 20px;"></div>
-			<div><button ui_key="btn_open_dialog" style="padding: 10px 20px 10px 20px;">Open Dialog</button></div>
-			<div style="height: 20px;"></div>
-			<div ui_key="btn_dropdown" style="display: flex;"></div>
-		</div>
-	</body>
+<html theme_mode="dark">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="description" content="" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <title>Test Async</title>
+        <link rel="stylesheet" href="/testasync/css/module/controller/controller.css">
+        <style>
+            /* CSS 反轉所有元素色彩 */
+            html[theme_mode=dark] { filter: invert(1) hue-rotate(180deg); }
+        </style>
+        <script src="/testasync/js/module/controller/controller.js"></script>
+        <script>
+            "use strict"
+            var website = window.website || {};
+            (function(){
+                website["ready"] = function(){
+                    // dropdown demo
+                    (function(){
+                        var dropdown_list = [
+                            "<div style='padding: 15px 20px;color: #000;'>option 1</div>",
+                            "<div style='padding: 15px 20px;color: #000;'>option 2</div>",
+                            "<div style='padding: 15px 20px;color: #000;'>option 3</div>",
+                            "<div style='padding: 15px 20px;color: #000;'>option 4</div>",
+                            "<div style='padding: 15px 20px;color: #000;'>option 5</div>"
+                        ];
+                        website.dropdown($("div[ui_key=btn_dropdown]"), dropdown_list).done(function(dropdown){
+                            console.log(dropdown);
+                        });
+                    })();
+                };
+                (function(){
+                    function asyncTest() {
+                        setTimeout(function(){
+                            var reqObj = {
+                                url: "/testasync/index",
+                                data: [
+                                    { key: "A", value: "100" },
+                                    { key: "B", value: "200" },
+                                    { key: "C", value: "300" }
+                                ]
+                            };
+                            website.get(reqObj).done(function(respd){
+                                var obj = JSON.parse(respd);
+                                console.log(obj);
+                            });
+                        }, 1000);
+                    }
+                    asyncTest();
+                })();
+            })();
+        </script>
+    </head>
+    <body style="background-color: rgb(212,212,212);">
+        <div style="padding: 20px;">
+            <div>TEST PAGE</div>
+            <div style="height: 20px;"></div>
+            <div style="display: flex;align-items: center;">
+                <div style="display: none;"><input id="upfile" type="file" /></div>
+                <div><button id="btn_select_file" style="padding: 10px 20px 10px 20px;">選擇檔案</button></div>
+                <div style="width: 20px;flex-shrink: 0;"></div>
+                <div id="label_select_file" style="font-size: 1rem;line-height: 1.2rem;letter-spacing: 1px;word-break: break-all;"></div>
+                <div style="width: 20px;flex-shrink: 0;"></div>
+                <div><button id="btn_upload_submit" style="padding: 10px 20px 10px 20px;">上傳檔案</button></div>
+            </div>
+            <div style="height: 20px;"></div>
+            <div style="display: flex;align-items: center;">
+                <button ui_key="btn_test_get" style="padding: 10px 20px 10px 20px;">TestGet</button>
+                <div style="width: 20px;"></div>
+                <button ui_key="btn_test_post" style="padding: 10px 20px 10px 20px;">TestPost</button>
+            </div>
+            <div style="height: 20px;"></div>
+            <div><button ui_key="btn_open_dialog" style="padding: 10px 20px 10px 20px;">Open Dialog</button></div>
+            <div style="height: 20px;"></div>
+            <div ui_key="btn_dropdown" style="display: flex;"></div>
+        </div>
+    </body>
 </html>
