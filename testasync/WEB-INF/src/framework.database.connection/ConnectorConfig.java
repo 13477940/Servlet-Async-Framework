@@ -100,7 +100,7 @@ public abstract class ConnectorConfig {
                     sbd.append("&verifyServerCertificate=false");
                 }
                 sbd.append("&useUnicode=true");
-                // 指定完整版的 unicode utf8mb4
+                // 指定使用完整版的 unicode 編碼：utf8mb4
                 sbd.append("&CharacterEncoding=utf8mb4");
             } break;
             case "postgres":
@@ -123,7 +123,7 @@ public abstract class ConnectorConfig {
             } break;
             default: {
                 try {
-                    throw new Exception("錯誤的資料庫類型(step2)，可用的類型：mysql, mariadb, postgresql, mssql, sqlserver");
+                    throw new Exception("錯誤的資料庫類型(step2)，可用的類型：mysql, mariadb, postgres, postgresql, mssql, sqlserver");
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

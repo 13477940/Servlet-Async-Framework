@@ -38,6 +38,7 @@ public class HikariDataSource extends ConnectorConfig implements ConnectionPool 
         {
             HikariConfig config = new HikariConfig();
             config.setJdbcUrl(connectURI);
+            config.setDriverClassName(getDriverClassName(dbContext.getDB_Type())); // webapp required
             config.setUsername(dbContext.getDB_ACC());
             config.setPassword(dbContext.getDB_PWD());
             config.addDataSourceProperty("cachePrepStmts", "true"); // 是否自定义配置，为true时下面两个参数才生效

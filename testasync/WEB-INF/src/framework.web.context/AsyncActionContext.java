@@ -716,6 +716,31 @@ public class AsyncActionContext {
     }
 
     /**
+     * 取得 Request 端 IP
+     * https://stackoverflow.com/questions/18570747/servlet-get-client-public-ip
+     */
+    public String getRemoteIP() {
+        HttpServletRequest req = (HttpServletRequest) asyncContext.getRequest();
+        ArrayList<String> names = Collections.list(req.getHeaderNames());
+        HashMap<String, String> headers = new HashMap<>();
+        for(String key : names) {
+            String value = req.getHeader(key);
+            headers.put(key.toLowerCase(), value);
+        }
+        String ip = headers.get("x-forwarded-for");
+        if(null == ip || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+            ip = headers.get("proxy-client-ip");
+        }
+        if(null == ip || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+            ip = headers.get("wl-proxy-client-ip");
+        }
+        if(null == ip || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+            ip = req.getRemoteAddr();
+        }
+        return ip;
+    }
+
+    /**
      * 非同步架構下 ServletOutputStream 綁定於 WriteListener 管理，
      * 所以會只有一次的輸出機制，請將輸出資料合併輸出至單一個 WriteListener
      */

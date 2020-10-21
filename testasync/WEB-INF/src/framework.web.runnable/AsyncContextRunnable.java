@@ -148,7 +148,7 @@ public class AsyncContextRunnable implements Runnable {
     }
 
     // 採用檔案處理方式解析 multipart/form-data 資料內容
-    // 由於 Session 處理上傳進度值會影響伺服器效率，僅建議由前端處理上傳進度即可
+    // 由 Session 處理上傳進度值會影響伺服器效率，僅建議由前端處理上傳進度即可
     // 前端 AJAX 操作推薦採用 https://github.com/axios/axios
     private void parseFormData() {
         // Elopteryx/upload-parser
@@ -265,7 +265,6 @@ public class AsyncContextRunnable implements Runnable {
                 // if single key has more than one value, they will be add in JSONArray String.
                 if (values.length > 1) {
                     JsonArray arr = new JsonArray();
-                    // Collections.addAll(arr, values);
                     for(String str : values) {
                         arr.add(str);
                     }
