@@ -56,7 +56,20 @@ public class DataTable {
     /**
      * DataTable 轉換為 JSONArray 型態
      */
+    public JsonArray toJsonArray() {
+        if(null == this.instance) return null;
+        JsonArray arr = new JsonArray();
+        for(DataRow row : prototype()) {
+            arr.add(row.toJsonObject());
+        }
+        return arr;
+    }
+
+    /**
+     * 原依照 fastjson 規則採用命名，將廢棄
+     */
     public JsonArray toJSONArray() {
+        if(null == this.instance) return null;
         JsonArray arr = new JsonArray();
         for(DataRow row : prototype()) {
             arr.add(row.toJSONObject());

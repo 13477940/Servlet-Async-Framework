@@ -85,9 +85,23 @@ public class DataRow {
     /**
      * DataRow 轉換為 JSONObject 型態
      */
+    public JsonObject toJsonObject() {
+        JsonObject obj = new JsonObject();
+        if(null == this.instance) return null;
+        for(Map.Entry<String, String> entry : prototype().entrySet()) {
+            String key = entry.getKey().toLowerCase(); // Key - LowerCase
+            String value = Objects.requireNonNullElse(entry.getValue(), "");
+            obj.addProperty(key, value);
+        }
+        return obj;
+    }
+
+    /**
+     * 原依照 fastjson 規則採用命名，將廢棄
+     */
     public JsonObject toJSONObject() {
         JsonObject obj = new JsonObject();
-        if(null == prototype()) return null;
+        if(null == this.instance) return null;
         for(Map.Entry<String, String> entry : prototype().entrySet()) {
             String key = entry.getKey().toLowerCase(); // Key - LowerCase
             String value = Objects.requireNonNullElse(entry.getValue(), "");

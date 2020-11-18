@@ -4,21 +4,29 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.util.Properties;
 
 /**
  * 僅使用於 webapp config.json, config.properties 檔案解析
- * TODO 預計取代 AppSetting 取得參數值的功能
  */
 public class SettingLoader {
 
+    // 由 java properties 檔案內容取得參數值
+    // https://ethan-imagination.blogspot.com/2018/12/javase-gettingstarted-020.html
     public JsonObject getProperties(File file) {
-        JsonObject res = null;
-
+        JsonObject res = new JsonObject();
+        try ( BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file)) ) {
+            Properties prop = new Properties();
+            prop.load(bis);
+            for( String key : prop.stringPropertyNames() ) {
+                String value = prop.getProperty(key);
+                res.addProperty(key, value);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         return res;
     }
 

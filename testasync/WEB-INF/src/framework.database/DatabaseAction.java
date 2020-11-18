@@ -23,7 +23,7 @@ public class DatabaseAction {
     private boolean autoCommit = false;
 
     /**
-     * SQL 指令字串, Connection, ArrayList（確保順序）, AutoCommit Status
+     * SQL 指令字串, Connection, ArrayList（確保參數順序）, AutoCommit Status
      */
     public DatabaseAction(String sql, Connection conn, ArrayList<String> parameters, boolean autoCommit) {
         // check connection status

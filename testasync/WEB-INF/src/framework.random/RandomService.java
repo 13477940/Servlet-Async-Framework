@@ -124,8 +124,8 @@ public abstract class RandomService {
         }
         // 製作亂數
         int min = numL;
-        int max = numR + 1; // +1 表示有機率出現最大值本身
-        return random.nextInt( max + 1 - min ) + min;
+        int max = numR + 1; // +1 表示會出現最大值本身
+        return random.nextInt( max - min ) + min;
     }
 
 }

@@ -7,10 +7,7 @@ import framework.web.context.AsyncActionContext;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.WriteListener;
-import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
+import java.io.*;
 import java.lang.ref.WeakReference;
 import java.nio.charset.StandardCharsets;
 
@@ -34,6 +31,20 @@ public class AsyncWriteListener implements WriteListener {
     private BufferedInputStream inputStream;
     private final Handler handler;
 
+    // from InputStream
+    private AsyncWriteListener(AsyncActionContext asyncActionContext, InputStream inputStream, Handler handler) {
+        this.requestContext = asyncActionContext;
+        {
+            try {
+                this.inputStream = new WeakReference<>( new BufferedInputStream( inputStream )).get();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        this.handler = handler;
+    }
+
+    // from String
     private AsyncWriteListener(AsyncActionContext asyncActionContext, CharSequence charSequence, Handler handler) {
         this.requestContext = asyncActionContext;
         {
@@ -46,6 +57,7 @@ public class AsyncWriteListener implements WriteListener {
         this.handler = handler;
     }
 
+    // from File
     private AsyncWriteListener(AsyncActionContext asyncActionContext, File file, Handler handler) {
         this.requestContext = asyncActionContext;
         {
@@ -95,15 +107,14 @@ public class AsyncWriteListener implements WriteListener {
         }
         // 非同步模式之下將 inputStream 內容讀取並輸出至 ServletOutputStream
         int rLength;
-        int bMaxSize = 1024 * 16;
+        int bMaxSize = 1024 * 16; // 快取上限（避免吃過多記憶體）
         while ( true ) {
             if(null == out) break;
             if(!out.isReady()) break;
             if(null == inputStream) break;
             try {
-                // 當使用 inputStream.available() 會使用到物理記憶體最大值
-                // 所以需要特別去注意這部分的調用值，應在之後設定一個極限值
-                // 保障系統物理記憶體空間的餘裕與穩定度
+                // inputStream.available() 會取得目前可用的物理記憶體最大值
+                // 過度的容量使用會造成系統不穩定，所以要設定 bMaxSize 值來限制
                 int bSize = inputStream.available();
                 if ( bSize > bMaxSize ) bSize = bMaxSize;
                 byte[] buffer = new byte[ bSize ];
@@ -155,8 +166,11 @@ public class AsyncWriteListener implements WriteListener {
     public static class Builder {
 
         private AsyncActionContext requestContext = null;
-        private CharSequence charSequence = null;
+
+        private InputStream inputStream = null;
         private File file = null;
+        private CharSequence charSequence = null;
+
         private Handler handler = null;
 
         public AsyncWriteListener.Builder setAsyncActionContext(AsyncActionContext asyncActionContext) {
@@ -164,13 +178,18 @@ public class AsyncWriteListener implements WriteListener {
             return this;
         }
 
-        public AsyncWriteListener.Builder setCharSequence(CharSequence charSequence) {
-            this.charSequence = charSequence;
+        public AsyncWriteListener.Builder setInputStream(InputStream inputStream) {
+            this.inputStream = inputStream;
             return this;
         }
 
         public AsyncWriteListener.Builder setFile(File file) {
             this.file = file;
+            return this;
+        }
+
+        public AsyncWriteListener.Builder setCharSequence(CharSequence charSequence) {
+            this.charSequence = charSequence;
             return this;
         }
 
@@ -180,10 +199,13 @@ public class AsyncWriteListener implements WriteListener {
         }
 
         public AsyncWriteListener build() {
-            if(null == file) {
-                return new AsyncWriteListener(requestContext, charSequence, handler);
+            if(null != inputStream) {
+                return new AsyncWriteListener(requestContext, inputStream, handler);
             }
-            return new AsyncWriteListener(requestContext, file, handler);
+            if(null != file) {
+                return new AsyncWriteListener(requestContext, file, handler);
+            }
+            return new AsyncWriteListener(requestContext, charSequence, handler);
         }
 
     }

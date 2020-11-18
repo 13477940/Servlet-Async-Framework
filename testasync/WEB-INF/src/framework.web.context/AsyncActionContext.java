@@ -2,7 +2,6 @@ package framework.web.context;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import framework.hash.HashServiceStatic;
 import framework.observer.Bundle;
 import framework.observer.Handler;
 import framework.observer.Message;
@@ -12,6 +11,7 @@ import framework.text.TextFileWriter;
 import framework.web.listener.AsyncWriteListener;
 import framework.web.multipart.FileItem;
 import framework.web.multipart.FileItemList;
+import org.apache.tika.Tika;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
@@ -22,7 +22,6 @@ import java.lang.ref.WeakReference;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
 
@@ -160,12 +159,12 @@ public class AsyncActionContext {
      * Map 型態的 HTTP Request 上傳檔案內容
      */
     public HashMap<String, FileItem> getFilesMap() {
-        if(null == this.files || this.files.size() == 0) return null;
+        if( null == this.files || this.files.size() == 0 ) return null;
         HashMap<String, Integer> sort_map = new HashMap<>(); // 同 key 多檔案排序
         HashMap<String, FileItem> map = new HashMap<>();
-        for(FileItem fileItem : this.files.prototype()) {
+        for( FileItem fileItem : this.files.prototype() ) {
             String key = fileItem.getFieldName();
-            if(map.containsKey(key)) {
+            if( map.containsKey(key) ) {
                 Integer index = sort_map.getOrDefault(key, 0);
                 sort_map.put(key, index);
                 StringBuilder sbd = new StringBuilder();
@@ -341,6 +340,67 @@ public class AsyncActionContext {
     }
 
     /**
+     * 直接輸出 InputStream 內容，適用於二進位內容直接輸出，並作為檔案形式傳遞至前端
+     * 於 safari, ie 要注意匯出檔案名稱不能過長，要不然會被瀏覽器重新命名
+     */
+    public void outputInputStream(InputStream inputStream, String fileName, String mimeType, boolean isAttachment, Handler handler) {
+        if(checkIsOutput()) return;
+
+        String encodeFileName = encodeOutputFileName(fileName);
+
+        // 本地檔案 MIME 解析處理
+        String fileMIME = null;
+        {
+            if (null == mimeType || mimeType.length() == 0) {
+                try {
+                    fileMIME = new Tika().detect(inputStream);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            } else {
+                fileMIME = mimeType;
+            }
+            // MIME types (IANA media types)
+            // https://developer.mozilla.org/zh-TW/docs/Web/HTTP/Basics_of_HTTP/MIME_types
+            if (null == fileMIME || fileMIME.length() == 0) {
+                fileMIME = "application/octet-stream";
+            }
+        }
+
+        // 如果指定為 isAttachment 為 true 則不管 MIME 是什麼都會被當作一般的檔案下載；
+        // 若 isAttachment 為 false 則由瀏覽器自身決定能否瀏覽該檔案類型，例如：pdf, json, html 等
+        // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Disposition
+        // 解決 Content-Disposition 跨瀏覽器編碼的問題：
+        // https://blog.robotshell.org/2012/deal-with-http-header-encoding-for-file-download/
+        HttpServletResponse response = ((HttpServletResponse) asyncContext.getResponse());
+        {
+            // ContentType
+            response.setContentType( fileMIME + ";charset=" + StandardCharsets.UTF_8.name() );
+            // Content-Disposition
+            StringBuilder sbd = new StringBuilder();
+            if (isAttachment) {
+                sbd.append("attachment;filename=\"");
+            } else {
+                sbd.append("inline;filename=\"");
+            }
+            sbd.append(encodeFileName);
+            sbd.append("\";");
+            sbd.append("filename*=utf-8''"); // use for modern browser
+            sbd.append(encodeFileName);
+            response.setHeader("Content-Disposition", sbd.toString());
+        }
+        // 使用 WriteListener 非同步輸出
+        {
+            AsyncWriteListener asyncWriteListener = new AsyncWriteListener.Builder()
+                    .setAsyncActionContext(this)
+                    .setInputStream(inputStream)
+                    .setHandler(handler)
+                    .build();
+            setOutputWriteListener(asyncWriteListener);
+        }
+    }
+
+    /**
      * 輸出 Gson JsonObject 至 Response
      * 此方法會以 text/plain 格式回傳至前端
      */
@@ -360,7 +420,7 @@ public class AsyncActionContext {
             StringBuilder sbd = new StringBuilder();
             {
                 sbd.append("inline;filename=\"");
-                String tmpRespName = HashServiceStatic.getInstance().stringToSHA256(RandomServiceStatic.getInstance().getTimeHash(6));
+                String tmpRespName = RandomServiceStatic.getInstance().getTimeHash(6);
                 sbd.append(encodeOutputFileName(tmpRespName)).append(".txt");
                 sbd.append("\"");
                 sbd.append("filename*=utf-8''"); // use for modern browser
@@ -394,7 +454,7 @@ public class AsyncActionContext {
             StringBuilder sbd = new StringBuilder();
             {
                 sbd.append("inline;filename=\"");
-                String tmpRespName = HashServiceStatic.getInstance().stringToSHA256(RandomServiceStatic.getInstance().getTimeHash(6));
+                String tmpRespName = RandomServiceStatic.getInstance().getTimeHash(6);
                 sbd.append(encodeOutputFileName(tmpRespName)).append(".json");
                 sbd.append("\"");
                 sbd.append("filename*=utf-8''"); // use for modern browser
@@ -451,6 +511,7 @@ public class AsyncActionContext {
      * by File
      * 輸出檔案至瀏覽器端；
      * isAttachment 影響到瀏覽器是否能預覽（true 時會被當作一般檔案來下載）
+     * 於 safari, ie 要注意匯出檔案名稱不能過長，要不然會被瀏覽器重新命名
      */
     public void outputFileToResponse(File file, String fileName, String mimeType, boolean isAttachment, Handler handler) {
         if(checkIsOutput()) return;
@@ -477,7 +538,8 @@ public class AsyncActionContext {
         {
             if (null == mimeType || mimeType.length() == 0) {
                 try {
-                    fileMIME = Files.probeContentType(Paths.get(file.getPath()));
+                    // fileMIME = Files.probeContentType(Paths.get(file.getPath()));
+                    fileMIME = new Tika().detect(file);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -486,7 +548,7 @@ public class AsyncActionContext {
             }
             // MIME types (IANA media types)
             // https://developer.mozilla.org/zh-TW/docs/Web/HTTP/Basics_of_HTTP/MIME_types
-            if (null == fileMIME) {
+            if (null == fileMIME || fileMIME.length() == 0) {
                 fileMIME = "application/octet-stream";
             }
         }
@@ -528,7 +590,7 @@ public class AsyncActionContext {
     }
 
     /**
-     * 取消該次請求 Http Cache 狀態
+     * 取消該次請求 Http Response Cache 狀態
      */
     public void disableHttpCache() {
         try {
@@ -826,14 +888,20 @@ public class AsyncActionContext {
     }
 
     /**
-     * 解決下載檔案時 Unicode 檔案名稱編碼
+     * 解決 output 下載檔案時 unicode 檔案名稱編碼
+     *
+     * https://tools.ietf.org/html/rfc3986
+     * https://stackoverflow.com/questions/4737841/urlencoder-not-able-to-translate-space-character
+     *
+     * #201117 補充說明
+     * 依照 rfc3986 java.net.URLEncoder.encode 將空格轉換為 "+" 是正確的，
+     * 但 org.apache.catalina.util.URLEncoder.encode 的會轉換為 "%20" 較能正常使用，
+     * 所以會採用 replaceAll("\\+", "%20") 達成其兩者間的一致性，
+     * 而原本具有 "+" 符號的內容會被轉換為 %2B 所以並不會互相干擾
      */
     private String encodeOutputFileName(String fileName) {
         String encodeFileName = null;
         try {
-            // https://www.ewdna.com/2008/11/urlencoder.html
-            // https://stackoverflow.com/questions/4737841/urlencoder-not-able-to-translate-space-character
-            // 轉碼後由 replace 修正編碼後空白加號問題（java 不會像 js 的 encodeURI 會自動處理空格為 %20）
             encodeFileName = java.net.URLEncoder
                     .encode(fileName, StandardCharsets.UTF_8)
                     .replaceAll("\\+", "%20");
@@ -844,7 +912,8 @@ public class AsyncActionContext {
     }
 
     /**
-     * 統一檢查與設定 AsyncWriteListener，以此管控每個請求只能輸出一次的機制
+     * 統一檢查與設定 AsyncWriteListener，以此管控每個請求只能輸出一次的機制，
+     * 藉由此單一輸出機制簡化非同步與原本同步架構的 output 差異性
      */
     private void setOutputWriteListener(AsyncWriteListener asyncWriteListener) {
         isOutput = true;
@@ -853,6 +922,18 @@ public class AsyncActionContext {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    /**
+     * 解析檔案名稱為檔名與副檔名
+     * https://stackoverflow.com/questions/4545937/java-splitting-the-filename-into-a-base-and-extension
+     */
+    private String[] parseFileName(String str) {
+        String[] tokens = str.split("\\.(?=[^.]+$)");
+        for(int i = 0, len = tokens.length; i < len; i++) {
+            tokens[i] = tokens[i].trim();
+        }
+        return tokens;
     }
 
     public static class Builder {

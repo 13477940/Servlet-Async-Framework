@@ -25,6 +25,14 @@ public class WebAppController extends HttpServlet {
         startAsync(req, resp);
     }
 
+    // 當 Servlet 被回收時，關閉常駐資源
+    @Override
+    public void destroy() {
+        super.destroy();
+        ThreadPoolStatic.shutdown();
+        deregisterDrivers();
+    }
+
     private void startAsync(HttpServletRequest req, HttpServletResponse resp) {
         setEncoding(req, resp);
         // https://docs.oracle.com/javaee/6/api/javax/servlet/AsyncContext.html
@@ -83,7 +91,7 @@ public class WebAppController extends HttpServlet {
     }
 
     // 釋放 WebApp 用到的 Driver Class 資源
-    private void unRegAppDrivers() {
+    private void deregisterDrivers() {
         Enumeration<Driver> drivers = DriverManager.getDrivers();
         while(drivers.hasMoreElements()) {
             Driver driver = drivers.nextElement();
@@ -93,14 +101,6 @@ public class WebAppController extends HttpServlet {
                 // e.printStackTrace();
             }
         }
-    }
-
-    // 當 Servlet 被回收時，關閉常駐資源
-    @Override
-    public void destroy() {
-        super.destroy();
-        ThreadPoolStatic.shutdown();
-        unRegAppDrivers();
     }
 
 }

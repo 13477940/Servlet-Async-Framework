@@ -19,8 +19,7 @@ import java.nio.charset.StandardCharsets;
  * 非 Tomcat 環境中則需要由使用者自行創建一個 baseFileDir 作為定位點。
  * 要注意 AppSetting 於多層次的 jar 檔封裝後可能會有路徑無法取得的問題發生。
  *
- * TODO #200818 由於一直發生 AppSetting 錯誤，所以將此 Class 拆分及重構
- * TODO SettingLoader, PathContext，自身功能仍維持
+ * #201116 已確認之前 AppSetting 無法正常初始化是被 ThreadPool 影響的關係
  */
 public class AppSetting {
 
