@@ -10,49 +10,9 @@
             /* CSS 反轉所有元素色彩 */
             html[theme_mode=dark] { filter: invert(1) hue-rotate(180deg); }
         </style>
-        <script src="/testasync/js/module/controller/controller.js"></script>
-        <script>
-            "use strict"
-            var website = window.website || {};
-            (function(){
-                website["ready"] = function(){
-                    // dropdown demo
-                    (function(){
-                        var dropdown_list = [
-                            "<div style='padding: 15px 20px;color: #000;'>option 1</div>",
-                            "<div style='padding: 15px 20px;color: #000;'>option 2</div>",
-                            "<div style='padding: 15px 20px;color: #000;'>option 3</div>",
-                            "<div style='padding: 15px 20px;color: #000;'>option 4</div>",
-                            "<div style='padding: 15px 20px;color: #000;'>option 5</div>"
-                        ];
-                        website.dropdown($("div[ui_key=btn_dropdown]"), dropdown_list).done(function(dropdown){
-                            console.log(dropdown);
-                        });
-                    })();
-                };
-                (function(){
-                    function asyncTest() {
-                        setTimeout(function(){
-                            var reqObj = {
-                                url: "/testasync/index",
-                                data: [
-                                    { key: "A", value: "100" },
-                                    { key: "B", value: "200" },
-                                    { key: "C", value: "300" }
-                                ]
-                            };
-                            website.get(reqObj).done(function(respd){
-                                var obj = JSON.parse(respd);
-                                console.log(obj);
-                            });
-                        }, 1000);
-                    }
-                    asyncTest();
-                })();
-            })();
-        </script>
+        <script src="/testasync/js/script.js"></script>
     </head>
-    <body style="background-color: rgb(212,212,212);">
+    <body page_key="index" style="background-color: rgb(212,212,212);">
         <div style="padding: 20px;">
             <div>TEST PAGE</div>
             <div style="height: 20px;"></div>

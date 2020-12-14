@@ -1,7 +1,51 @@
-"use strict"
-var website = window.website || {};
-(function() {
-    website["readyFn"] = function() {
+// namespace define
+var $: any = window.$ || null;
+
+// site function
+(function(){
+    // 新增腳本時於此處增加腳本路徑
+    var arr: any = [];
+    (function(){
+        arr.push("/testasync/js/jquery/jquery.min.js");
+        arr.push("/testasync/js/axios/axios.min.js");
+    })();
+    // 遞迴方式讀取所有 script 項目
+    (function(){
+        var tmpPath = null;
+        loadNext();
+        function loadNext() {
+            tmpPath = arr.shift();
+            if(null != tmpPath) {
+                website.script(tmpPath, function(){
+                    loadNext();
+                });
+            } else {
+                scriptReady();
+            }
+        }
+    })();
+    // all script ready
+    function scriptReady() {
+        // 公用腳本準備完成
+        if(null == website.ready) {
+            console.error("該頁面不具有 window.website.ready 方法，無法完成初始化呼叫");
+        } else {
+            // 藉由 setTimeout 將執行優先度降低
+            setTimeout(function(){
+                website.ready();
+            }, 1);
+        }
+    }
+})();
+
+(function(){
+    website.ready = function(){
+        var page_key = $("body").attr("page_key");
+        switch(page_key) {
+            case "index": { page_index(); } break;
+        }
+    };
+    function page_index() {
         // ajax worker example
         (function(){
             $("#btn_select_file").on("click", function(){
@@ -20,7 +64,7 @@ var website = window.website || {};
             });
         })();
         (function(){
-            $("#btn_upload_submit").on("click", function() {
+            $("#btn_upload_submit").on("click", function(){
                 var targetFile = $("#upfile")[0]["files"][0];
                 (function(){
                     var reqObj = {
@@ -38,10 +82,10 @@ var website = window.website || {};
                         });
                     }
                     website.post_form_data(reqObj)
-                        .progress(function(prog){
+                        .progress(function(prog: any){
                             console.log(prog);
                         })
-                        .done(function(respd){
+                        .done(function(respd: any){
                             console.log(respd);
                         });
                 })();
@@ -53,7 +97,7 @@ var website = window.website || {};
             function openDialog() {
                 website.dialog({
                     content: "<div style='position: relative; width: 400px;height: 400px;margin: auto 0px auto 0px;background-color: #fff;border-radius: 5px;'><span dialog_btn='close' style='position: absolute;top: 20px;right: 20px;'>&times;</span>TEST</div>"
-                }).done(function(dialogObj){
+                }).done(function(dialogObj: any){
                     console.log(dialogObj);
                     dialogObj.overlay.css("background-color", "rgba(190,190,190,0.5)");
                     dialogObj.dialog.find("span[dialog_btn=close]").on("click", function(){
@@ -78,7 +122,7 @@ var website = window.website || {};
                     header: [
                         { key: "my-auth", value: "aaabbbcccdddeeefffggg_hi" }
                     ]
-                }).done(function(respd){
+                }).done(function(respd: any){
                     console.log(respd);
                 });
             });
@@ -93,11 +137,42 @@ var website = window.website || {};
                         { key: "c", value: "國字測試" },
                         { key: "d", value: "/// //aaa// a//cc[]///" }
                     ]
-                }).done(function(respd){
+                }).done(function(respd: any){
                     console.log(respd);
                 });
             });
         })();
-    };
-}());
-$(website["readyFn"]);
+        // dropdown demo
+        (function(){
+            var dropdown_list = [
+                "<div style='padding: 15px 20px;color: #000;'>option 1</div>",
+                "<div style='padding: 15px 20px;color: #000;'>option 2</div>",
+                "<div style='padding: 15px 20px;color: #000;'>option 3</div>",
+                "<div style='padding: 15px 20px;color: #000;'>option 4</div>",
+                "<div style='padding: 15px 20px;color: #000;'>option 5</div>"
+            ];
+            website.dropdown($("div[ui_key=btn_dropdown]"), dropdown_list).done(function(dropdown: any){
+                console.log(dropdown);
+            });
+        })();
+        (function(){
+            function asyncTest() {
+                setTimeout(function(){
+                    var reqObj = {
+                        url: "/testasync/index",
+                        data: [
+                            { key: "A", value: "100" },
+                            { key: "B", value: "200" },
+                            { key: "C", value: "300" }
+                        ]
+                    };
+                    website.get(reqObj).done(function(respd: any){
+                        var obj = JSON.parse(respd);
+                        console.log(obj);
+                    });
+                }, 1000);
+            }
+            asyncTest();
+        })();
+    }
+})();
