@@ -358,61 +358,61 @@ public class JdkHttpClient {
         }
         {
             client.sendAsync(request, HttpResponse.BodyHandlers.ofInputStream())
-                    .whenCompleteAsync((resp_input_stream, throw_opt) -> {
-                        if(null != throw_opt) {
-                            throw_opt.printStackTrace();
-                            {
-                                Bundle b = new Bundle();
-                                b.put("status", "exception");
-                                b.put("throwable", throw_opt);
-                                Message m = tmp_handler.obtainMessage();
-                                m.setData(b);
-                                m.sendToTarget();
-                            }
-                        } else {
-                            // proc resp header
-                            {
-                                LinkedHashMap<String, String> headers = new LinkedHashMap<>();
-                                for (Map.Entry<String, List<String>> entry : resp_input_stream.headers().map().entrySet()) {
-                                    String key = entry.getKey();
-                                    List<String> value = entry.getValue();
-                                    if (value.size() > 1) {
-                                        int indx = 0;
-                                        for (String str : entry.getValue()) {
-                                            if (0 == indx) {
-                                                headers.put(key, str);
-                                            } else {
-                                                headers.put(key + "_" + indx, str);
-                                            }
-                                            indx++;
+                .whenCompleteAsync((resp_input_stream, throw_opt) -> {
+                    if(null != throw_opt) {
+                        throw_opt.printStackTrace();
+                        {
+                            Bundle b = new Bundle();
+                            b.put("status", "exception");
+                            b.put("throwable", throw_opt);
+                            Message m = tmp_handler.obtainMessage();
+                            m.setData(b);
+                            m.sendToTarget();
+                        }
+                    } else {
+                        // proc resp header
+                        {
+                            LinkedHashMap<String, String> headers = new LinkedHashMap<>();
+                            for (Map.Entry<String, List<String>> entry : resp_input_stream.headers().map().entrySet()) {
+                                String key = entry.getKey();
+                                List<String> value = entry.getValue();
+                                if (value.size() > 1) {
+                                    int indx = 0;
+                                    for (String str : entry.getValue()) {
+                                        if (0 == indx) {
+                                            headers.put(key, str);
+                                        } else {
+                                            headers.put(key + "_" + indx, str);
                                         }
-                                    } else {
-                                        headers.put(key, value.get(0));
+                                        indx++;
                                     }
-                                }
-                                {
-                                    Bundle b = new Bundle();
-                                    b.put("status", "header");
-                                    b.put("status_code", String.valueOf(resp_input_stream.statusCode()));
-                                    b.put("headers", headers);
-                                    if(headers.containsKey("content-type")) b.put("content_type", headers.get("content-type"));
-                                    if(headers.containsKey("content-disposition")) b.put("content_disposition", headers.get("content-disposition"));
-                                    Message m = tmp_handler.obtainMessage();
-                                    m.setData(b);
-                                    m.sendToTarget();
+                                } else {
+                                    headers.put(key, value.get(0));
                                 }
                             }
-                            // proc resp body
                             {
                                 Bundle b = new Bundle();
-                                b.put("status", "body");
-                                b.put("input_stream", resp_input_stream.body());
+                                b.put("status", "header");
+                                b.put("status_code", String.valueOf(resp_input_stream.statusCode()));
+                                b.put("headers", headers);
+                                if(headers.containsKey("content-type")) b.put("content_type", headers.get("content-type"));
+                                if(headers.containsKey("content-disposition")) b.put("content_disposition", headers.get("content-disposition"));
                                 Message m = tmp_handler.obtainMessage();
                                 m.setData(b);
                                 m.sendToTarget();
                             }
                         }
-                    });
+                        // proc resp body
+                        {
+                            Bundle b = new Bundle();
+                            b.put("status", "body");
+                            b.put("input_stream", resp_input_stream.body());
+                            Message m = tmp_handler.obtainMessage();
+                            m.setData(b);
+                            m.sendToTarget();
+                        }
+                    }
+                });
         }
     }
 

@@ -871,7 +871,6 @@ public class AsyncActionContext {
                 e.printStackTrace();
             }
         }
-
         if(null == this.urlPath) return;
         // 處理資源連結副檔名
         {

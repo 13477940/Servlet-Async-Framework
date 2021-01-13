@@ -179,7 +179,6 @@ public class AppSetting {
                     if(null != classLoader) {
                         URL url = classLoader.getResource("");
                         if(null != url) {
-                            // TODO 可靠度測試點
                             // 確認執行於 Servlet Container 環境之中
                             if(url.getPath().contains("WEB-INF")) {
                                 this.appName = ServletContextStatic.getInstance().getServletContextName();

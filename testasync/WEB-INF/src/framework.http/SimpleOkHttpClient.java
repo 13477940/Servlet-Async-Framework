@@ -18,7 +18,6 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import java.security.cert.CertificateException;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -641,15 +640,13 @@ public class SimpleOkHttpClient {
     }
 
     private TrustManager[] get_trust_all_certs() {
-        final TrustManager[] trustAllCerts = new TrustManager[] {
+        return new TrustManager[] {
                 new X509TrustManager() {
                     @Override
-                    public void checkClientTrusted(java.security.cert.X509Certificate[] chain, String authType) throws CertificateException {
-                    }
+                    public void checkClientTrusted(java.security.cert.X509Certificate[] chain, String authType) {}
 
                     @Override
-                    public void checkServerTrusted(java.security.cert.X509Certificate[] chain, String authType) throws CertificateException {
-                    }
+                    public void checkServerTrusted(java.security.cert.X509Certificate[] chain, String authType) {}
 
                     @Override
                     public java.security.cert.X509Certificate[] getAcceptedIssuers() {
@@ -657,7 +654,6 @@ public class SimpleOkHttpClient {
                     }
                 }
         };
-        return trustAllCerts;
     }
 
     private String reverseString(String str) {

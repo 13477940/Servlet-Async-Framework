@@ -1,3 +1,4 @@
+/* css reset */
 * {
     margin: 0px;
     padding: 0px;
@@ -5,10 +6,15 @@
     box-sizing: border-box;
 }
 html {
-    font-size: 16px; /* 決定 rem 起始值 */
+    font-size: 16px; /* 影響 rem */
 }
 img {
-    display: block; /* 修正圖片區塊下方會產生幽靈空白的問題 */
+    display: block; /* 修正圖片區塊造成的幽靈空白 */
+}
+div {
+    font-size: 1rem;
+    line-height: 1.2rem;
+    letter-spacing: 0px;
 }
 
 /*

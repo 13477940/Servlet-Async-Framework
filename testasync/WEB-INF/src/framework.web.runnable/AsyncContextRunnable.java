@@ -79,7 +79,7 @@ public class AsyncContextRunnable implements Runnable {
         String _content_type = content_type.toLowerCase();
         // structured http request
         if(_content_type.contains("application/x-www-form-urlencoded")) {
-            proc_urlencoded_body();
+            proc_url_encoded_body();
             return;
         }
         // structured http request
@@ -298,7 +298,7 @@ public class AsyncContextRunnable implements Runnable {
     }
 
     // proc application/x-www-form-urlencoded
-    private void proc_urlencoded_body() {
+    private void proc_url_encoded_body() {
         String param_str = requestContext.getRequestTextContent();
         String mode = "key"; // 'key' or 'value' mode, default is key
         LinkedHashMap<String, String> params = new LinkedHashMap<>();

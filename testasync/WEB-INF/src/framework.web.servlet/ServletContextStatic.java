@@ -8,8 +8,8 @@ import java.lang.ref.WeakReference;
  * https://openhome.cc/Gossip/ServletJSP/ServletContext.html
  * https://www.zhihu.com/question/38481443
  *
- * 2020-02-25 修改適用於 ServletContextListener 之中，解決 AppSetting 類別建立問題
- * 2020-04-14 修改初始化流程
+ * 2021-01-13 原先 AppSetting 會在執行中消失的問題已解決，屬於 ThreadPool 自建發生的問題
+ * 此問題解決已更改 ThreadPool 建立時採用預設的 Executors.newCachedThreadPool()。
  */
 public class ServletContextStatic {
 

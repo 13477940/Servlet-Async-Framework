@@ -115,7 +115,7 @@ public class SimpleDataSource extends ConnectorConfig implements ConnectionPool 
             System.err.println("設定的連結持續時間必須是一個大於 0 的整數");
             return;
         }
-        this.maxActiveSecond = second * 1000;
+        this.maxActiveSecond = second * 1000L;
     }
 
     // 初始化基礎資料庫連結管理
@@ -130,7 +130,7 @@ public class SimpleDataSource extends ConnectorConfig implements ConnectionPool 
     // 簡易連接池回收管理
     private void setupSimpleManager() {
         if(null == worker) worker = ThreadPoolStatic.getInstance();
-        worker.submit(() -> {
+        worker.execute(() -> {
             while(runTag) {
                 for (HashMap<String, Object> connObj : pool) {
                     // 檢查是否有逾時的 Connection 未被關閉

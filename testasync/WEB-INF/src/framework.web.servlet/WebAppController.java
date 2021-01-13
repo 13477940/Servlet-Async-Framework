@@ -15,13 +15,9 @@ import java.util.Enumeration;
 
 public class WebAppController extends HttpServlet {
 
+    // 以 service() 處理請求，自行決定各 http method 處理方式
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
-        startAsync(req, resp);
-    }
-
-    @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) {
+    protected void service(HttpServletRequest req, HttpServletResponse resp) {
         startAsync(req, resp);
     }
 

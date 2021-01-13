@@ -11,6 +11,8 @@ import java.util.concurrent.*;
  * https://juejin.im/post/5c90698ef265da611d7423ae
  * http://givemepass-blog.logdown.com/posts/296960-how-to-use-the-threadpool
  * https://blog.csdn.net/zxysshgood/article/details/80499034
+ *
+ * TODO 目前此類別不採用，因為自建的 ThreadPool 會造成固定數量的執行緒使用完畢後就造成卡死的問題
  */
 public class ThreadPool {
 

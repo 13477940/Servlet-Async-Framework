@@ -146,7 +146,7 @@ var axios: any = window.axios || null;
             return def;
         };
     })();
-    (function () {
+    (function(){
         website["post_json"] = function(reqObj: any) {
             var def = $.Deferred();
             if (null != reqObj["header"] && false == Array.isArray(reqObj["header"])) {
@@ -183,7 +183,6 @@ var axios: any = window.axios || null;
             return def;
         };
     })();
-
     // ajax - post form-data multipart
     (function(){
         website["post_form_data"] = function(reqObj: any) {
