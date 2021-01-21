@@ -173,6 +173,9 @@ var $: any = window.$ || null;
                 }, 1000);
             }
             asyncTest();
+            for(var i = 0, len = 20; i < len; i++) {
+                asyncTest();
+            }
         })();
     }
 })();

@@ -14,6 +14,7 @@ public class ThreadPoolStatic {
     public static ExecutorService getInstance() {
         if(null == StaticHolder.worker && !StaticHolder.isShutdown) {
             StaticHolder.worker = Executors.newCachedThreadPool();
+            // StaticHolder.worker = Executors.newFixedThreadPool(200);
         }
         if(null == StaticHolder.worker) {
             try {
@@ -30,6 +31,7 @@ public class ThreadPoolStatic {
     public static void execute(Runnable runnable) {
         if(null == StaticHolder.worker && !StaticHolder.isShutdown) {
             StaticHolder.worker = Executors.newCachedThreadPool();
+            // StaticHolder.worker = Executors.newFixedThreadPool(200);
         }
         if(null == StaticHolder.worker) {
             try {

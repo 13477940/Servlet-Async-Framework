@@ -40,8 +40,7 @@ public class ResourceFileHandler extends RequestHandler {
     }
 
     private void processRequest() {
-        AppSetting setting = new AppSetting.Builder().build();
-        String dirSlash = setting.getDirSlash();
+        String dirSlash = new AppSetting.Builder().build().getDirSlash();
         String path = requestContext.getUrlPath();
         {
             String[] tmp = path.split("/");

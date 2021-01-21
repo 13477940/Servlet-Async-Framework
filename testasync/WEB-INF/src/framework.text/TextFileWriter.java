@@ -1,30 +1,31 @@
 package framework.text;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
+import java.io.RandomAccessFile;
 import java.lang.ref.WeakReference;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.charset.StandardCharsets;
 
 /**
  * 簡易純文字檔案寫入工具
+ *
+ * https://my.oschina.net/u/3839951/blog/4890777
  */
 public class TextFileWriter {
 
     private final File targetFile;
-
-    private BufferedWriter bufferedWriter = null;
-    private FileWriter fileWriter = null;
+    private final boolean isAppend;
+    private FileChannel fileChannel = null; // for nio
 
     private TextFileWriter(File targetFile, Boolean isAppend) {
         this.targetFile = targetFile;
+        this.isAppend = isAppend;
         try {
             if(null == targetFile || !targetFile.exists()) {
                 throw new Exception("需要使用 TextFileWriter 的檔案不存在");
             }
-            // 內容是否為 append 模式決定在於 FileWriter 而不是 BufferedWriter
-            // 此 append 模式影響到第一次寫入時的狀態，意即開檔後是清除重寫還是接續內容寫入
-            fileWriter = new FileWriter(targetFile, isAppend);
-            bufferedWriter = new WeakReference<>( new BufferedWriter(fileWriter) ).get();
+            fileChannel = new WeakReference<>( new RandomAccessFile(this.targetFile, "rw").getChannel() ).get();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -33,7 +34,8 @@ public class TextFileWriter {
     public void write(CharSequence content) {
         if(this.targetFile.canWrite()) {
             try {
-                bufferedWriter.append(content);
+                if(this.isAppend) fileChannel.position(fileChannel.size());
+                fileChannel.write(ByteBuffer.wrap(content.toString().getBytes(StandardCharsets.UTF_8)));
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -49,17 +51,8 @@ public class TextFileWriter {
     // 關閉順序是固定的，不能更動
     public void close() {
         try {
-            if(null != fileWriter) {
-                fileWriter.flush();
-            }
-            if(null != bufferedWriter) {
-                bufferedWriter.flush();
-            }
-            if(null != fileWriter) {
-                fileWriter.close();
-            }
-            if(null != bufferedWriter) {
-                bufferedWriter.close();
+            if(null != fileChannel) {
+                fileChannel.close();
             }
         } catch (Exception e) {
             // e.printStackTrace();

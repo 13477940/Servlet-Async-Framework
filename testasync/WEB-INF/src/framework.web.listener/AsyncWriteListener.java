@@ -1,5 +1,6 @@
 package framework.web.listener;
 
+import framework.bytebuf.ByteBufferBackedInputStream;
 import framework.observer.Bundle;
 import framework.observer.Handler;
 import framework.observer.Message;
@@ -9,6 +10,7 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.WriteListener;
 import java.io.*;
 import java.lang.ref.WeakReference;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
 /**
@@ -28,7 +30,7 @@ public class AsyncWriteListener implements WriteListener {
     private final boolean devMode = false;
 
     private final AsyncActionContext requestContext;
-    private BufferedInputStream inputStream;
+    private InputStream inputStream;
     private final Handler handler;
 
     // from InputStream
@@ -49,7 +51,8 @@ public class AsyncWriteListener implements WriteListener {
         this.requestContext = asyncActionContext;
         {
             try {
-                this.inputStream = new WeakReference<>( new BufferedInputStream(new ByteArrayInputStream(charSequence.toString().getBytes(StandardCharsets.UTF_8))) ).get();
+                // this.inputStream = new WeakReference<>( new BufferedInputStream(new ByteArrayInputStream(charSequence.toString().getBytes(StandardCharsets.UTF_8))) ).get();
+                this.inputStream = new WeakReference<>( new ByteBufferBackedInputStream(ByteBuffer.wrap(charSequence.toString().getBytes(StandardCharsets.UTF_8)))).get();
             } catch (Exception e) {
                 if(devMode) { e.printStackTrace(); }
             }
@@ -107,7 +110,8 @@ public class AsyncWriteListener implements WriteListener {
         }
         // 非同步模式之下將 inputStream 內容讀取並輸出至 ServletOutputStream
         int rLength;
-        int bMaxSize = 1024 * 16; // 快取上限（避免吃過多記憶體）
+        // int bMaxSize = 1024 * 16; // 快取上限（避免吃過多記憶體）
+        int bMaxSize = requestContext.getAsyncContext().getResponse().getBufferSize();
         while ( true ) {
             if(null == out) break;
             if(!out.isReady()) break;
@@ -117,7 +121,8 @@ public class AsyncWriteListener implements WriteListener {
                 // 過度的容量使用會造成系統不穩定，所以要設定 bMaxSize 值來限制
                 int bSize = inputStream.available();
                 if ( bSize > bMaxSize ) bSize = bMaxSize;
-                byte[] buffer = new byte[ bSize ];
+                byte[] buffer = new WeakReference<>( new byte[ bSize ] ).get();
+                assert buffer != null;
                 rLength = inputStream.read(buffer);
                 // if all byte process done
                 if( 0 > rLength || 0 == bSize ) {
