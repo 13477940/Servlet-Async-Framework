@@ -72,6 +72,7 @@ public class WebAppController extends HttpServlet {
                 .setServletConfig( new WeakReference<>( getServletConfig() ).get() )
                 .setAsyncContext( new WeakReference<>( asyncContext ).get() )
                 .build();
+        // TODO 檢查死鎖的原因
         ThreadPoolStatic.execute(asyncContextRunnable);
     }
 

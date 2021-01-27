@@ -107,7 +107,7 @@ public class AsyncContextRunnable implements Runnable {
             parseParams();
             return;
         }
-        // unstructured http request to 'error 400 bad request'
+        // when unstructured http request return 'error 400 bad request'
         {
             response400(new Handler(){
                 @Override
@@ -189,8 +189,7 @@ public class AsyncContextRunnable implements Runnable {
             }
             final HashMap<String, File> fileTmp = new HashMap<>();
             fileTmp.put("file", null);
-            // int bMaxSize = 1024 * 16; // 2020-05-05 修正 buffer max size 限制
-            int bMaxSize = asyncContext.getResponse().getBufferSize();
+            int bMaxSize = 1024 * 16; // buffer size limit
             try {
                 UploadParser uploadParser = new WeakReference<>( UploadParser.newParser() ).get();
                 {

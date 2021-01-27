@@ -8,7 +8,10 @@ import framework.web.context.AsyncActionContext;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.WriteListener;
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -110,8 +113,7 @@ public class AsyncWriteListener implements WriteListener {
         }
         // 非同步模式之下將 inputStream 內容讀取並輸出至 ServletOutputStream
         int rLength;
-        // int bMaxSize = 1024 * 16; // 快取上限（避免吃過多記憶體）
-        int bMaxSize = requestContext.getAsyncContext().getResponse().getBufferSize();
+        int bMaxSize = 1024 * 16; // buffer size limit
         while ( true ) {
             if(null == out) break;
             if(!out.isReady()) break;
