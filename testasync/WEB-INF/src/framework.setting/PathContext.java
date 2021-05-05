@@ -11,8 +11,8 @@ public class PathContext {
     private String exportDirPath;
     private String logDirPath;
 
-    private String hostOS;
-    private String dirSlash;
+    private final String hostOS;
+    private final String dirSlash;
 
     private boolean initStatus = false; // 記錄是否正確建立
 

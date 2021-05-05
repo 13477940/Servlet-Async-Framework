@@ -6,11 +6,11 @@ import framework.observer.Message;
 import framework.random.RandomServiceStatic;
 import framework.web.multipart.FileItemList;
 import framework.web.multipart.MultiPartParser;
+import jakarta.servlet.AsyncContext;
+import jakarta.servlet.ReadListener;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletInputStream;
 
-import javax.servlet.AsyncContext;
-import javax.servlet.ReadListener;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -28,7 +28,7 @@ import java.lang.ref.WeakReference;
  * 調用 onDataAvailable 是一個重複性的動作，
  * 直到該請求所有上傳的資料都傳遞完成才會呼叫 onAllDataRead
  */
-public class AsyncReadListener implements ReadListener {
+@Deprecated public class AsyncReadListener implements ReadListener {
 
     private final boolean devMode = false;
 

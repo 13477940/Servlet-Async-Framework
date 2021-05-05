@@ -3,9 +3,9 @@ package framework.web.session.context;
 import com.google.gson.JsonObject;
 import framework.time.TimeService;
 import framework.web.context.AsyncActionContext;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
 import java.lang.ref.WeakReference;
 import java.time.LocalDateTime;
 

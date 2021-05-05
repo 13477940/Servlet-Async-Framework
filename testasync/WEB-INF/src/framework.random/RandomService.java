@@ -13,13 +13,6 @@ import java.time.format.DateTimeFormatter;
  */
 public abstract class RandomService {
 
-    private final String str_num = "0123456789";
-    private final String str_upper_num = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    private final String str_lower_num = "abcdefghijklmnopqrstuvwxyz0123456789";
-    private final String str_full = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-
-    private final int defaultSize = 8; // default random string length
-
     private final SecureRandom random;
 
     RandomService() {
@@ -40,6 +33,8 @@ public abstract class RandomService {
         return sbd.toString();
     }
     public String getTimeHash() {
+        // default random string length
+        int defaultSize = 8;
         return getTimeHash(defaultSize);
     }
 
@@ -60,6 +55,7 @@ public abstract class RandomService {
      */
     public String getRandomString(int ranStrLength) {
         StringBuilder sbd = new StringBuilder();
+        String str_full = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         int strLen = str_full.length();
         for(int i = 0; i < ranStrLength; i++) {
             int iRan = random.nextInt(strLen);
@@ -74,6 +70,7 @@ public abstract class RandomService {
      */
     public String getLowerCaseRandomString(int ranStrLength) {
         StringBuilder sbd = new StringBuilder();
+        String str_lower_num = "abcdefghijklmnopqrstuvwxyz0123456789";
         int strLen = str_lower_num.length();
         for(int i = 0; i < ranStrLength; i++) {
             int iRan = random.nextInt(strLen);
@@ -88,6 +85,7 @@ public abstract class RandomService {
      */
     public String getUpperCaseRandomString(int ranStrLength) {
         StringBuilder sbd = new StringBuilder();
+        String str_upper_num = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         int strLen = str_upper_num.length();
         for(int i = 0; i < ranStrLength; i++) {
             int iRan = random.nextInt(strLen);
@@ -102,6 +100,7 @@ public abstract class RandomService {
      */
     public String getRandomNumber(int ranNumLength) {
         StringBuilder sbd = new StringBuilder();
+        String str_num = "0123456789";
         int strLen = str_num.length();
         for(int i = 0; i < ranNumLength; i++) {
             int iRan = random.nextInt(strLen);

@@ -2,9 +2,8 @@ package app.listener;
 
 import app.handler.*;
 import framework.web.executor.WebAppServicePoolStatic;
-
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
+import jakarta.servlet.ServletContextEvent;
+import jakarta.servlet.ServletContextListener;
 
 public class AppContextListener implements ServletContextListener {
 

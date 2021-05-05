@@ -5,6 +5,9 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.Objects;
 
+/**
+ * https://stackoverflow.com/questions/4332264/wrapping-a-bytebuffer-with-an-inputstream
+ */
 public class ByteBufferBackedInputStream extends InputStream {
 
     private ByteBuffer backendBuffer;

@@ -1,4 +1,4 @@
-package test.byftest;
+package framework.bytebuf;
 
 import java.io.IOException;
 import java.io.OutputStream;

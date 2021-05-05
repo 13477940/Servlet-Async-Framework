@@ -1,9 +1,9 @@
 package framework.web.multipart;
 
 import framework.random.RandomServiceStatic;
+import jakarta.servlet.AsyncContext;
+import jakarta.servlet.ServletContext;
 
-import javax.servlet.AsyncContext;
-import javax.servlet.ServletContext;
 import java.io.*;
 import java.lang.ref.WeakReference;
 import java.nio.charset.StandardCharsets;
@@ -16,7 +16,7 @@ import java.util.ArrayList;
  * 2019-07-05 重構完成並修正可能發生的 byte 取碼處理錯誤問題
  * 2020-04-14 請改用 https://github.com/Elopteryx/upload-parser，此類別將被凍結保存！
  */
-public class MultiPartParser {
+@Deprecated public class MultiPartParser {
 
     private final AsyncContext asyncContext;
 

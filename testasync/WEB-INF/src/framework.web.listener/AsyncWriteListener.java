@@ -5,9 +5,9 @@ import framework.observer.Bundle;
 import framework.observer.Handler;
 import framework.observer.Message;
 import framework.web.context.AsyncActionContext;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.WriteListener;
 
-import javax.servlet.ServletOutputStream;
-import javax.servlet.WriteListener;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -54,7 +54,6 @@ public class AsyncWriteListener implements WriteListener {
         this.requestContext = asyncActionContext;
         {
             try {
-                // this.inputStream = new WeakReference<>( new BufferedInputStream(new ByteArrayInputStream(charSequence.toString().getBytes(StandardCharsets.UTF_8))) ).get();
                 this.inputStream = new WeakReference<>( new ByteBufferBackedInputStream(ByteBuffer.wrap(charSequence.toString().getBytes(StandardCharsets.UTF_8)))).get();
             } catch (Exception e) {
                 if(devMode) { e.printStackTrace(); }

@@ -387,18 +387,19 @@ public class SimpleOkHttpClient {
         }
         // #200807 避免因 exception 而造成 HttpClient 無 handler 回應的問題
         try {
-            String content_type = response.body().contentType().toString();
+            ResponseBody respBody = Objects.requireNonNull(response.body());
+            String content_type = Objects.requireNonNull(respBody.contentType()).toString();
             if (content_type.length() == 0) {
-                processTextResponse(headers, response.body().byteStream(), handler);
+                processTextResponse(headers, respBody.byteStream(), handler);
             } else {
-                if ( content_type.contains("text/") || content_type.contains("application/json") || content_type.contains("application/x-msdownload") ) {
-                    if ( alwaysDownload ) {
-                        processFileResponse(headers, response.body().byteStream(), handler);
+                if (content_type.contains("text/") || content_type.contains("application/json") || content_type.contains("application/x-msdownload")) {
+                    if (alwaysDownload) {
+                        processFileResponse(headers, respBody.byteStream(), handler);
                     } else {
-                        processTextResponse(headers, response.body().byteStream(), handler);
+                        processTextResponse(headers, respBody.byteStream(), handler);
                     }
                 } else {
-                    processFileResponse(headers, response.body().byteStream(), handler);
+                    processFileResponse(headers, respBody.byteStream(), handler);
                 }
             }
         } catch (Exception e) {

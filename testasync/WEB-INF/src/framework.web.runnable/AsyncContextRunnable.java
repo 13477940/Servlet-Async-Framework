@@ -1,7 +1,5 @@
 package framework.web.runnable;
 
-import com.github.elopteryx.upload.PartOutput;
-import com.github.elopteryx.upload.UploadParser;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import framework.observer.Handler;
@@ -14,13 +12,15 @@ import framework.web.multipart.FileItemList;
 import framework.web.session.context.UserContext;
 import framework.web.session.pattern.UserMap;
 import framework.web.session.service.SessionServiceStatic;
+import jakarta.servlet.AsyncContext;
+import jakarta.servlet.ServletConfig;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+import upload.PartOutput;
+import upload.UploadParser;
 
-import javax.servlet.AsyncContext;
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -191,6 +191,7 @@ public class AsyncContextRunnable implements Runnable {
             fileTmp.put("file", null);
             int bMaxSize = 1024 * 16; // buffer size limit
             try {
+                // https://github.com/Elopteryx/upload-parser
                 UploadParser uploadParser = new WeakReference<>( UploadParser.newParser() ).get();
                 {
                     assert uploadParser != null;

@@ -1,6 +1,7 @@
 package framework.web.servlet;
 
-import javax.servlet.ServletContext;
+import jakarta.servlet.ServletContext;
+
 import java.lang.ref.WeakReference;
 
 /**

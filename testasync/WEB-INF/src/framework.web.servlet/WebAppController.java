@@ -2,17 +2,20 @@ package framework.web.servlet;
 
 import framework.thread.ThreadPoolStatic;
 import framework.web.runnable.AsyncContextRunnable;
+import jakarta.servlet.AsyncContext;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
-import javax.servlet.AsyncContext;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.lang.ref.WeakReference;
 import java.nio.charset.StandardCharsets;
 import java.sql.Driver;
 import java.sql.DriverManager;
 import java.util.Enumeration;
 
+/**
+ * ＃2021-05-05 fixed for tomcat 10 to jakarta
+ */
 public class WebAppController extends HttpServlet {
 
     // 以 service() 處理請求，自行決定各 http method 處理方式
@@ -64,7 +67,7 @@ public class WebAppController extends HttpServlet {
                     e.printStackTrace();
                 }
             }
-            ServletContextStatic.setInstance( new WeakReference<>( getServletContext() ).get() );
+            ServletContextStatic.setInstance(getServletContext());
         }
         // Process Async Request
         AsyncContextRunnable asyncContextRunnable = new AsyncContextRunnable.Builder()
@@ -72,7 +75,12 @@ public class WebAppController extends HttpServlet {
                 .setServletConfig( new WeakReference<>( getServletConfig() ).get() )
                 .setAsyncContext( new WeakReference<>( asyncContext ).get() )
                 .build();
-        // TODO 檢查死鎖的原因
+        /*
+         * 目前測出
+         * 『自定義 ThreadPool』、
+         * 『asyncContext.getResponse().getBufferSize()』
+         * 會造成 AppSetting 發生錯誤
+         */
         ThreadPoolStatic.execute(asyncContextRunnable);
     }
 

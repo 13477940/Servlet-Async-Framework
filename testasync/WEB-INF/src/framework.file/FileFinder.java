@@ -85,12 +85,12 @@ public class FileFinder {
             File[] list = baseFile.listFiles();
             if(null == list) return null;
             for(File pFile : list) {
-                if(fileName.toLowerCase().equals(pFile.getName().toLowerCase())) {
+                if(fileName.equalsIgnoreCase(pFile.getName())) {
                     res = pFile;
                 }
             }
         } else {
-            if(fileName.toLowerCase().equals(baseFile.getName().toLowerCase())) {
+            if(fileName.equalsIgnoreCase(baseFile.getName())) {
                 res = baseFile;
             }
         }
