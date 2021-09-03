@@ -16,11 +16,11 @@
 
 package upload.internal;
 
-import jakarta.servlet.http.HttpServletRequest;
 import upload.PartOutput;
 import upload.interfaces.PartStream;
 import upload.interfaces.UploadContext;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;

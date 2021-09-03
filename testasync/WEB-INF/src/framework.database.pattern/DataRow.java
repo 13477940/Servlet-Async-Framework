@@ -99,15 +99,8 @@ public class DataRow {
     /**
      * 原依照 fastjson 規則採用命名，將廢棄
      */
-    public JsonObject toJSONObject() {
-        JsonObject obj = new JsonObject();
-        if(null == this.instance) return null;
-        for(Map.Entry<String, String> entry : prototype().entrySet()) {
-            String key = entry.getKey().toLowerCase(); // Key - LowerCase
-            String value = Objects.requireNonNullElse(entry.getValue(), "");
-            obj.addProperty(key, value);
-        }
-        return obj;
+    @Deprecated public JsonObject toJSONObject() {
+        return toJsonObject();
     }
 
     /**

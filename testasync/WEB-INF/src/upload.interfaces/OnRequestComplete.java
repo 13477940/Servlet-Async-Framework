@@ -16,9 +16,9 @@
 
 package upload.interfaces;
 
-import jakarta.servlet.ServletException;
 import upload.UploadParser;
 
+import javax.servlet.ServletException;
 import java.io.IOException;
 
 /**

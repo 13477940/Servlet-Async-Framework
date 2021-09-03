@@ -11,12 +11,12 @@ import framework.text.TextFileWriter;
 import framework.web.listener.AsyncWriteListener;
 import framework.web.multipart.FileItem;
 import framework.web.multipart.FileItemList;
-import jakarta.servlet.*;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import org.apache.tika.Tika;
 
+import javax.servlet.*;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.*;
 import java.lang.ref.WeakReference;
 import java.net.URLDecoder;

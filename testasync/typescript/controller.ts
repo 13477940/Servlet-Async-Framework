@@ -142,19 +142,6 @@ var $: any = window.$ || null;
                 });
             });
         })();
-        // dropdown demo
-        (function(){
-            var dropdown_list = [
-                "<div style='padding: 15px 20px;color: #000;'>option 1</div>",
-                "<div style='padding: 15px 20px;color: #000;'>option 2</div>",
-                "<div style='padding: 15px 20px;color: #000;'>option 3</div>",
-                "<div style='padding: 15px 20px;color: #000;'>option 4</div>",
-                "<div style='padding: 15px 20px;color: #000;'>option 5</div>"
-            ];
-            website.dropdown($("div[ui_key=btn_dropdown]"), dropdown_list).done(function(dropdown: any){
-                console.log(dropdown);
-            });
-        })();
         (function(){
             function asyncTest() {
                 setTimeout(function(){
@@ -173,9 +160,10 @@ var $: any = window.$ || null;
                 }, 1000);
             }
             asyncTest();
+            /*
             for(var i = 0, len = 20; i < len; i++) {
                 asyncTest();
-            }
+            }*/
         })();
     }
 })();

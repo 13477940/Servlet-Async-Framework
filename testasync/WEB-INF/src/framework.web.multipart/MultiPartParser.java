@@ -1,9 +1,9 @@
 package framework.web.multipart;
 
 import framework.random.RandomServiceStatic;
-import jakarta.servlet.AsyncContext;
-import jakarta.servlet.ServletContext;
 
+import javax.servlet.AsyncContext;
+import javax.servlet.ServletContext;
 import java.io.*;
 import java.lang.ref.WeakReference;
 import java.nio.charset.StandardCharsets;

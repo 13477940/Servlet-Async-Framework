@@ -42,8 +42,7 @@ public class TimeService {
 
     // https://currentmillis.com/
     public long currentTimeMillis() {
-        ZoneId zoneId = ZoneId.systemDefault();
-        return ldt.atZone(zoneId).toInstant().toEpochMilli();
+        return ldt.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
     }
 
     public LocalDateTime prototype() {

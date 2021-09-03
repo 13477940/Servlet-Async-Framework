@@ -69,12 +69,7 @@ public class DataTable {
      * 原依照 fastjson 規則採用命名，將進行廢棄
      */
     @Deprecated public JsonArray toJSONArray() {
-        if(null == this.instance) return null;
-        JsonArray arr = new JsonArray();
-        for(DataRow row : prototype()) {
-            arr.add(row.toJSONObject());
-        }
-        return arr;
+        return toJsonArray();
     }
 
     /**

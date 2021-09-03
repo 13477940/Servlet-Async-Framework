@@ -8,6 +8,9 @@ import java.lang.ref.WeakReference;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 
+/**
+ * #210821 增加檔案名稱及副檔名處理
+ */
 public class FileItem {
 
     private File file;
@@ -78,6 +81,20 @@ public class FileItem {
         return new WeakReference<>( inputStream ).get();
     }
 
+    /**
+     * 僅取得檔案名稱 -> ex. test.txt -> text
+     */
+    public String getFileName() {
+        return parse_file_name(this.name, "name");
+    }
+
+    /**
+     * 僅取得檔案副檔名 -> ex. test.txt -> txt
+     */
+    public String getFileExtension() {
+        return parse_file_name(this.name, "extension");
+    }
+
     public static class Builder {
 
         private File file = null;
@@ -121,6 +138,45 @@ public class FileItem {
             return new FileItem(file, name, fieldName, contentType, size, isFormField);
         }
 
+    }
+
+    /**
+     * 取得檔案名稱，type = "name", "extension"
+     */
+    private String parse_file_name(String file_name_str, String parse_type) {
+        // null check
+        if(null == file_name_str || file_name_str.length() == 0) return null;
+        String res = null;
+        if( "name".equalsIgnoreCase(parse_type) ) {
+            String[] sArr = file_name_str.split("\\.");
+            StringBuilder sbd = new StringBuilder();
+            for (int i = 0, len = sArr.length; i < len; i++) {
+                String s = sArr[i];
+                // 如果沒有副檔名時
+                if (sArr.length == 1) {
+                    sbd.append(s);
+                    break;
+                }
+                // 正常處理繼續以下步驟
+                int max = len - 1;
+                if (i != max) {
+                    sbd.append(s);
+                }
+                if (i < max - 1) {
+                    sbd.append(".");
+                }
+            }
+            res = sbd.toString();
+        }
+        if( "extension".equalsIgnoreCase(parse_type) ) {
+            String[] sArr = file_name_str.split("\\.");
+            if(sArr.length > 1) {
+                res = sArr[sArr.length-1].toLowerCase();
+            } else {
+                return null;
+            }
+        }
+        return res;
     }
 
 }

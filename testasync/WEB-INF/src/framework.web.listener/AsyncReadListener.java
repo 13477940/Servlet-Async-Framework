@@ -6,11 +6,11 @@ import framework.observer.Message;
 import framework.random.RandomServiceStatic;
 import framework.web.multipart.FileItemList;
 import framework.web.multipart.MultiPartParser;
-import jakarta.servlet.AsyncContext;
-import jakarta.servlet.ReadListener;
-import jakarta.servlet.ServletContext;
-import jakarta.servlet.ServletInputStream;
 
+import javax.servlet.AsyncContext;
+import javax.servlet.ReadListener;
+import javax.servlet.ServletContext;
+import javax.servlet.ServletInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;

@@ -7,8 +7,6 @@ public class SessionCounter {
 
     private static HashMap<String, HttpSession> onlineCount = null;
 
-    static {}
-
     public static void addCount(HttpSession session) {
         if(null == onlineCount) onlineCount = new HashMap<>();
         onlineCount.put(session.getId(), session);

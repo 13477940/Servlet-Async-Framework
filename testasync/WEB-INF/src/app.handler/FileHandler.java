@@ -29,7 +29,7 @@ public class FileHandler extends RequestHandler {
     @Override
     protected boolean checkIsMyJob(AsyncActionContext asyncActionContext) {
         if(asyncActionContext.isFileAction()) return false;
-        return "file".equals(asyncActionContext.getParameters().get("act"));
+        return "file".equalsIgnoreCase(asyncActionContext.getParameters().get("act"));
     }
 
     private void processRequest() {

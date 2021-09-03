@@ -2,9 +2,15 @@ package app.listener;
 
 import app.handler.*;
 import framework.web.executor.WebAppServicePoolStatic;
-import jakarta.servlet.ServletContextEvent;
-import jakarta.servlet.ServletContextListener;
 
+import javax.servlet.ServletContextEvent;
+import javax.servlet.ServletContextListener;
+
+/**
+ * webapp main program entry point
+ * modularization load request handler class
+ * you can add request handlers to increase functionality
+ */
 public class AppContextListener implements ServletContextListener {
 
     @Override
@@ -18,6 +24,9 @@ public class AppContextListener implements ServletContextListener {
     }
 
     @Override
-    public void contextDestroyed(ServletContextEvent servletContextEvent) {}
+    public void contextDestroyed(ServletContextEvent servletContextEvent) {
+        // TODO you should close connection pool right here.
+        // ConnectionPoolStatic.getInstance().shutdown();
+    }
 
 }

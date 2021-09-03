@@ -16,12 +16,12 @@
 
 package upload.internal;
 
-import jakarta.servlet.ReadListener;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.ServletInputStream;
-import jakarta.servlet.http.HttpServletRequest;
 import upload.errors.MultipartException;
 
+import javax.servlet.ReadListener;
+import javax.servlet.ServletException;
+import javax.servlet.ServletInputStream;
+import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 
 import static java.util.Objects.requireNonNull;

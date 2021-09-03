@@ -15,11 +15,11 @@ import java.nio.charset.StandardCharsets;
 
 /**
  * AppSetting 主要管理作業系統判斷、WebApp 名稱與統一的檔案路徑，
- * 在運行 Tomcat 的 WebApp 中會直接藉由 WEB-INF 資料夾作為定位點，
+ * 在運行 Tomcat 的 WebApp 中會直接藉由當前專案 WEB-INF 資料夾作為定位點，
  * 非 Tomcat 環境中則需要由使用者自行創建一個 baseFileDir 作為定位點。
  * 要注意 AppSetting 於多層次的 jar 檔封裝後可能會有路徑無法取得的問題發生。
  *
- * #201116 已確認之前 AppSetting 無法正常初始化是被 ThreadPool 影響的關係
+ * #201116 已確認之前 AppSetting 無法正常初始化是被 ThreadPool 卡死的關係影響到
  */
 public class AppSetting {
 
@@ -62,16 +62,24 @@ public class AppSetting {
         return this.pathContext;
     }
 
-    public JsonObject getConfig(String configDirName, String configFileName) {
-        return getConfig(new FileFinder.Builder().build().find(configDirName, configFileName));
-    }
-
+    // 預設於 WEB-INF 資料夾底下尋找設定檔
     public JsonObject getConfig() {
-        FileFinder finder = new FileFinder.Builder().build();
+        FileFinder finder = new FileFinder.Builder().setBaseFile(AppSettingStatic.get_web_inf_dir()).build();
         File file = finder.find(this.configDirName, this.configFileName);
         return getConfig(file);
     }
 
+    // 預設於 WEB-INF 資料夾底下尋找設定檔
+    public JsonObject getConfig(String configDirName, String configFileName) {
+        return getConfig(
+                new FileFinder.Builder()
+                        .setBaseFile(AppSettingStatic.get_web_inf_dir())
+                        .build()
+                        .find(configDirName, configFileName)
+        );
+    }
+
+    // 於任意位址尋找設定檔
     public JsonObject getConfig(String filePath) {
         File file = new File(filePath);
         if(file.exists()) {
@@ -84,6 +92,14 @@ public class AppSetting {
             }
         }
         return null;
+    }
+
+    /**
+     * TODO 測試用 API
+     * 取得 web-app 資料夾路徑
+     */
+    public File getWebAppDir() {
+        return AppSettingStatic.get_web_app_dir();
     }
 
     // getConfig 實作
@@ -172,6 +188,20 @@ public class AppSetting {
         }
 
         public AppSetting build() {
+            // 如果是支援的資料夾路徑則進行快取，並作為基礎定位資料夾路徑
+            // fixed for IIS or Other Web Server Project File Path
+            {
+                ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+                URL url = classLoader.getResource("");
+                assert url != null;
+                if(url.getPath().contains("WEB-INF")) {
+                    File tmp_file = new File(url.getPath());
+                    File web_inf_dir = tmp_file.getParentFile();
+                    if(null == AppSettingStatic.get_web_inf_dir()) {
+                        AppSettingStatic.set_web_inf_dir(web_inf_dir);
+                    }
+                }
+            }
             // check is webapp(in servlet container)
             {
                 if(null == this.appName || this.appName.length() == 0) {
@@ -182,6 +212,16 @@ public class AppSetting {
                             // 確認執行於 Servlet Container 環境之中
                             if(url.getPath().contains("WEB-INF")) {
                                 this.appName = ServletContextStatic.getInstance().getServletContextName();
+                            } else {
+                                if(null != AppSettingStatic.get_web_inf_dir()) {
+                                    this.appName = AppSettingStatic.get_web_inf_dir().getParentFile().getName();
+                                }
+                            }
+                        } else {
+                            try {
+                                throw new Exception("classLoader.getResource() 為空值！");
+                            } catch (Exception e) {
+                                e.printStackTrace();
                             }
                         }
                     }

@@ -3,9 +3,9 @@ package framework.web.session.context;
 import com.google.gson.JsonObject;
 import framework.time.TimeService;
 import framework.web.context.AsyncActionContext;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 import java.lang.ref.WeakReference;
 import java.time.LocalDateTime;
 
@@ -96,7 +96,7 @@ public class UserContext {
         return extenObj;
     }
 
-    public JsonObject toJSONObject() {
+    public JsonObject toJsonObject() {
         JsonObject obj = new JsonObject();
         obj.addProperty("session_id", sessionID);
         obj.addProperty("data_id", dataID);
@@ -109,6 +109,10 @@ public class UserContext {
         obj.addProperty("create_time", createTime);
         obj.add("exten_obj", extenObj);
         return obj;
+    }
+
+    @Deprecated public JsonObject toJSONObject() {
+        return toJsonObject();
     }
 
     // 由 HttpServletRequest 判斷遠端 IP

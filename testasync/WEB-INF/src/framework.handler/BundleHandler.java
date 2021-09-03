@@ -1,34 +1,31 @@
-package framework.string.handler;
+package framework.handler;
 
 import framework.observer.Bundle;
 import framework.observer.Handler;
 import framework.observer.Message;
 
 /**
- * 基礎形式的 Observer Design Pattern 應用
- * 僅使用 String 內容作為判斷工作責任歸屬的責任鏈節點
- * 需要附帶另外的參數可藉由繼承此類別
- * 通常用來簡化 switch、多層 if-else 判斷處理結構
+ * 藉由 observer.Bundle 型態作為傳遞參數封裝
  */
-public abstract class StringHandler {
+abstract public class BundleHandler {
 
-    private StringHandler nextHandler;
+    private BundleHandler nextHandler;
     private Handler nonMatchedExceptionHandler;
 
     /**
      * Handler 處理事件起始點，通常直接呼叫 checkIsMyJob()
      */
-    public abstract void startup(String str);
+    public abstract void startup(Bundle bundle);
 
     /**
      * Handler 確認是否為自身的工作
      */
-    protected abstract boolean checkIsMyJob(String str);
+    protected abstract boolean checkIsMyJob(Bundle bundle);
 
     /**
      * 設定下一位 Handler
      */
-    public void setNextHandler(StringHandler handler) {
+    public void setNextHandler(BundleHandler handler) {
         this.nextHandler = handler;
         if(null != this.nonMatchedExceptionHandler) {
             this.nextHandler.setNonMatchedExceptionHandler(this.nonMatchedExceptionHandler);
@@ -38,9 +35,9 @@ public abstract class StringHandler {
     /**
      * 如果該項工作不屬於這位 Handler 轉交給下一個 Handler
      */
-    protected void passToNext(String str) {
+    protected void passToNext(Bundle bundle) {
         if(null != nextHandler) {
-            this.nextHandler.startup(str);
+            this.nextHandler.startup(bundle);
         } else {
             // 如果是持續遞交到沒有下一個 handler 表示為無效的請求
             if(null != this.nonMatchedExceptionHandler) {
@@ -64,7 +61,7 @@ public abstract class StringHandler {
     /**
      * 取得下一位 Handler
      */
-    public StringHandler getNextHandler() {
+    public BundleHandler getNextHandler() {
         return this.nextHandler;
     }
 

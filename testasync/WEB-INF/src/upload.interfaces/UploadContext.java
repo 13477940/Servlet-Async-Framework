@@ -16,9 +16,9 @@
 
 package upload.interfaces;
 
-import jakarta.servlet.http.HttpServletRequest;
 import upload.PartOutput;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 
 /**

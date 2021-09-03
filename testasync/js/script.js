@@ -1,1 +1,490 @@
-"use strict";var website=window.website||{},$=window.$||null,axios=window.axios||null;website.script=function(e,a){if(Array.isArray(e))for(var o=0,n=e.length;o<n;o++)t(e[o]);else t(e);function t(e){var o=document.createElement("script");o.src=e,o.onload=a,document.head.appendChild(o)}},website.randomString=function(e){var a="abcdefghijklmnopqrstuvwxyz0123456789",o=[],n=16,t=a.length;null!=e&&(n=e);for(var r=0;r<n;r++){var i=a.charAt(Math.floor(Math.random()*t));o.push(i)}return o.join("")},website.get=function(e){var a=$.Deferred();if(null!=e.header&&0==Array.isArray(e.header))return console.error("header 參數必須使用 array 型態"),void a.reject();var o={};if(function(){var a=e.header;for(var n in a){var t=a[n],r=t.key,i=t.value;o[r]=i}}(),null!=e.data&&0==Array.isArray(e.data))return console.error("data 參數必須使用 array 型態"),void a.reject();var n=new URLSearchParams;!function(){var a=e.data;for(var o in a){var t=a[o],r=t.key,i=t.value;n.append(r,i)}}();var t={transformResponse:[function(e){return e}],headers:o,params:n};return axios.get(e.url,t).then((function(e){var o={status:"done",status_code:e.status,data:e.data};a.resolve(o.data)})).catch((function(e){a.reject(e)})),a},website.post=function(e){var a=$.Deferred();if(null!=e.header&&0==Array.isArray(e.header))return console.error("header 參數必須使用 array 型態"),void a.reject();var o={};if(function(){var a=e.header;for(var n in a){var t=a[n],r=t.key,i=t.value;o[r]=i}}(),null!=e.data&&0==Array.isArray(e.data))return console.error("data 參數必須使用 array 型態"),void a.reject();var n=new URLSearchParams;!function(){var a=e.data;for(var o in a){var t=a[o],r=t.key,i=t.value;n.append(r,i)}}();var t={transformResponse:[function(e){return e}],headers:o};return axios.post(e.url,n,t).then((function(e){var o={status:"done",status_code:e.status,data:e.data};a.resolve(o.data)})).catch((function(e){a.reject(e)})),a},website.post_json=function(e){var a=$.Deferred();if(null!=e.header&&0==Array.isArray(e.header))return console.error("header 參數必須使用 array 型態"),void a.reject();var o={};return function(){var a=e.header;for(var n in a){var t=a[n],r=t.key,i=t.value;o[r]=i}}(),axios.post(e.url,e.text).then((function(e){var o={status:"done",status_code:e.status,data:e.data};a.resolve(o.data)})).catch((function(e){a.reject(e)})),a},website.post_form_data=function(e){var a=$.Deferred();if(null!=e.header&&0==Array.isArray(e.header))return console.error("header 參數必須使用 array 型態"),void a.reject();var o={};if(function(){var a=e.header;for(var n in a){var t=a[n],r=t.key,i=t.value;o[r]=i}}(),null!=e.data&&0==Array.isArray(e.data))return console.error("data 參數必須使用 array 型態"),void a.reject();var n=new FormData;!function(){if(null!=e.data){var a=e.data;for(var o in a){var t=a[o];n.append(t.key,t.value)}}}();var t={transformResponse:[function(e){return e}],headers:o,onUploadProgress:function(e){var o=Math.round(100*e.loaded/e.total),n={status:"upload_progress",progress_value:String(o)};a.notify(n)}};return axios.post(e.url,n,t).then((function(e){var o={status:"done",status_code:e.status,data:e.data};a.resolve(o.data)})).catch((function(e){a.reject(e)})),a},website.dialog=function(e){var a,o=$.Deferred(),n=website.randomString(16),t=$(((a=[]).push("<div modal_dialog_key='overlay' style='display: none;position: fixed;top: 0px;left: 0px;height: 100vh;width: 100vw;overflow: auto;'>"),a.push("<div modal_dialog_key='wrap' style='margin: auto'></div>"),a.push("</div>"),a.join("")));t.attr("modal_dialog_ssid",n),t.css("z-index","10"),t.css("background-color","rgba(245,245,245,0.5)"),null!=e.content&&e.content.length>0&&t.find("div[modal_dialog_key=wrap]").append(e.content),$("body").append(t),t.css("display","flex");var r={dialog:t.find("div[modal_dialog_key=wrap]"),overlay:t,close:function(){t.remove()}};return o.resolve(r),o},website.dropdown=function(e,a){var o,n=$.Deferred(),t=null,r=website.randomString(12);(o=[]).push("<div dropdown_ssid='"+r+"' ui_type='dropdown'>"),o.push("<div ui_type='dropdown_label' style='position: relative;z-index: 2;'>dropdown label</div>"),o.push("<div ui_type='dropdown_list' style='display: none;position: absolute;max-height: 400px;'></div>"),o.push("</div>");var i=(t=$(o.join(""))).find("div[ui_type=dropdown_list]");i.css("z-index","3"),function(){if(null!=a)for(var e=0,o=a.length;e<o;e++)i.append(a[e])}();var d=t.find("div[ui_type=dropdown_label]"),l=!1,s=$("<div dropdown_overlay='"+r+"' style='position: fixed;top: 0px;left: 0px;z-index: 1;width: 100vw;height: 100vh;'></div>");function u(){i.css("display","none"),$("div[dropdown_overlay='"+r+"']").remove(),l=!1}return d.on("click",(function(){l?u():(i.css("display","block"),$("body").append(s),s.on("click",(function(){u()})),l=!0)})),function(){e.append(t);var a={dropdown:t,label:d,list:i};n.resolve(a)}(),n},website.redirect=function(e,a){null==a&&(a=!0);var o=null;if(o=null==e?location.protocol+"//"+location.host+location.pathname:e,a)location.href=o;else{var n=Date.now();location.href=o+"?ei="+n}};$=window.$||null;!function(){var e,a=[];a.push("/testasync/js/jquery/jquery.min.js"),a.push("/testasync/js/axios/axios.min.js"),e=null,function o(){null!=(e=a.shift())?website.script(e,(function(){o()})):null==website.ready?console.error("該頁面不具有 window.website.ready 方法，無法完成初始化呼叫"):setTimeout((function(){website.ready()}),1)}()}(),website.ready=function(){var e;switch($("body").attr("page_key")){case"index":$("#btn_select_file").on("click",(function(){$("#upfile").click()})),$("#label_select_file").html("[未選擇檔案]"),$("#upfile").on("change",(function(){var e=$("#upfile")[0].files[0];null!=e?$("#label_select_file").html(e.name):$("#label_select_file").html("[未選擇檔案]")})),$("#btn_upload_submit").on("click",(function(){var e,a=$("#upfile")[0].files[0];e={url:"/testasync/index",data:[{key:"a",value:"100"},{key:"b",value:"ABC"},{key:"c",value:"國字測試"}]},null!=a&&e.data.push({key:"myfile",value:a}),website.post_form_data(e).progress((function(e){console.log(e)})).done((function(e){console.log(e)}))})),function(){function e(){website.dialog({content:"<div style='position: relative; width: 400px;height: 400px;margin: auto 0px auto 0px;background-color: #fff;border-radius: 5px;'><span dialog_btn='close' style='position: absolute;top: 20px;right: 20px;'>&times;</span>TEST</div>"}).done((function(e){console.log(e),e.overlay.css("background-color","rgba(190,190,190,0.5)"),e.dialog.find("span[dialog_btn=close]").on("click",(function(){e.close()}))}))}$("button[ui_key=btn_open_dialog]").on("click",(function(){e()}))}(),$("button[ui_key=btn_test_get]").on("click",(function(){website.get({url:"/testasync/index",data:[{key:"a",value:"100"},{key:"b",value:"ABC"},{key:"c",value:"國字測試"},{key:"d",value:"/// //aaa// a//cc[]///"}],header:[{key:"my-auth",value:"aaabbbcccdddeeefffggg_hi"}]}).done((function(e){console.log(e)}))})),$("button[ui_key=btn_test_post]").on("click",(function(){website.post({url:"/testasync/index",data:[{key:"a",value:"100"},{key:"b",value:"ABC"},{key:"c",value:"國字測試"},{key:"d",value:"/// //aaa// a//cc[]///"}]}).done((function(e){console.log(e)}))})),e=["<div style='padding: 15px 20px;color: #000;'>option 1</div>","<div style='padding: 15px 20px;color: #000;'>option 2</div>","<div style='padding: 15px 20px;color: #000;'>option 3</div>","<div style='padding: 15px 20px;color: #000;'>option 4</div>","<div style='padding: 15px 20px;color: #000;'>option 5</div>"],website.dropdown($("div[ui_key=btn_dropdown]"),e).done((function(e){console.log(e)})),function(){function e(){setTimeout((function(){var e={url:"/testasync/index",data:[{key:"A",value:"100"},{key:"B",value:"200"},{key:"C",value:"300"}]};website.get(e).done((function(e){var a=JSON.parse(e);console.log(a)}))}),1e3)}e();for(var a=0,o=20;a<o;a++)e()}()}};
+"use strict";
+var website = window.website || {};
+var $ = window.$ || null;
+var axios = window.axios || null;
+(function () {
+    website["script"] = function (url, readyFn) {
+        if (Array.isArray(url)) {
+            for (var i = 0, len = url.length; i < len; i++) {
+                var _url = url[i];
+                loadScript(_url);
+            }
+        }
+        else {
+            loadScript(url);
+        }
+        function loadScript(url) {
+            rm_rep_script(url);
+            append_load_script(url);
+        }
+        function append_load_script(url) {
+            var timer = setInterval(exec_load_fn, 1);
+            function exec_load_fn() {
+                if ("complete" == document.readyState) {
+                    var scriptTag = document.createElement('script');
+                    scriptTag.src = url;
+                    scriptTag.onload = readyFn;
+                    scriptTag.onerror = loadErrorFn;
+                    document.body.appendChild(scriptTag);
+                    clearInterval(timer);
+                }
+            }
+            function loadErrorFn(oError) {
+                clearInterval(timer);
+                console.log(oError);
+            }
+        }
+    };
+    function rm_rep_script(url) {
+        var elems = document.querySelectorAll("script");
+        var prefix = window.location.protocol + "//" + window.location.hostname;
+        var chk_str = prefix + url;
+        for (var i = 0, len = elems.length; i < len; i++) {
+            var elem = elems[i];
+            if (elem.src.indexOf(chk_str) > -1) {
+                elem.remove();
+            }
+        }
+    }
+})();
+(function () {
+    website["randomString"] = function (len) {
+        var t = "abcdefghijklmnopqrstuvwxyz0123456789";
+        var r = [];
+        var l = 16;
+        var tLen = t.length;
+        if (null != len)
+            l = len;
+        for (var i = 0; i < l; i++) {
+            var c = t.charAt(Math.floor(Math.random() * tLen));
+            r.push(c);
+        }
+        return r.join("");
+    };
+})();
+(function () {
+    (function () {
+        website["get"] = function (reqObj) {
+            var def = $.Deferred();
+            if (null != reqObj["header"] && false == Array.isArray(reqObj["header"])) {
+                console.error("header 參數必須使用 array 型態");
+                def.reject();
+                return;
+            }
+            var headers = {};
+            (function () {
+                var arr = reqObj["header"];
+                for (var index in arr) {
+                    var obj = arr[index];
+                    var key = obj["key"];
+                    var value = obj["value"];
+                    headers[key] = value;
+                }
+            })();
+            if (null != reqObj["data"] && false == Array.isArray(reqObj["data"])) {
+                console.error("data 參數必須使用 array 型態");
+                def.reject();
+                return;
+            }
+            var params = new URLSearchParams();
+            (function () {
+                var arr = reqObj["data"];
+                for (var index in arr) {
+                    var obj = arr[index];
+                    var key = obj["key"];
+                    var value = obj["value"];
+                    params.append(key, value);
+                }
+            })();
+            var config = {
+                transformResponse: [
+                    function (data) { return data; }
+                ],
+                headers: headers,
+                params: params
+            };
+            axios.get(reqObj["url"], config).then(function (response) {
+                var respObj = {
+                    status: "done",
+                    status_code: response.status,
+                    data: response.data
+                };
+                def.resolve(respObj.data);
+            }).catch(function (err) {
+                def.reject(err);
+            });
+            return def;
+        };
+    })();
+    (function () {
+        website["post"] = function (reqObj) {
+            var def = $.Deferred();
+            if (null != reqObj["header"] && false == Array.isArray(reqObj["header"])) {
+                console.error("header 參數必須使用 array 型態");
+                def.reject();
+                return;
+            }
+            var headers = {};
+            (function () {
+                var arr = reqObj["header"];
+                for (var index in arr) {
+                    var obj = arr[index];
+                    var key = obj["key"];
+                    var value = obj["value"];
+                    headers[key] = value;
+                }
+            })();
+            if (null != reqObj["data"] && false == Array.isArray(reqObj["data"])) {
+                console.error("data 參數必須使用 array 型態");
+                def.reject();
+                return;
+            }
+            var params = new URLSearchParams();
+            (function () {
+                var arr = reqObj["data"];
+                for (var index in arr) {
+                    var obj = arr[index];
+                    var key = obj["key"];
+                    var value = obj["value"];
+                    params.append(key, value);
+                }
+            })();
+            var config = {
+                transformResponse: [
+                    function (data) { return data; }
+                ],
+                headers: headers
+            };
+            axios.post(reqObj["url"], params, config).then(function (response) {
+                var respObj = {
+                    status: "done",
+                    status_code: response.status,
+                    data: response.data
+                };
+                def.resolve(respObj.data);
+            }).catch(function (err) {
+                def.reject(err);
+            });
+            return def;
+        };
+    })();
+    (function () {
+        website["post_json"] = function (reqObj) {
+            var def = $.Deferred();
+            if (null != reqObj["header"] && false == Array.isArray(reqObj["header"])) {
+                console.error("header 參數必須使用 array 型態");
+                def.reject();
+                return;
+            }
+            var headers = {};
+            (function () {
+                var arr = reqObj["header"];
+                for (var index in arr) {
+                    var obj = arr[index];
+                    var key = obj["key"];
+                    var value = obj["value"];
+                    headers[key] = value;
+                }
+            })();
+            var config = {
+                transformResponse: [
+                    function (data) { return data; }
+                ],
+                headers: headers
+            };
+            axios.post(reqObj["url"], reqObj["text"]).then(function (response) {
+                var respObj = {
+                    status: "done",
+                    status_code: response.status,
+                    data: response.data
+                };
+                def.resolve(respObj.data);
+            }).catch(function (err) {
+                def.reject(err);
+            });
+            return def;
+        };
+    })();
+    (function () {
+        website["post_form_data"] = function (reqObj) {
+            var def = $.Deferred();
+            if (null != reqObj["header"] && false == Array.isArray(reqObj["header"])) {
+                console.error("header 參數必須使用 array 型態");
+                def.reject();
+                return;
+            }
+            var headers = {};
+            (function () {
+                var arr = reqObj["header"];
+                for (var index in arr) {
+                    var obj = arr[index];
+                    var key = obj["key"];
+                    var value = obj["value"];
+                    headers[key] = value;
+                }
+            })();
+            if (null != reqObj["data"] && false == Array.isArray(reqObj["data"])) {
+                console.error("data 參數必須使用 array 型態");
+                def.reject();
+                return;
+            }
+            var formData = new FormData();
+            (function () {
+                if (null != reqObj["data"]) {
+                    var arr = reqObj["data"];
+                    for (var index in arr) {
+                        var obj = arr[index];
+                        formData.append(obj["key"], obj["value"]);
+                    }
+                }
+            })();
+            var config = {
+                transformResponse: [function (data) { return data; }],
+                headers: headers,
+                onUploadProgress: function (progressEvent) {
+                    var percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                    var percentStr = String(percentCompleted);
+                    var respObj = {
+                        status: "upload_progress",
+                        progress_value: percentStr
+                    };
+                    def.notify(respObj);
+                }
+            };
+            axios.post(reqObj["url"], formData, config).then(function (response) {
+                var respObj = {
+                    status: "done",
+                    status_code: response.status,
+                    data: response.data
+                };
+                def.resolve(respObj.data);
+            }).catch(function (err) {
+                def.reject(err);
+            });
+            return def;
+        };
+    })();
+})();
+(function () {
+    website["dialog"] = function (initObj) {
+        var def = $.Deferred();
+        var dialogId = website.randomString(16);
+        var dialogElem = $(buildDialogHtml());
+        (function () {
+            dialogElem.attr("modal_dialog_ssid", dialogId);
+            dialogElem.css("z-index", "10");
+            dialogElem.css("background-color", "rgba(90,90,90,0.5)");
+            if (null != initObj["content"] && initObj["content"].length > 0) {
+                dialogElem.find("div[modal_dialog_key=wrap]").append(initObj["content"]);
+            }
+        })();
+        $("body").append(dialogElem);
+        dialogElem.css("display", "flex");
+        var dialogObj = {
+            dialog: dialogElem.find("div[modal_dialog_key=wrap]"),
+            overlay: dialogElem,
+            close: function () {
+                dialogElem.remove();
+            }
+        };
+        (function () {
+            dialogElem.on("keydown", function (evt) {
+                if (27 == evt.keyCode) {
+                    dialogObj.close();
+                }
+            });
+        })();
+        def.resolve(dialogObj);
+        return def;
+    };
+    function buildDialogHtml() {
+        var tmp = [];
+        tmp.push("<div modal_dialog_key='overlay' tabindex='0' style='display: none;position: fixed;top: 0px;left: 0px;height: 100vh;width: 100vw;overflow: auto;'>");
+        tmp.push("<div modal_dialog_key='wrap' style='margin: auto'></div>");
+        tmp.push("</div>");
+        return tmp.join('');
+    }
+})();
+(function () {
+    website["redirect"] = function (url, onCache, ran_str) {
+        if (null == onCache)
+            onCache = true;
+        var targetURL = null;
+        if (null == url) {
+            targetURL = location.protocol + '//' + location.host + location.pathname;
+        }
+        else {
+            targetURL = url;
+        }
+        if (onCache) {
+            location.href = targetURL;
+        }
+        else {
+            var ts = Date.now();
+            var _ran_str = ts;
+            if (null != ran_str)
+                _ran_str = ran_str;
+            location.href = targetURL + "?ei=" + _ran_str;
+        }
+    };
+})();
+var $ = window.$ || null;
+(function () {
+    var arr = [];
+    (function () {
+        arr.push("/testasync/js/jquery/jquery.min.js");
+        arr.push("/testasync/js/axios/axios.min.js");
+    })();
+    (function () {
+        var tmpPath = null;
+        loadNext();
+        function loadNext() {
+            tmpPath = arr.shift();
+            if (null != tmpPath) {
+                website.script(tmpPath, function () {
+                    loadNext();
+                });
+            }
+            else {
+                scriptReady();
+            }
+        }
+    })();
+    function scriptReady() {
+        if (null == website.ready) {
+            console.error("該頁面不具有 window.website.ready 方法，無法完成初始化呼叫");
+        }
+        else {
+            setTimeout(function () {
+                website.ready();
+            }, 1);
+        }
+    }
+})();
+(function () {
+    website.ready = function () {
+        var page_key = $("body").attr("page_key");
+        switch (page_key) {
+            case "index":
+                {
+                    page_index();
+                }
+                break;
+        }
+    };
+    function page_index() {
+        (function () {
+            $("#btn_select_file").on("click", function () {
+                $("#upfile").click();
+            });
+        })();
+        (function () {
+            $("#label_select_file").html("[未選擇檔案]");
+            $("#upfile").on("change", function () {
+                var targetFile = $("#upfile")[0]["files"][0];
+                if (null != targetFile) {
+                    $("#label_select_file").html(targetFile.name);
+                }
+                else {
+                    $("#label_select_file").html("[未選擇檔案]");
+                }
+            });
+        })();
+        (function () {
+            $("#btn_upload_submit").on("click", function () {
+                var targetFile = $("#upfile")[0]["files"][0];
+                (function () {
+                    var reqObj = {
+                        url: "/testasync/index",
+                        data: [
+                            { key: "a", value: "100" },
+                            { key: "b", value: "ABC" },
+                            { key: "c", value: "國字測試" }
+                        ]
+                    };
+                    if (null != targetFile) {
+                        reqObj.data.push({
+                            key: "myfile",
+                            value: targetFile
+                        });
+                    }
+                    website.post_form_data(reqObj)
+                        .progress(function (prog) {
+                        console.log(prog);
+                    })
+                        .done(function (respd) {
+                        console.log(respd);
+                    });
+                })();
+            });
+        })();
+        (function () {
+            function openDialog() {
+                website.dialog({
+                    content: "<div style='position: relative; width: 400px;height: 400px;margin: auto 0px auto 0px;background-color: #fff;border-radius: 5px;'><span dialog_btn='close' style='position: absolute;top: 20px;right: 20px;'>&times;</span>TEST</div>"
+                }).done(function (dialogObj) {
+                    console.log(dialogObj);
+                    dialogObj.overlay.css("background-color", "rgba(190,190,190,0.5)");
+                    dialogObj.dialog.find("span[dialog_btn=close]").on("click", function () {
+                        dialogObj.close();
+                    });
+                });
+            }
+            $("button[ui_key=btn_open_dialog]").on("click", function () {
+                openDialog();
+            });
+        })();
+        (function () {
+            $("button[ui_key=btn_test_get]").on("click", function () {
+                website.get({
+                    url: "/testasync/index",
+                    data: [
+                        { key: "a", value: "100" },
+                        { key: "b", value: "ABC" },
+                        { key: "c", value: "國字測試" },
+                        { key: "d", value: "/// //aaa// a//cc[]///" }
+                    ],
+                    header: [
+                        { key: "my-auth", value: "aaabbbcccdddeeefffggg_hi" }
+                    ]
+                }).done(function (respd) {
+                    console.log(respd);
+                });
+            });
+        })();
+        (function () {
+            $("button[ui_key=btn_test_post]").on("click", function () {
+                website.post({
+                    url: "/testasync/index",
+                    data: [
+                        { key: "a", value: "100" },
+                        { key: "b", value: "ABC" },
+                        { key: "c", value: "國字測試" },
+                        { key: "d", value: "/// //aaa// a//cc[]///" }
+                    ]
+                }).done(function (respd) {
+                    console.log(respd);
+                });
+            });
+        })();
+        (function () {
+            function asyncTest() {
+                setTimeout(function () {
+                    var reqObj = {
+                        url: "/testasync/index",
+                        data: [
+                            { key: "A", value: "100" },
+                            { key: "B", value: "200" },
+                            { key: "C", value: "300" }
+                        ]
+                    };
+                    website.get(reqObj).done(function (respd) {
+                        var obj = JSON.parse(respd);
+                        console.log(obj);
+                    });
+                }, 1000);
+            }
+            asyncTest();
+        })();
+    }
+})();

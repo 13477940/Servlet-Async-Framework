@@ -22,7 +22,7 @@ public class SessionHandler extends RequestHandler {
 
     @Override
     protected boolean checkIsMyJob(AsyncActionContext asyncActionContext) {
-        return "session".equals(asyncActionContext.getParameters().get("act"));
+        return "session".equalsIgnoreCase(asyncActionContext.getParameters().get("act"));
     }
 
     private void processRequest() {

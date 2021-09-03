@@ -16,8 +16,7 @@
 
 package upload.internal;
 
-import jakarta.servlet.http.HttpServletRequest;
-import upload.*;
+import upload.PartOutput;
 import upload.errors.PartSizeException;
 import upload.errors.RequestSizeException;
 import upload.interfaces.OnError;
@@ -27,6 +26,7 @@ import upload.interfaces.OnRequestComplete;
 import upload.util.NullChannel;
 import upload.util.OutputStreamBackedChannel;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;

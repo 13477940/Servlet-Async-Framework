@@ -2,11 +2,11 @@ package framework.web.servlet;
 
 import framework.thread.ThreadPoolStatic;
 import framework.web.runnable.AsyncContextRunnable;
-import jakarta.servlet.AsyncContext;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 
+import javax.servlet.AsyncContext;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.lang.ref.WeakReference;
 import java.nio.charset.StandardCharsets;
 import java.sql.Driver;
@@ -62,7 +62,7 @@ public class WebAppController extends HttpServlet {
         {
             if(null == getServletContext()) {
                 try {
-                    throw new Exception("目前無法正常執行 Servlet 任務，請檢查 getServletContext() 為空值的原因");
+                    throw new Exception("目前無法正常執行 Servlet 任務，請檢查 getServletContext() 為空值的原因，通常是 thread pool 有未正常結束的任務卡住佇列");
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

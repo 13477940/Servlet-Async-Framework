@@ -11,7 +11,7 @@ import java.util.Map;
 public abstract class SessionService {
 
     private final UserMap userMap;
-    private final String userContextTag = "user_context";
+    private final String userContextTag = "user_context"; // 原生 session 保留參數 key
 
     /**
      * 一定要於此處初始化的原因在於不一定都從 addUser 開始，
@@ -60,7 +60,7 @@ public abstract class SessionService {
 
     public void setUserContext(HttpSession session, UserContext userContext) {
         if(null == userContext) return;
-        session.setAttribute(userContextTag, new Gson().toJson(userContext.toJSONObject()));
+        session.setAttribute(userContextTag, new Gson().toJson(userContext.toJsonObject()));
     }
 
     public UserContext getUserContext(HttpSession session) {

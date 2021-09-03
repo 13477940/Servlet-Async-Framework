@@ -69,17 +69,21 @@ public abstract class ConnectorConfig {
                 // MySQL 體系要採用 utf8mb4/utf8mb4_0900_ai_ci 才能正常支援所有 Unicode 字集
                 // 新增 NULL 值處理原則，zeroDateTimeBehavior=convertToNull
                 // 更新到 MySQL 8.0 以及 JDBC 版本的需求更改 zeroDateTimeBehavior=CONVERT_TO_NULL
+                sbd.append("?useUnicode=true");
+                sbd.append("&CharacterEncoding=utf8mb4");
                 if (!useSecurity) {
-                    sbd.append("?useSSL=false");
+                    sbd.append("&useSSL=false");
                 } else {
-                    sbd.append("?useSSL=true");
+                    sbd.append("&useSSL=true");
                     sbd.append("&verifyServerCertificate=false");
                 }
-                sbd.append("&useUnicode=true");
-                sbd.append("&CharacterEncoding=utf8mb4");
                 // sbd.append("&zeroDateTimeBehavior=convertToNull");
                 sbd.append("&zeroDateTimeBehavior=CONVERT_TO_NULL");
-                sbd.append("&serverTimezone=CST");
+                // fix for jdbc 8.0.25 timezone setting
+                // https://ithelp.ithome.com.tw/articles/10217691
+                // sbd.append("&serverTimezone=CST");
+                // sbd.append("&serverTimezone=").append(URLEncoder.encode("UTC+8", StandardCharsets.UTF_8));
+                sbd.append("&serverTimezone=UTC");
                 sbd.append("&useServerPrepStmts=true");
                 // https://segmentfault.com/a/1190000021870318
                 sbd.append("&allowPublicKeyRetrieval=true");
@@ -91,17 +95,17 @@ public abstract class ConnectorConfig {
                 sbd.append(port);
                 sbd.append("/");
                 sbd.append(dbName);
+                sbd.append("?useUnicode=true");
+                // 指定使用完整版的 unicode 編碼：utf8mb4
+                sbd.append("&CharacterEncoding=utf8mb4");
                 if (!useSecurity) {
-                    sbd.append("?useSSL=false");
+                    sbd.append("&useSSL=false");
                 } else {
-                    sbd.append("?useSSL=true");
+                    sbd.append("&useSSL=true");
                     // 若需要使用 server 端的 rsa public key 則要為 false
                     // 但設定為 false 需要注意是否可能具有中間人攻擊的機率（未經過 VPN 時）
                     sbd.append("&verifyServerCertificate=false");
                 }
-                sbd.append("&useUnicode=true");
-                // 指定使用完整版的 unicode 編碼：utf8mb4
-                sbd.append("&CharacterEncoding=utf8mb4");
             } break;
             case "postgres":
             case "postgresql": {
@@ -120,6 +124,14 @@ public abstract class ConnectorConfig {
                 sbd.append(port);
                 sbd.append(";databaseName=");
                 sbd.append(dbName);
+                /*
+                if (!useSecurity) {
+                    sbd.append(";encrypt=false");
+                    sbd.append(";authentication=NotSpecified");
+                } else {
+                    sbd.append(";encrypt=true");
+                    sbd.append(";integratedSecurity=true;trustServerCertificate=true");
+                }*/
             } break;
             default: {
                 try {

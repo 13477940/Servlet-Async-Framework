@@ -45,13 +45,20 @@ public abstract class UserMap {
     /**
      * 轉型為 JSONArray
      */
-    public JsonArray toJSONArray() {
+    public JsonArray toJsonArray() {
         JsonArray arr = new JsonArray();
         for (Entry<String, UserContext> entry : map.entrySet()) {
-            JsonObject obj = entry.getValue().toJSONObject();
+            JsonObject obj = entry.getValue().toJsonObject();
             arr.add(obj);
         }
         return arr;
+    }
+
+    /**
+     * 轉型為 JSONArray
+     */
+    @Deprecated public JsonArray toJSONArray() {
+        return toJsonArray();
     }
 
     /**

@@ -30,7 +30,7 @@ public class ParameterHandler extends RequestHandler {
 
     @Override
     protected boolean checkIsMyJob(AsyncActionContext asyncActionContext) {
-        if("session".equals(asyncActionContext.getParameters().get("act"))) return false;
+        if("session".equalsIgnoreCase(asyncActionContext.getParameters().get("act"))) return false;
         // proc json
         if(asyncActionContext.getHeaders().containsKey("content-type")) {
             if (asyncActionContext.getHeaders().get("content-type").contains("application/json")) return true;

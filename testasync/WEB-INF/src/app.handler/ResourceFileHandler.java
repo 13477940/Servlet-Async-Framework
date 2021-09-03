@@ -7,20 +7,21 @@ import framework.observer.Message;
 import framework.setting.AppSetting;
 import framework.web.context.AsyncActionContext;
 import framework.web.handler.RequestHandler;
-import jakarta.servlet.http.HttpServletResponse;
 
+import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 
 /**
- * ResourceFileHandler 會先處理所有具有副檔名格式的 URL，
- * 所以要注意之後的 handler 是否需要處理具有副檔名的 URL，
- * 若需要另外處理請由此處寫入避開的判斷原則才能正常傳遞請求。
+ * 此 Handler 會先處理具有副檔名格式的請求，
+ * 所以要注意是否有後面的 handler 需要附帶副檔名的請求，
+ * 並由此處寫入避開的判斷原則才能正常使用
+ * 修正 URL UTF-8 字串的問題
  */
 public class ResourceFileHandler extends RequestHandler {
 
-    private AsyncActionContext requestContext;
+    private AsyncActionContext requestContext = null;
 
     @Override
     public void startup(AsyncActionContext asyncActionContext) {
@@ -34,19 +35,21 @@ public class ResourceFileHandler extends RequestHandler {
 
     @Override
     protected boolean checkIsMyJob(AsyncActionContext asyncActionContext) {
-        if(asyncActionContext.isFileAction()) return false; // 排除上傳檔案請求
-        if(asyncActionContext.getUrlPath().contains("/WEB-INF")) return false; // 基本安全機制
+        if(asyncActionContext.isFileAction()) return false;
+        if(asyncActionContext.getUrlPath().contains("WEB-INF")) return false;
         return (null != asyncActionContext.getResourceExtension() && asyncActionContext.getResourceExtension().length() > 0);
     }
 
     private void processRequest() {
-        String dirSlash = new AppSetting.Builder().build().getDirSlash();
+        AppSetting setting = new AppSetting.Builder().build();
+        String dirSlash = setting.getDirSlash();
         String path = requestContext.getUrlPath();
         {
             String[] tmp = path.split("/");
             StringBuilder sbd = new StringBuilder();
             int i = 0;
             for(String str : tmp) {
+                // fix for unicode path
                 sbd.append(URLDecoder.decode(str, StandardCharsets.UTF_8));
                 i++;
                 if(i <= tmp.length - 1) sbd.append("/");
@@ -55,10 +58,16 @@ public class ResourceFileHandler extends RequestHandler {
         }
         path = path.replaceAll("/", dirSlash); // cover dirSlash
         FileFinder finder = new FileFinder.Builder().build();
-        File dir = finder.find("WEB-INF").getParentFile(); // project-dir
+        // #210812 fix for windows IIS path
+        File web_app_dir; // project-dir
+        if( null != finder.find("WEB-INF") ) {
+            web_app_dir = finder.find("WEB-INF").getParentFile();
+        } else {
+            web_app_dir = setting.getWebAppDir();
+        }
         {
             // path 本身已具有根斜線，只需接上 path 即可
-            File file = new File(dir.getPath() + path);
+            File file = new File(web_app_dir.getPath() + path);
             if (!file.exists()) {
                 response404(new Handler() {
                     @Override
@@ -73,6 +82,17 @@ public class ResourceFileHandler extends RequestHandler {
             {
                 if ("js".equals(requestContext.getResourceExtension())) fileMIME = "text/javascript";
                 if ("css".equals(requestContext.getResourceExtension())) fileMIME = "text/css";
+                // if you want protected typescript code or etc.
+                if ("ts".equals(requestContext.getResourceExtension())) {
+                    response404(new Handler(){
+                        @Override
+                        public void handleMessage(Message m) {
+                            super.handleMessage(m);
+                            requestContext.complete();
+                        }
+                    });
+                    return;
+                }
             }
             requestContext.outputFileToResponse(file, file.getName(), fileMIME, false, new Handler() {
                 @Override

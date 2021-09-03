@@ -16,11 +16,11 @@
 
 package upload.internal;
 
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import upload.interfaces.UploadContext;
 import upload.errors.MultipartException;
+import upload.interfaces.UploadContext;
 
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.InputStream;
 

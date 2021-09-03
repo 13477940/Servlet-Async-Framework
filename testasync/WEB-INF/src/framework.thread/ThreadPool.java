@@ -14,7 +14,7 @@ import java.util.concurrent.*;
  *
  * TODO 目前此類別不採用，因為自建的 ThreadPool 會造成固定數量的執行緒使用完畢後就造成卡死的問題
  */
-public class ThreadPool {
+@Deprecated public class ThreadPool {
 
     private ExecutorService worker = null;
 

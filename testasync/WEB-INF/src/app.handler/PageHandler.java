@@ -1,14 +1,14 @@
 package app.handler;
 
-import framework.file.FileFinder;
 import framework.observer.Bundle;
 import framework.observer.Handler;
 import framework.observer.Message;
+import framework.setting.AppSetting;
 import framework.setting.PathContext;
 import framework.web.context.AsyncActionContext;
 import framework.web.handler.RequestHandler;
-import jakarta.servlet.http.HttpServletResponse;
 
+import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 
 /**
@@ -36,7 +36,7 @@ public class PageHandler extends RequestHandler {
         if(asyncActionContext.getHeaders().containsKey("content-type")) {
             if (asyncActionContext.getHeaders().get("content-type").contains("application/json")) return false;
         }
-        if("page".equals(asyncActionContext.getParameters().get("page"))) return true;
+        if("page".equalsIgnoreCase(asyncActionContext.getParameters().get("page"))) return true;
         return asyncActionContext.getParameters().size() == 0;
     }
 
@@ -73,7 +73,8 @@ public class PageHandler extends RequestHandler {
     }
 
     private File getPageFile(String path) {
-        File appDir = new FileFinder.Builder().build().find("WEB-INF").getParentFile();
+        // File appDir = new FileFinder.Builder().build().find("WEB-INF").getParentFile();
+        File appDir = new AppSetting.Builder().build().getWebAppDir(); // test api
         File res = new File(appDir.getPath() + path);
         if(!res.exists()) return null;
         return res;

@@ -48,6 +48,27 @@ public class TextFileWriter {
         }
     }
 
+    /**
+     * 添加系統文檔換行
+     */
+    public void next_line() {
+        if(this.targetFile.canWrite()) {
+            try {
+                if(this.isAppend) fileChannel.position(fileChannel.size());
+                String sys_new_line = System.lineSeparator();
+                fileChannel.write(ByteBuffer.wrap(sys_new_line.getBytes(StandardCharsets.UTF_8)));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } else {
+            try {
+                throw new Exception(this.targetFile.getName() + " 該檔案為無法寫入的狀態");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
     // 關閉順序是固定的，不能更動
     public void close() {
         try {

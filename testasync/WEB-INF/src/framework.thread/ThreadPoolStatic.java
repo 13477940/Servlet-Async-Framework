@@ -14,7 +14,6 @@ public class ThreadPoolStatic {
     public static ExecutorService getInstance() {
         if(null == StaticHolder.worker && !StaticHolder.isShutdown) {
             StaticHolder.worker = Executors.newCachedThreadPool();
-            // StaticHolder.worker = Executors.newFixedThreadPool(200);
         }
         if(null == StaticHolder.worker) {
             try {
@@ -31,7 +30,6 @@ public class ThreadPoolStatic {
     public static void execute(Runnable runnable) {
         if(null == StaticHolder.worker && !StaticHolder.isShutdown) {
             StaticHolder.worker = Executors.newCachedThreadPool();
-            // StaticHolder.worker = Executors.newFixedThreadPool(200);
         }
         if(null == StaticHolder.worker) {
             try {
@@ -74,7 +72,10 @@ public class ThreadPoolStatic {
         }
     }
 
-    static class StaticHolder {
+    /**
+     * 採用 private 保護僅此類別內可用
+     */
+    private static class StaticHolder {
         // 藉由此 flag 判斷關閉依據
         public static boolean isShutdown = false;
         // ThreadPool 實例

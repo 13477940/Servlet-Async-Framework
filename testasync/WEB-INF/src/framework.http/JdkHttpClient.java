@@ -55,6 +55,8 @@ public class JdkHttpClient {
     private final Duration conn_timeout;
     private final boolean insecure_https;
 
+    private final boolean keepUrlParams;
+
     private final HttpClient.Version httpVersion = HttpClient.Version.HTTP_2; // default
     private final HttpClient.Redirect httpRedirect = HttpClient.Redirect.NORMAL; // default
 
@@ -72,7 +74,8 @@ public class JdkHttpClient {
             String tempDirPath,
             String tempDirName,
             Duration conn_timeout,
-            String resp_encoding
+            String resp_encoding,
+            Boolean keepUrlParams
     ) {
         this.url = url;
         this.headers = headers;
@@ -95,6 +98,7 @@ public class JdkHttpClient {
                 this.resp_encoding = resp_encoding;
             }
         }
+        this.keepUrlParams = keepUrlParams;
     }
 
     /**
@@ -200,7 +204,11 @@ public class JdkHttpClient {
             } else {
                 requestBuilder.POST(HttpRequest.BodyPublishers.noBody());
             }
-            requestBuilder.uri(URI.create(parse_url_domain(this.url)));
+            if(!keepUrlParams) {
+                requestBuilder.uri(URI.create(parse_url_domain(this.url)));
+            } else {
+                requestBuilder.uri(URI.create(this.url));
+            }
         }
         HttpClient.Builder clientBuilder = HttpClient.newBuilder();
         {
@@ -237,7 +245,11 @@ public class JdkHttpClient {
             } else {
                 requestBuilder.POST(HttpRequest.BodyPublishers.noBody());
             }
-            requestBuilder.uri(URI.create(parse_url_domain(this.url)));
+            if(!keepUrlParams) {
+                requestBuilder.uri(URI.create(parse_url_domain(this.url)));
+            } else {
+                requestBuilder.uri(URI.create(this.url));
+            }
         }
         HttpClient.Builder clientBuilder = HttpClient.newBuilder();
         {
@@ -679,6 +691,7 @@ public class JdkHttpClient {
         private Duration conn_timeout = null;
         private Boolean insecure_https = false;
         private String resp_encoding = StandardCharsets.UTF_8.name();
+        private Boolean keep_url_params = false;
 
         public JdkHttpClient.Builder setUrl(String url) {
             this.url = url;
@@ -834,6 +847,11 @@ public class JdkHttpClient {
             return this;
         }
 
+        public JdkHttpClient.Builder setKeepUrlParams(Boolean isKeepUrlParams) {
+            if(null != isKeepUrlParams) this.keep_url_params = isKeepUrlParams;
+            return this;
+        }
+
         public JdkHttpClient build() {
             return new JdkHttpClient(
                     this.url,
@@ -846,7 +864,8 @@ public class JdkHttpClient {
                     this.tempDirPath,
                     this.tempDirName,
                     this.conn_timeout,
-                    this.resp_encoding
+                    this.resp_encoding,
+                    this.keep_url_params
             );
         }
 
