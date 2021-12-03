@@ -12,13 +12,17 @@ It's a tomcat(or jetty) webapp for processing asynchronous http request task sim
 
 # Require
 * Java OpenJDK 8+(recommend use LTS version or Latest version)
-  * <a href="https://adoptopenjdk.net">AdoptOpenJDK</a>
+  * <a href="https://adoptium.net">Eclipse Temurin JDK</a>
+  * <a href="https://www.microsoft.com/openjdk">Microsoft OpenJDK</a>
 * Apache Tomcat 8.5+ or Jetty ( attention JDBC use )
   * <a href="http://tomcat.apache.org">Tomcat</a>
   * <a href="https://www.eclipse.org/jetty">Jetty (recommend)</a>
 * Google Gson
   * <a href="https://github.com/google/gson">google/gson</a>
-* Elopteryx/upload-parser
+  * <a href="https://mvnrepository.com/artifact/com.google.code.gson/gson">Gson Jar</a>
+* Apache Tika Core
+  * <a href="https://mvnrepository.com/artifact/org.apache.tika/tika-core">Apache Tika Core</a>
+* Elopteryx/upload-parser ( now integrated src, just need to know )
   * <a href="https://github.com/Elopteryx/upload-parser">Elopteryx/upload-parser</a>
 
 # Optional
@@ -31,6 +35,13 @@ It's a tomcat(or jetty) webapp for processing asynchronous http request task sim
   * <a href="https://mvnrepository.com/artifact/org.jetbrains.kotlin/kotlin-stdlib">Kotlin Standard Library</a>
   * <a href="https://mvnrepository.com/artifact/com.squareup.okhttp3/okhttp">OkHttp</a>
   * <a href="https://mvnrepository.com/artifact/com.squareup.okio/okio">OkIO</a>
+* Jakarta Mail API
+  * <a href="https://mvnrepository.com/artifact/jakarta.mail/jakarta.mail-api">Jakarta Mail</a>
+* Bouncy Castle Provider ( for AES, SHA, Base64, Base32, etc... )
+  * <a href="https://mvnrepository.com/artifact/org.bouncycastle/bcprov-jdk15on">Bouncy Castle Provider</a>
+* ZXing Core ( for QRCode )
+  * <a href="https://mvnrepository.com/artifact/com.google.zxing/core">ZXing Core</a>
+  * <a href="https://mvnrepository.com/artifact/com.google.zxing/javase">ZXing Java SE Extensions</a>
 
 # Getting Started
 放置檔案內容到 tomcat/webapps/testasync 之中，並進行編譯，編譯完成後，即可啟動 Tomcat。<br>
