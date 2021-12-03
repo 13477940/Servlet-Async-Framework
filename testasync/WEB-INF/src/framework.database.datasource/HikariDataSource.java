@@ -41,10 +41,10 @@ public class HikariDataSource extends ConnectorConfig implements ConnectionPool 
             config.setDriverClassName(getDriverClassName(dbContext.getDB_Type())); // webapp required
             config.setUsername(dbContext.getDB_ACC());
             config.setPassword(dbContext.getDB_PWD());
-            config.addDataSourceProperty("cachePrepStmts", "true"); // 是否自定义配置，为true时下面两个参数才生效
-            config.addDataSourceProperty("prepStmtCacheSize", "250"); // 连接池大小默认25，官方推荐250-500
-            config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048"); // 单条语句最大长度默认256，官方推荐2048
-            config.addDataSourceProperty("useServerPrepStmts", "true"); // 新版本MySQL支持服务器端准备，开启能够得到显著性能提升
+            config.addDataSourceProperty("cachePrepStmts", "true"); // 當為 true 時下方三個參數才有效
+            config.addDataSourceProperty("prepStmtCacheSize", "250"); // 連接池大小預設 25，推薦值是 200~250
+            config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048"); // 單個指令快取是 256，推薦值是 2048
+            config.addDataSourceProperty("useServerPrepStmts", "true"); // 新版本 MySQL 支援服務器端快取，提升處理效能
             config.addDataSourceProperty("useLocalSessionState", "true");
             config.addDataSourceProperty("useLocalTransactionState", "true");
             config.addDataSourceProperty("rewriteBatchedStatements", "true");

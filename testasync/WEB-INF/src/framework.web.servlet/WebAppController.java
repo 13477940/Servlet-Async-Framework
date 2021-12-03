@@ -43,11 +43,11 @@ public class WebAppController extends HttpServlet {
                 asyncContext = req.startAsync();
             } else {
                 try {
-                    throw new Exception("Servlet 或 Fileter 等類別尚未全部開啟非同步支援(async-supported)");
+                    throw new Exception("Servlet 或 Filter 等類別尚未全部開啟非同步支援(async-supported)");
                 } catch (Exception e) {
                     e.printStackTrace();
-                    return;
                 }
+                return;
             }
         }
         // Async Request Timeout
@@ -62,7 +62,13 @@ public class WebAppController extends HttpServlet {
         {
             if(null == getServletContext()) {
                 try {
-                    throw new Exception("目前無法正常執行 Servlet 任務，請檢查 getServletContext() 為空值的原因，通常是 thread pool 有未正常結束的任務卡住佇列");
+                    StringBuilder sbd = new StringBuilder();
+                    {
+                        sbd.append("目前無法正常執行 Servlet 任務，");
+                        sbd.append("請檢查 getServletContext() 為空值的原因，");
+                        sbd.append("通常是 thread pool 有未正常結束的任務卡住佇列");
+                    }
+                    throw new Exception(sbd.toString());
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
