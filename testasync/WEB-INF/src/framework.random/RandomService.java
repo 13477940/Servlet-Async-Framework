@@ -8,15 +8,27 @@ import java.time.format.DateTimeFormatter;
 /**
  * 基礎的亂數字串取得方法
  * ThreadLocalRandom 相當於 Random 且提供更好的效能，但並不代表隨機性有所提高
- * SecureRandom 為較安全的亂數產生類別，除了系統時間種子外會加上其他因素來達成不可預測的隨機數
+ * SecureRandom 為相較安全的亂數產生類別，除了系統時間種子外會加上其他因素來達成不可預測的隨機數因子
+ * "在密碼學中，安全的隨機數非常重要。如果使用不安全的僞隨機數，
+ * 所有加密體系都將被攻破。因此，時刻牢記必須使用 SecureRandom 來產生安全的隨機數。"
+ *
  * https://www.cnblogs.com/deng-cc/p/8064481.html
+ * https://www.twblogs.net/a/5e51442bbd9eee21167f63d1
  */
 public abstract class RandomService {
 
     private final SecureRandom random;
 
     RandomService() {
-        random = new WeakReference<>( new SecureRandom() ).get();
+        SecureRandom secureRandom;
+        try {
+            // 預設取得高安全性的隨機生成器
+            secureRandom = SecureRandom.getInstanceStrong();
+        } catch ( Exception e ) {
+            // 若不支援則改採標準隨機生成器
+            secureRandom = new SecureRandom();
+        }
+        random = new WeakReference<>( secureRandom ).get();
     }
 
     /**
