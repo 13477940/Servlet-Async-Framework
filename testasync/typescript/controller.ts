@@ -8,6 +8,7 @@ var $: any = window.$ || null;
     (function(){
         arr.push("/testasync/js/jquery/jquery.min.js");
         arr.push("/testasync/js/axios/axios.min.js");
+        arr.push("/testasync/js/index.js");
     })();
     // 遞迴方式讀取所有 script 項目
     (function(){
@@ -161,7 +162,7 @@ var $: any = window.$ || null;
             }
             asyncTest();
             /*
-            for(var i = 0, len = 20; i < len; i++) {
+            for(var i = 0, len = 4000; i < len; i++) {
                 asyncTest();
             }*/
         })();

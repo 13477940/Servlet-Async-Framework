@@ -334,6 +334,7 @@ var $ = window.$ || null;
     (function () {
         arr.push("/testasync/js/jquery/jquery.min.js");
         arr.push("/testasync/js/axios/axios.min.js");
+        arr.push("/testasync/js/index.js");
     })();
     (function () {
         var tmpPath = null;
