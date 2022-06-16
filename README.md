@@ -24,6 +24,10 @@ It's a tomcat(or jetty) webapp for processing asynchronous http request task sim
   * <a href="https://mvnrepository.com/artifact/org.apache.tika/tika-core">Apache Tika Core</a>
 * Elopteryx/upload-parser ( now integrated src, just need to know )
   * <a href="https://github.com/Elopteryx/upload-parser">Elopteryx/upload-parser</a>
+* kotlin-stdlib -> for kotlin coroutines ( wating for JDK 19 Virtual Threads (Preview) alternative plan )
+  * <a href="https://mvnrepository.com/artifact/org.jetbrains.kotlin/kotlin-stdlib">kotlin-stdlib</a>
+* kotlinx-coroutines-core-jvm -> for kotlin coroutines
+  * <a href="https://mvnrepository.com/artifact/org.jetbrains.kotlinx/kotlinx-coroutines-core-jvm">kotlinx-coroutines-core-jvm</a>
 
 # Optional
 * Database JDBC
