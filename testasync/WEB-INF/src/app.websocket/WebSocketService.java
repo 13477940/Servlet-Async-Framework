@@ -82,9 +82,14 @@ public class WebSocketService {
             JsonObject obj = new JsonObject();
             obj.addProperty("status", "ping");
             for(Map.Entry<String, Session> entry : WebSocketChannel.getAllSessionMap().entrySet()) {
+                Session wsSession = entry.getValue();
                 // 確認是使用中的 socket session
-                if ( null != entry.getValue() && entry.getValue().isOpen() ) {
-                    entry.getValue().getAsyncRemote().sendText( new Gson().toJson(obj) );
+                try {
+                    if (null != wsSession && wsSession.isOpen()) {
+                        wsSession.getAsyncRemote().sendText(new Gson().toJson(obj));
+                    }
+                } catch (Exception e) {
+                    // e.printStackTrace();
                 }
             }
             try {

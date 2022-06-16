@@ -1,6 +1,7 @@
 package framework.web.servlet;
 
 import framework.thread.ThreadPoolStatic;
+import framework.thread.VirtualThreadStatic;
 import framework.web.runnable.AsyncContextRunnable;
 
 import javax.servlet.AsyncContext;
@@ -14,7 +15,8 @@ import java.sql.DriverManager;
 import java.util.Enumeration;
 
 /**
- * ＃2021-05-05 fixed for tomcat 10 to jakarta
+ * ＃2021-05-05 fixed for tomcat 10 to jakarta -> 前期相容先使用 tomcat migration tool 遷移（相容舊版本）
+ * https://github.com/apache/tomcat-jakartaee-migration
  */
 public class WebAppController extends HttpServlet {
 
@@ -87,7 +89,8 @@ public class WebAppController extends HttpServlet {
          * 『asyncContext.getResponse().getBufferSize()』
          * 會造成 AppSetting 發生錯誤
          */
-        ThreadPoolStatic.execute(asyncContextRunnable);
+        // ThreadPoolStatic.execute(asyncContextRunnable);
+        VirtualThreadStatic.execute(asyncContextRunnable);
     }
 
     // 內容編碼設定

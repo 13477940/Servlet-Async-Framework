@@ -99,21 +99,21 @@ public class FileFinder {
 
     // 針對資料夾處理方式
     private File processDirectory(File baseFile, String fileDirectoryName, String fileName) {
-        if(null == baseFile) return null; // break;
+        if (null == baseFile) return null; // break;
         File pFile = new File(baseFile.getPath()); // current directory
         // pFile 為向上查找的路徑，並加上想要尋找的子路徑（可以藉由 file.separator 多層存取）作為查詢條件
-        if(fileDirectoryName.contains(dirSlash)) {
+        if (fileDirectoryName.contains(dirSlash)) {
             pFile = new File(pFile.getPath() + dirSlash + fileDirectoryName);
         }
-        if(pFile.isDirectory()) {
+        if (pFile.isDirectory()) {
             File[] list = pFile.listFiles();
-            if(null == list) return null;
-            for(File listFile : list) {
-                if(fileDirectoryName.equals(listFile.getName())) {
+            if (null == list) return null;
+            for (File listFile : list) {
+                if (fileDirectoryName.equals(listFile.getName())) {
                     return processFile(new File(pFile.getPath() + dirSlash + fileDirectoryName), fileName);
                 }
                 // 如果直接輸入兩階層含以上的資料夾路徑會直接找到該檔案
-                if(fileDirectoryName.equals(fileName)) {
+                if (fileDirectoryName.equals(fileName)) {
                     return new File(pFile.getPath() + dirSlash + fileDirectoryName);
                 }
             }
@@ -130,8 +130,8 @@ public class FileFinder {
     private void initFileFinder(File baseFile) {
         setHostInfo();
         if(null == baseFile) {
-            // URL resourceURL = this.getClass().getClassLoader().getResource("");
-            URL resourceURL = Thread.currentThread().getContextClassLoader().getResource("");
+            URL resourceURL = this.getClass().getClassLoader().getResource("");
+            // URL resourceURL = Thread.currentThread().getContextClassLoader().getResource("");
             if(null != resourceURL) {
                 String classPath = URLDecoder.decode(resourceURL.getPath(), StandardCharsets.UTF_8);
                 this.baseFile = new File(classPath);

@@ -13,6 +13,8 @@ import java.util.concurrent.*;
  * https://blog.csdn.net/zxysshgood/article/details/80499034
  *
  * TODO 目前此類別不採用，因為自建的 ThreadPool 會造成固定數量的執行緒使用完畢後就造成卡死的問題
+ *
+ * https://my.oschina.net/u/5079097/blog/5448512
  */
 @Deprecated public class ThreadPool {
 

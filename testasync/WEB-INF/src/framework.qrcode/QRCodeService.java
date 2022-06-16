@@ -32,7 +32,7 @@ import java.util.HashMap;
  */
 public class QRCodeService {
 
-    private final String exten = "png"; // use png for transparent
+    private final String exten = "png"; // use png for transparent background
     private final HashMap<EncodeHintType, Object> hints = new HashMap<>();
 
     private QRCodeService(String character, ErrorCorrectionLevel level, Integer margin) {

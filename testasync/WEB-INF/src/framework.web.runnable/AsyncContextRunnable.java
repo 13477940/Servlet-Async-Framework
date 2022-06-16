@@ -113,7 +113,9 @@ public class AsyncContextRunnable implements Runnable {
                 @Override
                 public void handleMessage(Message m) {
                     super.handleMessage(m);
-                    requestContext.complete();
+                    if(null != requestContext) {
+                        requestContext.complete();
+                    }
                 }
             });
         }
