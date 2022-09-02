@@ -1,7 +1,10 @@
 "use strict";
+var debug_mode = true;
 var website = window.website || {};
 var $ = window.$ || null;
 var axios = window.axios || null;
+var CryptoJS = window.CryptoJS || null;
+var moment = window.moment || null;
 (function () {
     website["script"] = function (url, readyFn) {
         if (Array.isArray(url)) {
@@ -18,20 +21,34 @@ var axios = window.axios || null;
             append_load_script(url);
         }
         function append_load_script(url) {
-            var timer = setInterval(exec_load_fn, 1);
+            exec_load_fn();
             function exec_load_fn() {
                 if ("complete" == document.readyState) {
+                    var framework_label = "my_script_loader";
+                    var container_div = document.querySelector("div[_framework_key=" + framework_label + "]");
+                    (function () {
+                        if (null == container_div) {
+                            container_div = document.createElement('div');
+                            container_div.setAttribute("_framework_key", framework_label);
+                            document.body.appendChild(container_div);
+                        }
+                    })();
                     var scriptTag = document.createElement('script');
                     scriptTag.src = url;
                     scriptTag.onload = readyFn;
                     scriptTag.onerror = loadErrorFn;
-                    document.body.appendChild(scriptTag);
-                    clearInterval(timer);
+                    (function () {
+                        container_div.append(scriptTag);
+                    })();
+                }
+                else {
+                    setTimeout(function () {
+                        exec_load_fn();
+                    }, 100);
                 }
             }
             function loadErrorFn(oError) {
-                clearInterval(timer);
-                console.log(oError);
+                console.error(oError);
             }
         }
     };
@@ -111,6 +128,8 @@ var axios = window.axios || null;
                 };
                 def.resolve(respObj.data);
             }).catch(function (err) {
+                if (debug_mode)
+                    console.error(err);
                 def.reject(err);
             });
             return def;
@@ -163,6 +182,8 @@ var axios = window.axios || null;
                 };
                 def.resolve(respObj.data);
             }).catch(function (err) {
+                if (debug_mode)
+                    console.error(err);
                 def.reject(err);
             });
             return def;
@@ -186,12 +207,6 @@ var axios = window.axios || null;
                     headers[key] = value;
                 }
             })();
-            var config = {
-                transformResponse: [
-                    function (data) { return data; }
-                ],
-                headers: headers
-            };
             axios.post(reqObj["url"], reqObj["text"]).then(function (response) {
                 var respObj = {
                     status: "done",
@@ -200,6 +215,8 @@ var axios = window.axios || null;
                 };
                 def.resolve(respObj.data);
             }).catch(function (err) {
+                if (debug_mode)
+                    console.error(err);
                 def.reject(err);
             });
             return def;
@@ -259,6 +276,8 @@ var axios = window.axios || null;
                 };
                 def.resolve(respObj.data);
             }).catch(function (err) {
+                if (debug_mode)
+                    console.error(err);
                 def.reject(err);
             });
             return def;
@@ -268,7 +287,7 @@ var axios = window.axios || null;
 (function () {
     website["dialog"] = function (initObj) {
         var def = $.Deferred();
-        var dialogId = website.randomString(16);
+        var dialogId = "_dialog_" + website.randomString(16);
         var dialogElem = $(buildDialogHtml());
         (function () {
             dialogElem.attr("modal_dialog_ssid", dialogId);
@@ -288,25 +307,44 @@ var axios = window.axios || null;
             }
         };
         (function () {
-            dialogElem.on("keydown", function (evt) {
-                if (27 == evt.keyCode) {
-                    dialogObj.close();
-                }
-            });
+            var enable_esc_key = "true";
+            if (null != initObj["escape_key"]) {
+                enable_esc_key = initObj["escape_key"];
+            }
+            if ("true" == enable_esc_key) {
+                dialogElem.on("keydown", function (evt) {
+                    if (27 == evt.keyCode) {
+                        dialogObj.close();
+                    }
+                });
+            }
+        })();
+        (function () {
+            dialogElem.focus();
         })();
         def.resolve(dialogObj);
         return def;
     };
     function buildDialogHtml() {
-        var tmp = [];
-        tmp.push("<div modal_dialog_key='overlay' tabindex='0' style='display: none;position: fixed;top: 0px;left: 0px;height: 100vh;width: 100vw;overflow: auto;'>");
-        tmp.push("<div modal_dialog_key='wrap' style='margin: auto'></div>");
-        tmp.push("</div>");
-        return tmp.join('');
+        var overlay_elem = $("<div modal_dialog_key='overlay' tabindex='0'></div>");
+        (function () {
+            overlay_elem.css("display", "none");
+            overlay_elem.css("align-items", "center");
+            overlay_elem.css("justify-content", "center");
+            overlay_elem.css("position", "fixed");
+            overlay_elem.css("top", "0px");
+            overlay_elem.css("left", "0px");
+            overlay_elem.css("width", "100vw");
+            overlay_elem.css("height", "100vh");
+            overlay_elem.css("overflow", "auto");
+            overlay_elem.css("backdrop-filter", "blur(1px)");
+        })();
+        overlay_elem.html("<div modal_dialog_key='wrap' style='position: absolute;'></div>");
+        return overlay_elem.prop("outerHTML");
     }
 })();
 (function () {
-    website["redirect"] = function (url, onCache, ran_str) {
+    website["redirect"] = function (url, onCache) {
         if (null == onCache)
             onCache = true;
         var targetURL = null;
@@ -321,11 +359,113 @@ var axios = window.axios || null;
         }
         else {
             var ts = Date.now();
-            var _ran_str = ts;
-            if (null != ran_str)
-                _ran_str = ran_str;
-            location.href = targetURL + "?ei=" + _ran_str;
+            location.href = targetURL + "?ei=" + ts;
         }
+    };
+})();
+(function () {
+    website["base64_url_encode"] = function (content) {
+        if (null == content) {
+            console.error("b64 encode content is null!");
+            return null;
+        }
+        var byteArr = CryptoJS.enc.Utf8.parse(content);
+        var res_str = url_safe_withoutPadding(CryptoJS.enc.Base64.stringify(byteArr));
+        return res_str;
+    };
+    website["base64_url_decode"] = function (content) {
+        if (null == content) {
+            console.error("b64 decode content is null!");
+            return null;
+        }
+        var byteArr = CryptoJS.enc.Base64.parse(decode_url_safe(content));
+        var res_str = byteArr.toString(CryptoJS.enc.Utf8);
+        return res_str;
+    };
+    function url_safe_withoutPadding(str) {
+        return str.replace(/\+/g, '-').replace(/\//g, '_').replace(/\=+$/, '');
+    }
+    function decode_url_safe(str) {
+        return str.replace(/-/g, '+').replace(/_/g, '/');
+    }
+})();
+(function () {
+    website["currency_number"] = function (num_val) {
+        return new Intl.NumberFormat('zh-TW', { style: 'decimal', currency: 'TWD' }).format(num_val);
+    };
+})();
+(function () {
+    website["print"] = function (elem) {
+        var w_width = $(window).width() * 0.9;
+        var w_height = $(window).height() * 0.9;
+        (function () {
+            if (600 > w_width)
+                w_width = 600;
+            if (600 > w_height)
+                w_height = 600;
+        })();
+        var mywindow = window.open('', '', 'left=0,top=0,width=' + w_width + ',height=' + w_height + ',toolbar=0,scrollbars=0,status=0,addressbar=0');
+        var is_chrome = Boolean(mywindow.chrome);
+        mywindow.document.write(elem.prop("outerHTML"));
+        mywindow.document.close();
+        if (is_chrome) {
+            var b_need_load = false;
+            if (elem.prop("outerHTML").indexOf("<img") == -1)
+                b_need_load = true;
+            if (b_need_load) {
+                mywindow.focus();
+                mywindow.print();
+                mywindow.close();
+            }
+            else {
+                mywindow.onload = function () {
+                    mywindow.focus();
+                    mywindow.print();
+                    mywindow.close();
+                };
+            }
+        }
+        else {
+            mywindow.document.close();
+            mywindow.focus();
+            mywindow.print();
+            mywindow.close();
+        }
+    };
+})();
+(function () {
+    website["scroll_width"] = function () {
+        var scr = null;
+        var inn = null;
+        var wNoScroll = 0;
+        var wScroll = 0;
+        scr = document.createElement('div');
+        var div_id = "_scroll_test" + website.randomString(16);
+        scr.id = div_id;
+        scr.style.position = 'absolute';
+        scr.style.top = '-1000px';
+        scr.style.left = '-1000px';
+        scr.style.width = '100px';
+        scr.style.height = '50px';
+        scr.style.overflow = 'hidden';
+        inn = document.createElement('div');
+        inn.style.width = '100%';
+        inn.style.height = '200px';
+        scr.appendChild(inn);
+        document.getElementsByTagName('html')[0].appendChild(scr);
+        wNoScroll = inn.offsetWidth;
+        scr.style.overflow = 'auto';
+        wScroll = inn.offsetWidth;
+        var elem = document.getElementById(div_id);
+        if (null != elem)
+            elem.remove();
+        return (wNoScroll - wScroll);
+    };
+})();
+(function () {
+    website["proc_float"] = function (number, fractionDigits) {
+        var def = fractionDigits || 2;
+        return Math.round(number * Math.pow(10, def)) / Math.pow(10, def);
     };
 })();
 var $ = window.$ || null;
@@ -334,6 +474,8 @@ var $ = window.$ || null;
     (function () {
         arr.push("/testasync/js/jquery/jquery.min.js");
         arr.push("/testasync/js/axios/axios.min.js");
+        arr.push("/testasync/js/cryptojs/core.min.js");
+        arr.push("/testasync/js/cryptojs/enc-base64.min.js");
         arr.push("/testasync/js/index.js");
     })();
     (function () {
@@ -374,118 +516,5 @@ var $ = window.$ || null;
         }
     };
     function page_index() {
-        (function () {
-            $("#btn_select_file").on("click", function () {
-                $("#upfile").click();
-            });
-        })();
-        (function () {
-            $("#label_select_file").html("[未選擇檔案]");
-            $("#upfile").on("change", function () {
-                var targetFile = $("#upfile")[0]["files"][0];
-                if (null != targetFile) {
-                    $("#label_select_file").html(targetFile.name);
-                }
-                else {
-                    $("#label_select_file").html("[未選擇檔案]");
-                }
-            });
-        })();
-        (function () {
-            $("#btn_upload_submit").on("click", function () {
-                var targetFile = $("#upfile")[0]["files"][0];
-                (function () {
-                    var reqObj = {
-                        url: "/testasync/index",
-                        data: [
-                            { key: "a", value: "100" },
-                            { key: "b", value: "ABC" },
-                            { key: "c", value: "國字測試" }
-                        ]
-                    };
-                    if (null != targetFile) {
-                        reqObj.data.push({
-                            key: "myfile",
-                            value: targetFile
-                        });
-                    }
-                    website.post_form_data(reqObj)
-                        .progress(function (prog) {
-                        console.log(prog);
-                    })
-                        .done(function (respd) {
-                        console.log(respd);
-                    });
-                })();
-            });
-        })();
-        (function () {
-            function openDialog() {
-                website.dialog({
-                    content: "<div style='position: relative; width: 400px;height: 400px;margin: auto 0px auto 0px;background-color: #fff;border-radius: 5px;'><span dialog_btn='close' style='position: absolute;top: 20px;right: 20px;'>&times;</span>TEST</div>"
-                }).done(function (dialogObj) {
-                    console.log(dialogObj);
-                    dialogObj.overlay.css("background-color", "rgba(190,190,190,0.5)");
-                    dialogObj.dialog.find("span[dialog_btn=close]").on("click", function () {
-                        dialogObj.close();
-                    });
-                });
-            }
-            $("button[ui_key=btn_open_dialog]").on("click", function () {
-                openDialog();
-            });
-        })();
-        (function () {
-            $("button[ui_key=btn_test_get]").on("click", function () {
-                website.get({
-                    url: "/testasync/index",
-                    data: [
-                        { key: "a", value: "100" },
-                        { key: "b", value: "ABC" },
-                        { key: "c", value: "國字測試" },
-                        { key: "d", value: "/// //aaa// a//cc[]///" }
-                    ],
-                    header: [
-                        { key: "my-auth", value: "aaabbbcccdddeeefffggg_hi" }
-                    ]
-                }).done(function (respd) {
-                    console.log(respd);
-                });
-            });
-        })();
-        (function () {
-            $("button[ui_key=btn_test_post]").on("click", function () {
-                website.post({
-                    url: "/testasync/index",
-                    data: [
-                        { key: "a", value: "100" },
-                        { key: "b", value: "ABC" },
-                        { key: "c", value: "國字測試" },
-                        { key: "d", value: "/// //aaa// a//cc[]///" }
-                    ]
-                }).done(function (respd) {
-                    console.log(respd);
-                });
-            });
-        })();
-        (function () {
-            function asyncTest() {
-                setTimeout(function () {
-                    var reqObj = {
-                        url: "/testasync/index",
-                        data: [
-                            { key: "A", value: "100" },
-                            { key: "B", value: "200" },
-                            { key: "C", value: "300" }
-                        ]
-                    };
-                    website.get(reqObj).done(function (respd) {
-                        var obj = JSON.parse(respd);
-                        console.log(obj);
-                    });
-                }, 1000);
-            }
-            asyncTest();
-        })();
     }
 })();

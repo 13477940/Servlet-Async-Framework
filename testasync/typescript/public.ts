@@ -1,7 +1,10 @@
 // namespace define
+var debug_mode: boolean = true; // for try-catch, scope: ajax
 var website: any = window.website || {};
-var $: any = window.$ || null;
+var $: any = window.$ || null; // jquery
 var axios: any = window.axios || null;
+var CryptoJS: any = window.CryptoJS || null;
+var moment: any = window.moment || null;
 
 // script loader
 (function(){
@@ -24,23 +27,38 @@ var axios: any = window.axios || null;
         // https://developer.mozilla.org/zh-TW/docs/Web/API/Document/readyState
         // https://developer.mozilla.org/en-US/docs/Web/API/Node/appendChild
         function append_load_script(url: any) {
-            var timer = setInterval(exec_load_fn, 1);
+            // loop check page ready status.
+            exec_load_fn();
             // 載入腳本實作
             function exec_load_fn() {
                 // 如果沒有在這個時候載入會導致 log cat 無法接收所有此時載入的腳本錯誤 exception
                 if("complete" == document.readyState) {
+                    var framework_label = "my_script_loader";
+                    var container_div: any = document.querySelector("div[_framework_key="+framework_label+"]");
+                    (function(){
+                        if(null == container_div) {
+                            container_div = document.createElement('div');
+                            container_div.setAttribute("_framework_key", framework_label); // set elem attr
+                            document.body.appendChild(container_div);
+                        }
+                    })();
                     var scriptTag = document.createElement('script');
                     scriptTag.src = url;
                     scriptTag.onload = readyFn;
                     scriptTag.onerror = loadErrorFn;
-                    document.body.appendChild(scriptTag);
-                    clearInterval(timer);
+                    // document.body.appendChild(scriptTag);
+                    (function(){
+                        container_div.append(scriptTag);
+                    })();
+                } else {
+                    setTimeout(function(){
+                        exec_load_fn();
+                    }, 100);
                 }
             }
             // 當腳本讀取發生錯誤時
             function loadErrorFn(oError: any) {
-                clearInterval(timer);
-                console.log(oError);
+                console.error(oError);
             }
         }
     };
@@ -125,6 +143,7 @@ var axios: any = window.axios || null;
                 };
                 def.resolve(respObj.data);
             }).catch(function(err: any) {
+                if(debug_mode) console.error(err);
                 def.reject(err);
             });
             return def;
@@ -176,7 +195,8 @@ var axios: any = window.axios || null;
                     data: response.data
                 };
                 def.resolve(respObj.data);
-            }).catch(function (err: any) {
+            }).catch(function(err: any) {
+                if(debug_mode) console.error(err);
                 def.reject(err);
             });
             return def;
@@ -200,12 +220,6 @@ var axios: any = window.axios || null;
                     headers[key] = value;
                 }
             })();
-            var config = {
-                transformResponse: [
-                    function(data: any) { return data; }
-                ],
-                headers: headers
-            };
             axios.post(reqObj["url"], reqObj["text"]).then(function(response: any) {
                 var respObj = {
                     status: "done",
@@ -214,6 +228,7 @@ var axios: any = window.axios || null;
                 };
                 def.resolve(respObj.data);
             }).catch(function(err: any) {
+                if(debug_mode) console.error(err);
                 def.reject(err);
             });
             return def;
@@ -278,6 +293,7 @@ var axios: any = window.axios || null;
                 };
                 def.resolve(respObj.data);
             }).catch(function(err: any) {
+                if(debug_mode) console.error(err);
                 def.reject(err);
             });
             return def;
@@ -290,7 +306,7 @@ var axios: any = window.axios || null;
 (function(){
     website["dialog"] = function(initObj: any) {
         var def = $.Deferred();
-        var dialogId = website.randomString(16);
+        var dialogId = "_dialog_"+website.randomString(16);
         var dialogElem = $(buildDialogHtml());
         (function(){
             dialogElem.attr("modal_dialog_ssid", dialogId);
@@ -311,27 +327,47 @@ var axios: any = window.axios || null;
         };
         // esc key setting（要配合 tabindex 設定）
         (function(){
-            dialogElem.on("keydown", function(evt: any){
-                if(27 == evt.keyCode) {
-                    dialogObj.close();
-                }
-            });
+            var enable_esc_key = "true";
+            if(null != initObj["escape_key"]) {
+                enable_esc_key = initObj["escape_key"];
+            }
+            if("true" == enable_esc_key) {
+                dialogElem.on("keydown", function(evt: any){
+                    if(27 == evt.keyCode) {
+                        dialogObj.close();
+                    }
+                });
+            }
+        })();
+        // focus to this ( fix for use tab key )
+        (function(){
+            dialogElem.focus();
         })();
         def.resolve(dialogObj);
         return def;
     };
     function buildDialogHtml() {
-        var tmp = [];
-        tmp.push("<div modal_dialog_key='overlay' tabindex='0' style='display: none;position: fixed;top: 0px;left: 0px;height: 100vh;width: 100vw;overflow: auto;'>");
-        tmp.push("<div modal_dialog_key='wrap' style='margin: auto'></div>"); // 垂直與水平置中
-        tmp.push("</div>");
-        return tmp.join('');
+        var overlay_elem = $("<div modal_dialog_key='overlay' tabindex='0'></div>");
+        (function(){
+            overlay_elem.css("display", "none");
+            overlay_elem.css("align-items", "center");
+            overlay_elem.css("justify-content", "center");
+            overlay_elem.css("position", "fixed");
+            overlay_elem.css("top", "0px");
+            overlay_elem.css("left", "0px");
+            overlay_elem.css("width", "100vw");
+            overlay_elem.css("height", "100vh");
+            overlay_elem.css("overflow", "auto");
+            overlay_elem.css("backdrop-filter", "blur(1px)"); // 毛玻璃效果
+        })();
+        overlay_elem.html("<div modal_dialog_key='wrap' style='position: absolute;'></div>");
+        return overlay_elem.prop("outerHTML");
     }
 })();
 
 // hyperlinker
 (function(){
-    website["redirect"] = function(url: string, onCache: boolean, ran_str: any) {
+    website["redirect"] = function(url: string, onCache: boolean) {
         if(null == onCache) onCache = true; // GET 預設是快取狀態
         var targetURL = null;
         if(null == url) {
@@ -345,9 +381,138 @@ var axios: any = window.axios || null;
         } else {
             // 藉由參數取消瀏覽器快取機制
             var ts = Date.now();
-            var _ran_str = ts;
-            if(null != ran_str) _ran_str = ran_str;
-            location.href = targetURL + "?ei=" + _ran_str;
+            location.href = targetURL + "?ei=" + ts;
         }
+    };
+})();
+
+// base64 url safe
+(function(){
+    website["base64_url_encode"] = function( content: any ) {
+        if(null == content) {
+            console.error("b64 encode content is null!");
+            return null;
+        }
+        var byteArr = CryptoJS.enc.Utf8.parse( content );
+        var res_str = url_safe_withoutPadding( CryptoJS.enc.Base64.stringify(byteArr) );
+        return res_str;
+    };
+    website["base64_url_decode"] = function( content: any ) {
+        if(null == content) {
+            console.error("b64 decode content is null!");
+            return null;
+        }
+        var byteArr = CryptoJS.enc.Base64.parse( decode_url_safe( content ) );
+        var res_str = byteArr.toString(CryptoJS.enc.Utf8);
+        return res_str;
+    };
+    // https://jsfiddle.net/magikMaker/7bjaT/
+    function url_safe_withoutPadding(str: any) {
+        return str.replace(/\+/g, '-').replace(/\//g, '_').replace(/\=+$/, '');
+    }
+    // https://jsfiddle.net/magikMaker/7bjaT/
+    function decode_url_safe(str: any) {
+        return str.replace(/-/g, '+').replace(/_/g, '/');
+    }
+})();
+
+// number format currency style
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/NumberFormat
+(function(){
+    website["currency_number"] = function( num_val: number ) {
+        // for taiwan used
+        // return new Intl.NumberFormat('zh-TW', { style: 'currency', currency: 'TWD' }).format( num_val );
+        return new Intl.NumberFormat('zh-TW', { style: 'decimal', currency: 'TWD' }).format( num_val );
+    };
+})();
+
+// print command
+// https://stackoverflow.com/questions/28343748/google-chrome-print-preview-does-not-load-the-page-the-first-time
+(function(){
+    website["print"] = function( elem: any ){
+        // default print content preview
+        // window.open('tab_url', 'tab_name', 'width=800,height=600');
+        var w_width = $(window).width() * 0.9;
+        var w_height = $(window).height() * 0.9;
+        (function(){
+            // limit preview size
+            if(600 > w_width) w_width = 600;
+            if(600 > w_height) w_height = 600;
+        })();
+        var mywindow: any = window.open('','','left=0,top=0,width='+w_width+',height='+w_height+',toolbar=0,scrollbars=0,status=0,addressbar=0');
+        var is_chrome = Boolean(mywindow.chrome);
+        mywindow.document.write( elem.prop("outerHTML") );
+        mywindow.document.close(); // necessary for IE >= 10 and necessary before onload for chrome
+        if(is_chrome) {
+            var b_need_load = false;
+            // 確認是否需要使用到 onload 狀態（如頁面沒有這個需求會導致無法觸發 onload）
+            if ( elem.prop("outerHTML").indexOf("<img") == -1 ) b_need_load = true;
+            if( b_need_load ) {
+                mywindow.focus(); // necessary for IE >= 10
+                mywindow.print();
+                mywindow.close();
+            } else {
+                mywindow.onload = function() { // wait until all resources loaded
+                    mywindow.focus(); // necessary for IE >= 10
+                    mywindow.print(); // change window to mywindow
+                    mywindow.close(); // change window to mywindow
+                };
+            }
+        } else {
+            mywindow.document.close(); // necessary for IE >= 10
+            mywindow.focus(); // necessary for IE >= 10
+            mywindow.print();
+            mywindow.close();
+        }
+    };
+})();
+
+// get os browser scroll width size
+(function(){
+    website["scroll_width"] = function() {
+        var scr = null;
+        var inn = null;
+        var wNoScroll = 0;
+        var wScroll = 0;
+        // Outer scrolling div
+        scr = document.createElement('div');
+        var div_id = "_scroll_test" + website.randomString(16);
+        scr.id = div_id;
+        scr.style.position = 'absolute';
+        scr.style.top = '-1000px';
+        scr.style.left = '-1000px';
+        scr.style.width = '100px';
+        scr.style.height = '50px';
+        // scr.padding='0px';
+        // scr.margin='0px';
+        // Start with no scrollbar
+        scr.style.overflow = 'hidden';
+        // Inner content div
+        inn = document.createElement('div');
+        inn.style.width = '100%';
+        inn.style.height = '200px';
+        // Put the inner div in the scrolling div
+        scr.appendChild(inn);
+        // Append the scrolling div to the doc
+        document.getElementsByTagName('html')[0].appendChild(scr);
+        // Width of the inner div sans scrollbar
+        wNoScroll = inn.offsetWidth;
+        // Add the scrollbar
+        scr.style.overflow = 'auto';
+        // Width of the inner div width scrollbar
+        wScroll = inn.offsetWidth;
+        // Remove the scrolling div from the doc
+        var elem = document.getElementById(div_id);
+        if(null != elem) elem.remove();
+        // Pixel width of the scroller
+        return (wNoScroll - wScroll);
+    };
+})();
+
+(function(){
+    // ( 輸入值, 處理四捨五入到小數點第幾位 )
+    website["proc_float"] = function(number: any, fractionDigits: any) {
+        var def = fractionDigits || 2;
+        return Math.round(number* Math.pow(10, def))/ Math.pow(10, def);
     };
 })();

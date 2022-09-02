@@ -10,7 +10,8 @@ import framework.web.handler.RequestHandler;
 import java.io.File;
 
 /**
- * 檔案下載範例
+ * 建立一個可提供下載主機端任意檔案服務的 RequestHandler，
+ * 應注意其安全性原則與路徑隱私達到保護主機檔案資源的機制
  */
 public class FileHandler extends RequestHandler {
 
@@ -20,7 +21,7 @@ public class FileHandler extends RequestHandler {
     public void startup(AsyncActionContext asyncActionContext) {
         if(checkIsMyJob(asyncActionContext)) {
             this.requestContext = asyncActionContext;
-            processRequest();
+            process_request();
         } else {
             this.passToNext(asyncActionContext);
         }
@@ -28,18 +29,39 @@ public class FileHandler extends RequestHandler {
 
     @Override
     protected boolean checkIsMyJob(AsyncActionContext asyncActionContext) {
-        if(asyncActionContext.isFileAction()) return false;
-        return "file".equalsIgnoreCase(asyncActionContext.getParameters().get("act"));
+        if( asyncActionContext.isFileAction() ) return false; // 排除 post multipart upload
+        return ( "file_download".equalsIgnoreCase(asyncActionContext.getParameters().get("act")) );
     }
 
-    private void processRequest() {
-        String path = requestContext.getParameters().get("path");
-        JsonObject resObj = getDirContent(path);
+    private void process_request() {
+        String file_path = requestContext.getParameters().get("file_path");
+        if(null == file_path || file_path.length() == 0) {
+            JsonObject obj = new JsonObject();
+            {
+                obj.addProperty("status", "fail");
+                obj.addProperty("msg_zht", "file_path：請輸入正確的檔案路徑");
+            }
+            requestContext.printToResponse(obj, new Handler(){
+                @Override
+                public void handleMessage(Message m) {
+                    super.handleMessage(m);
+                    requestContext.complete();
+                }
+            });
+            return;
+        }
+        process_file_download(file_path);
+    }
+
+    private void process_file_download(String file_path) {
+        JsonObject resObj = getDirContent( file_path );
         try {
             // 如果是檔案則直接下載，若是資料夾則顯示其檔案列表
-            if ("path_is_file".equals(resObj.get("status").getAsString())) {
-                File file = new File(path);
-                requestContext.outputFileToResponse(path, file.getName(), null, false, new Handler(){
+            String file_status = resObj.get("status").getAsString();
+            if ("path_is_file".equalsIgnoreCase( file_status )) {
+                // 當路徑為檔案時
+                File file = new File( file_path );
+                requestContext.outputFileToResponse(file_path, file.getName(), null, false, new Handler(){
                     @Override
                     public void handleMessage(Message m) {
                         super.handleMessage(m);
@@ -47,6 +69,7 @@ public class FileHandler extends RequestHandler {
                     }
                 });
             } else {
+                // 當路徑為資料夾時
                 requestContext.printToResponse(resObj, new Handler(){
                     @Override
                     public void handleMessage(Message m) {
@@ -57,7 +80,20 @@ public class FileHandler extends RequestHandler {
             }
         } catch (Exception e) {
             e.printStackTrace();
-            requestContext.complete();
+            {
+                JsonObject obj = new JsonObject();
+                {
+                    obj.addProperty("status", "fail");
+                    obj.addProperty("msg_zht", "伺服器端發生錯誤");
+                }
+                requestContext.printToResponse(obj, new Handler(){
+                    @Override
+                    public void handleMessage(Message m) {
+                        super.handleMessage(m);
+                        requestContext.complete();
+                    }
+                });
+            }
         }
     }
 

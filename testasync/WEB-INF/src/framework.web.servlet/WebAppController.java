@@ -1,7 +1,6 @@
 package framework.web.servlet;
 
 import framework.thread.ThreadPoolStatic;
-import framework.thread.VirtualThreadStatic;
 import framework.web.runnable.AsyncContextRunnable;
 
 import javax.servlet.AsyncContext;
@@ -89,8 +88,8 @@ public class WebAppController extends HttpServlet {
          * 『asyncContext.getResponse().getBufferSize()』
          * 會造成 AppSetting 發生錯誤
          */
-        // ThreadPoolStatic.execute(asyncContextRunnable);
-        VirtualThreadStatic.execute(asyncContextRunnable);
+        ThreadPoolStatic.execute(asyncContextRunnable);
+        // VirtualThreadStatic.execute(asyncContextRunnable);
     }
 
     // 內容編碼設定

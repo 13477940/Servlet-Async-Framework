@@ -21,10 +21,15 @@ public class TextFileWriter {
     private TextFileWriter(File targetFile, Boolean isAppend) {
         this.targetFile = targetFile;
         this.isAppend = isAppend;
-        try {
-            if(null == targetFile || !targetFile.exists()) {
+        if(null == targetFile || !targetFile.exists()) {
+            try {
                 throw new Exception("需要使用 TextFileWriter 的檔案不存在");
+            } catch (Exception e) {
+                e.printStackTrace();
             }
+            return;
+        }
+        try {
             fileChannel = new WeakReference<>( new RandomAccessFile(this.targetFile, "rw").getChannel() ).get();
         } catch (Exception e) {
             e.printStackTrace();

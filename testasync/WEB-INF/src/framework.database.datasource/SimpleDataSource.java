@@ -3,7 +3,7 @@ package framework.database.datasource;
 import framework.database.connection.ConnectContext;
 import framework.database.connection.ConnectorConfig;
 import framework.database.interfaces.ConnectionPool;
-import framework.thread.VirtualThreadStatic;
+import framework.thread.ThreadPoolStatic;
 
 import java.lang.ref.WeakReference;
 import java.sql.Connection;
@@ -131,7 +131,7 @@ public class SimpleDataSource extends ConnectorConfig implements ConnectionPool 
     private void setupSimpleManager() {
         // if(null == worker) worker = ThreadPoolStatic.getInstance();
         // worker.execute(() -> {
-        VirtualThreadStatic.execute(() -> {
+        ThreadPoolStatic.execute(() -> {
             while(runTag) {
                 for (HashMap<String, Object> connObj : pool) {
                     // 檢查是否有逾時的 Connection 未被關閉

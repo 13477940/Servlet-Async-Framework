@@ -33,7 +33,12 @@ public class AppWebSocket {
     public void onSocketOpen(Session session) {
         String sessionID = session.getId();
         // all session map
-        { WebSocketChannel.getAllSessionMap().put(sessionID, new WeakReference<>( session ).get()); }
+        {
+            if(null == WebSocketChannelList.getChannel("_all")) {
+                WebSocketChannelList.addChannel("_all", new WebSocketChannel());
+            }
+            WebSocketChannelList.getChannel("_all").addSession( sessionID, new WeakReference<>( session ).get() );
+        }
         // server welcome message
         {
             JsonObject obj = new JsonObject();
@@ -46,7 +51,7 @@ public class AppWebSocket {
     @OnClose
     public void onSocketClose(Session session) {
         String sessionId = session.getId();
-        WebSocketChannel.exitChannels(sessionId);
+        WebSocketChannelList.getChannel("_all").closeSession(sessionId);
     }
 
 }

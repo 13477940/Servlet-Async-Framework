@@ -12,7 +12,8 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 
 /**
- * 路徑判斷與頁面檔回傳範例
+ * 建立一個前端頁面檔案回傳的處理機制 RequestHandler，
+ * 應注重系統頁面隱私性及路徑存取機制是否安全
  */
 public class PageHandler extends RequestHandler {
 
@@ -22,7 +23,7 @@ public class PageHandler extends RequestHandler {
     public void startup(AsyncActionContext asyncActionContext) {
         if(checkIsMyJob(asyncActionContext)) {
             this.requestContext = asyncActionContext;
-            processRequest();
+            process_request();
         } else {
             this.passToNext(asyncActionContext);
         }
@@ -30,18 +31,18 @@ public class PageHandler extends RequestHandler {
 
     @Override
     protected boolean checkIsMyJob(AsyncActionContext asyncActionContext) {
-        if(asyncActionContext.isFileAction()) return false;
+        if(asyncActionContext.isFileAction()) return false; // 排除 post multipart upload
         if(null != asyncActionContext.getResourceExtension()) return false; // 排除資源類請求
-        // if json form body
+        // 排除對於 "content-type: application/json" 的請求處理
         if(asyncActionContext.getHeaders().containsKey("content-type")) {
             if (asyncActionContext.getHeaders().get("content-type").contains("application/json")) return false;
         }
-        if("page".equalsIgnoreCase(asyncActionContext.getParameters().get("page"))) return true;
-        return asyncActionContext.getParameters().size() == 0;
+        if("page".equalsIgnoreCase(asyncActionContext.getParameters().get("act"))) return true;
+        return ( asyncActionContext.getParameters().size() == 0 );
     }
 
-    private void processRequest() {
-        String dirSlash = new PathContext(this.getClass(), "testasync").getDirSlash();
+    private void process_request() {
+        String dirSlash = new PathContext().get_file_separator();
         switch (requestContext.getUrlPath()) {
             case "/":
             case "/index": {
@@ -92,7 +93,9 @@ public class PageHandler extends RequestHandler {
 
     private void response404(Handler handler) {
         try {
+            // 前端顯示 404 page
             requestContext.getHttpResponse().sendError(HttpServletResponse.SC_NOT_FOUND);
+            // 後台 Handler 接收到的內容
             if(null != handler) {
                 Bundle b = new Bundle();
                 b.putString("status", "fail");

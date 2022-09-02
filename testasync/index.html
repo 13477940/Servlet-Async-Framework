@@ -32,6 +32,43 @@
             </div>
             <div style="height: 20px;"></div>
             <div><button ui_key="btn_open_dialog" style="padding: 10px 20px 10px 20px;">Open Dialog</button></div>
+            <div style="height: 20px;"></div>
+            <div>
+                <div style="display: flex;align-items: center;">
+                    <div style="border: 1px solid #999;padding: 5px;">
+                        <input ui_key="send_ws_content" style="border: none;background: none;padding: 5px;font-size: 1rem;line-height: 1.2rem;">
+                    </div>
+                    <div style="width: 10px;"></div>
+                    <button ui_key="btn_send_msg_to_ws" style="padding: 10px 20px 10px 20px;">Send To WebSocket</button>
+                </div>
+            </div>
+            <div style="height: 20px;"></div>
+            <div>you should open "web developer tools" to browse log.</div>
+            <div style="height: 20px;"></div>
+        </div>
+        <!-- template -->
+        <div ui_key="template" style="display: none;">
+            <div ui_key="dialog_msg" style="width: 300px;height: 300px;border: 1px solid #ccc;background-color: #ccc;">
+                <div style="display: flex;align-items: stretch;justify-content: stretch;flex-direction: column;height: 100%;">
+                    <div style="flex-shrink: 0;height: 5px;"></div>
+                    <div style="flex: 1;padding: 0px 5px 0px 5px;overflow: auto;">
+                        <div style="height: 1000px;">test</div>
+                    </div>
+                    <div style="flex-shrink: 0;">
+                        <div style="height: 5px;"></div>
+                        <div style="height: 1px;background-color: #000;"></div>
+                        <div style="height: 5px;"></div>
+                    </div>
+                    <div style="flex-shrink: 0;display: flex;align-items: center;">
+                        <div style="flex: 1;"></div>
+                        <div style="flex-shrink: 0;">
+                            <button ui_key="btn_cancel" style="padding: 10px 20px 10px 20px;">close</button>
+                        </div>
+                        <div style="flex-shrink: 0;width: 5px;"></div>
+                    </div>
+                    <div style="flex-shrink: 0;height: 5px;"></div>
+                </div>
+            </div>
         </div>
     </body>
 </html>

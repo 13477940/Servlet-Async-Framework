@@ -4,7 +4,7 @@ import framework.file.FileFinder;
 import framework.observer.Bundle;
 import framework.observer.Handler;
 import framework.observer.Message;
-import framework.setting.AppSetting;
+import framework.setting.PathContext;
 import framework.web.context.AsyncActionContext;
 import framework.web.handler.RequestHandler;
 
@@ -41,8 +41,8 @@ public class ResourceFileHandler extends RequestHandler {
     }
 
     private void processRequest() {
-        AppSetting setting = new AppSetting.Builder().build();
-        String dirSlash = setting.getDirSlash();
+        // 前端網址路徑轉換為檔案路徑
+        String dirSlash = new PathContext().get_file_separator();
         String path = requestContext.getUrlPath();
         {
             String[] tmp = path.split("/");
@@ -63,7 +63,7 @@ public class ResourceFileHandler extends RequestHandler {
         if( null != finder.find("WEB-INF") ) {
             web_app_dir = finder.find("WEB-INF").getParentFile();
         } else {
-            web_app_dir = setting.getWebAppDir();
+            web_app_dir = new File( new PathContext().get_webapp_project_folder_path() );
         }
         {
             // path 本身已具有根斜線，只需接上 path 即可

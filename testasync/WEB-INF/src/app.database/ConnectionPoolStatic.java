@@ -3,6 +3,10 @@ package app.database;
 import framework.database.datasource.TomcatDataSource;
 import framework.database.interfaces.ConnectionPool;
 
+/**
+ * 此處是資料庫連結資源作為常駐服務的一個範例，
+ * 使每次使用資料庫的時候都有統一調用連結資源的集中點
+ */
 public class ConnectionPoolStatic {
 
     private static ConnectionPool instance = null;

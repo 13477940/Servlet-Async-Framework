@@ -9,6 +9,7 @@ import framework.web.handler.RequestHandler;
 import framework.web.multipart.FileItem;
 import framework.web.multipart.FileItemList;
 
+import java.io.File;
 import java.util.Map;
 
 /**
@@ -34,12 +35,31 @@ public class UploadHandler extends RequestHandler {
     }
 
     private void processRequest() {
-        String uploadPath = new PathContext(this.getClass(), "testasync").getUploadDirPath();
+        String uploadPath = new PathContext().get_webapp_upload_file_folder_path();
+        {
+            File upload_folder = new File(uploadPath);
+            if(!upload_folder.exists()) {
+                {
+                    JsonObject obj = new JsonObject();
+                    obj.addProperty("status", "fail");
+                    obj.addProperty("msg_zht", "錯誤的上傳檔案路徑："+upload_folder);
+                    requestContext.printToResponse(obj, new Handler(){
+                        @Override
+                        public void handleMessage(Message m) {
+                            super.handleMessage(m);
+                            requestContext.complete();
+                        }
+                    });
+                }
+                // upload_folder.mkdirs(); // 如果不具有該資料夾時
+            }
+        }
         if(null != requestContext.getFiles()) {
             FileItemList files = requestContext.getFiles();
             for (FileItem fi : files.prototype()) {
                 if (!fi.isFormField()) {
-                    requestContext.writeFile(fi, uploadPath, String.valueOf(System.currentTimeMillis()), new Handler() {
+                    String upload_file_name = "upload_"+ System.currentTimeMillis();
+                    requestContext.writeFile(fi, uploadPath, upload_file_name, new Handler() {
                         @Override
                         public void handleMessage(Message m) {
                             super.handleMessage(m);

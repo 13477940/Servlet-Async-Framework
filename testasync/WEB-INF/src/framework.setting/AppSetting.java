@@ -339,7 +339,7 @@ public class AppSetting {
             }
             return null;
         }
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(fr, StandardCharsets.UTF_8))) {
+        try ( BufferedReader br = new BufferedReader( new InputStreamReader(fr, StandardCharsets.UTF_8) ) ) {
             while(br.ready()) {
                 String line = br.readLine();
                 sbd.append(line);
