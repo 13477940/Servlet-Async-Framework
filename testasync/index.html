@@ -5,7 +5,7 @@
         <meta name="description" content="" />
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
         <title>Test Async</title>
-        <link rel="stylesheet" href="/testasync/css/module/controller/controller.css">
+        <link rel="stylesheet" href="/testasync/css/controller.css">
         <style>
             /* CSS 反轉所有元素色彩 */
             html[theme_mode=dark] { filter: invert(1) hue-rotate(180deg); }
@@ -51,6 +51,15 @@
             <div ui_key="dialog_msg" style="width: 300px;height: 300px;border: 1px solid #ccc;background-color: #ccc;">
                 <div style="display: flex;align-items: stretch;justify-content: stretch;flex-direction: column;height: 100%;">
                     <div style="flex-shrink: 0;height: 5px;"></div>
+                    <div ui_key="drag_zone" style="flex-shrink: 0;">
+                        <div style="background-color: #ccc;">title</div>
+                        <div style="height: 10px;"></div>
+                    </div>
+                    <div style="flex-shrink: 0;">
+                        <div style="height: 5px;"></div>
+                        <div style="height: 1px;background-color: #000;"></div>
+                        <div style="height: 5px;"></div>
+                    </div>
                     <div style="flex: 1;padding: 0px 5px 0px 5px;overflow: auto;">
                         <div style="height: 1000px;">test</div>
                     </div>

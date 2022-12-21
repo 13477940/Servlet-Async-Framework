@@ -1,15 +1,10 @@
-// namespace define
-var $: any = window.$ || null;
-
-// site function
+// script controller function
 (function(){
     // 新增腳本時於此處增加腳本路徑
     var arr: any = [];
     (function(){
         arr.push("/testasync/js/jquery/jquery.min.js");
         arr.push("/testasync/js/axios/axios.min.js");
-        arr.push("/testasync/js/cryptojs/core.min.js");
-        arr.push("/testasync/js/cryptojs/enc-base64.min.js");
         arr.push("/testasync/js/index.js");
     })();
     // 遞迴方式讀取所有 script 項目

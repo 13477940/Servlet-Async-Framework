@@ -1,76 +1,95 @@
+// 通用腳本 - modify:2022-12-16
+
 // namespace define
 var debug_mode: boolean = true; // for try-catch, scope: ajax
 var website: any = window.website || {};
 var $: any = window.$ || null; // jquery
 var axios: any = window.axios || null;
-var CryptoJS: any = window.CryptoJS || null;
-var moment: any = window.moment || null;
 
 // script loader
 (function(){
-    website["script"] = function(url: string, readyFn: any) {
-        // 檢查是否為陣列格式
-        if( Array.isArray(url) ) {
-            for (var i = 0, len = url.length; i < len; i++) {
-                var _url = url[i];
-                loadScript(_url);
-            }
-        } else {
-            loadScript(url);
-        }
-        // 動態讀取腳本實作
-        function loadScript(url: string) {
-            rm_rep_script(url);
-            append_load_script(url);
-        }
+    website["script"] = function(script_url: string, ready_fn: any) {
         // https://developer.mozilla.org/zh-TW/docs/Web/API/Document/createElement
         // https://developer.mozilla.org/zh-TW/docs/Web/API/Document/readyState
         // https://developer.mozilla.org/en-US/docs/Web/API/Node/appendChild
-        function append_load_script(url: any) {
+        (function(){
+            let timer: any = null;
             // loop check page ready status.
             exec_load_fn();
             // 載入腳本實作
             function exec_load_fn() {
-                // 如果沒有在這個時候載入會導致 log cat 無法接收所有此時載入的腳本錯誤 exception
-                if("complete" == document.readyState) {
-                    var framework_label = "my_script_loader";
-                    var container_div: any = document.querySelector("div[_framework_key="+framework_label+"]");
-                    (function(){
-                        if(null == container_div) {
-                            container_div = document.createElement('div');
-                            container_div.setAttribute("_framework_key", framework_label); // set elem attr
-                            document.body.appendChild(container_div);
-                        }
-                    })();
-                    var scriptTag = document.createElement('script');
-                    scriptTag.src = url;
-                    scriptTag.onload = readyFn;
-                    scriptTag.onerror = loadErrorFn;
-                    // document.body.appendChild(scriptTag);
-                    (function(){
-                        container_div.append(scriptTag);
-                    })();
-                } else {
-                    setTimeout(function(){
+                if(null != timer) clearTimeout(timer);
+                timer = setTimeout(function(){
+                    if("complete" == document.readyState) {
+                        load_script_fn(script_url, ready_fn);
+                    } else {
                         exec_load_fn();
-                    }, 100);
-                }
+                    }
+                }, 60);
             }
-            // 當腳本讀取發生錯誤時
-            function loadErrorFn(oError: any) {
-                console.error(oError);
-            }
-        }
+        })();
     };
+    function load_script_fn(script_url: any, ready_fn: any) {
+        if(null == ready_fn) ready_fn = function(){}; // if null ready_fn
+        const framework_label = "my_script_loader";
+        let container_div = document.querySelector("div[_framework_key="+framework_label+"]");
+        (function(){
+            if(null == container_div) {
+                container_div = document.createElement('div');
+                container_div.setAttribute("_framework_key", framework_label);
+                document.body.appendChild(container_div);
+            }
+        })();
+        // 檢查是否需要同時載入的 script，同時載入以 array 形式帶入
+        // 藉由當下計數器與目標計數器達成陣列腳本列表載入狀態確認
+        let catch_count = 0;
+        let target_count = 0;
+        (function(){
+            if(Array.isArray(script_url)) {
+                target_count = script_url.length;
+                // 當腳本路徑為陣列載入時會以讀取最久的腳本內容作為回應時間點
+                for(let url_index in script_url) {
+                    let url = script_url[url_index];
+                    rm_rep_script(url);
+                    append_script_tag(url, container_div, catch_script_done, catch_script_fail);
+                }
+            } else {
+                target_count = 1;
+                rm_rep_script(script_url);
+                append_script_tag(script_url, container_div, catch_script_done, catch_script_fail);
+            }
+        })();
+        function catch_script_done(evt: any) {
+            catch_count++;
+            if(target_count == catch_count) ready_fn();
+        }
+        function catch_script_fail(evt: any) {
+            catch_count++;
+            if(target_count == catch_count) ready_fn();
+            console.error(evt);
+        }
+    }
+    function append_script_tag(url: any, container_div: any, ready_fn: any, error_fn: any) {
+        let scriptTag = document.createElement('script');
+        scriptTag.src = url;
+        if(null != ready_fn) scriptTag.onload = ready_fn;
+        if(null != error_fn) scriptTag.onerror = error_fn;
+        container_div.append(scriptTag);
+    }
     // https://developer.mozilla.org/en-US/docs/Web/API/Document/querySelectorAll
     // 當重複載入同個 script 路徑則將舊的 tag 刪除
+    let prefix: any = [];
+    (function(){
+        prefix.push(window.location.protocol);
+        prefix.push("//");
+        prefix.push(window.location.hostname);
+    })();
     function rm_rep_script(url: string) {
-        var elems = document.querySelectorAll("script");
-        var prefix = window.location.protocol + "//" + window.location.hostname;
-        var chk_str = prefix + url;
-        for(var i = 0, len = elems.length; i < len; i++) {
-            var elem = elems[i];
-            if(elem.src.indexOf(chk_str) > -1) {
+        let elems = document.querySelectorAll("script");
+        let chk_str = prefix.join("") + url;
+        for(let i = 0, len = elems.length; i < len; i++) {
+            let elem = elems[i];
+            if(elem.src.includes(chk_str)) {
                 elem.remove();
             }
         }
@@ -80,13 +99,13 @@ var moment: any = window.moment || null;
 // 亂數產生器
 (function(){
     website["randomString"] = function(len: any) {
-        var t = "abcdefghijklmnopqrstuvwxyz0123456789";
-        var r = [];
-        var l = 16; // default
-        var tLen = t.length;
+        const t = "abcdefghijklmnopqrstuvwxyz0123456789";
+        let r = [];
+        let l = 16; // default
+        let tLen = t.length;
         if(null != len) l = len;
-        for(var i = 0; i < l; i++) {
-            var c = t.charAt( Math.floor( Math.random() * tLen ) );
+        for(let i = 0; i < l; i++) {
+            const c = t.charAt( Math.floor( Math.random() * tLen ) );
             r.push(c);
         }
         return r.join("");
@@ -97,19 +116,19 @@ var moment: any = window.moment || null;
 (function(){
     (function(){
         website["get"] = function(reqObj: any) {
-            var def = $.Deferred();
+            const def = $.Deferred();
             if (null != reqObj["header"] && false == Array.isArray(reqObj["header"])) {
                 console.error("header 參數必須使用 array 型態");
                 def.reject();
                 return;
             }
-            var headers: any = {};
+            const headers: any = {};
             (function(){
-                var arr = reqObj["header"];
-                for (var index in arr) {
-                    var obj = arr[index];
-                    var key = obj["key"];
-                    var value = obj["value"];
+                let arr = reqObj["header"];
+                for (let index in arr) {
+                    let obj = arr[index];
+                    let key = obj["key"];
+                    let value = obj["value"];
                     headers[key] = value;
                 }
             })();
@@ -118,17 +137,17 @@ var moment: any = window.moment || null;
                 def.reject();
                 return;
             }
-            var params = new URLSearchParams();
+            const params = new URLSearchParams();
             (function(){
-                var arr = reqObj["data"];
-                for (var index in arr) {
-                    var obj = arr[index];
-                    var key = obj["key"];
-                    var value = obj["value"];
+                let arr = reqObj["data"];
+                for (let index in arr) {
+                    let obj = arr[index];
+                    let key = obj["key"];
+                    let value = obj["value"];
                     params.append(key, value);
                 }
             })();
-            var config = {
+            const config = {
                 transformResponse: [
                     function (data: any) { return data; }
                 ],
@@ -136,7 +155,7 @@ var moment: any = window.moment || null;
                 params: params
             };
             axios.get(reqObj["url"], config).then(function(response: any) {
-                var respObj = {
+                let respObj = {
                     status: "done",
                     status_code: response.status,
                     data: response.data
@@ -151,19 +170,19 @@ var moment: any = window.moment || null;
     })();
     (function(){
         website["post"] = function(reqObj: any) {
-            var def = $.Deferred();
+            const def = $.Deferred();
             if (null != reqObj["header"] && false == Array.isArray(reqObj["header"])) {
                 console.error("header 參數必須使用 array 型態");
                 def.reject();
                 return;
             }
-            var headers: any = {};
+            const headers: any = {};
             (function(){
-                var arr = reqObj["header"];
-                for (var index in arr) {
-                    var obj = arr[index];
-                    var key = obj["key"];
-                    var value = obj["value"];
+                let arr = reqObj["header"];
+                for (let index in arr) {
+                    let obj = arr[index];
+                    let key = obj["key"];
+                    let value = obj["value"];
                     headers[key] = value;
                 }
             })();
@@ -172,24 +191,24 @@ var moment: any = window.moment || null;
                 def.reject();
                 return;
             }
-            var params = new URLSearchParams();
+            const params = new URLSearchParams();
             (function(){
-                var arr = reqObj["data"];
-                for (var index in arr) {
-                    var obj = arr[index];
-                    var key = obj["key"];
-                    var value = obj["value"];
+                let arr = reqObj["data"];
+                for (let index in arr) {
+                    let obj = arr[index];
+                    let key = obj["key"];
+                    let value = obj["value"];
                     params.append(key, value);
                 }
             })();
-            var config = {
+            const config = {
                 transformResponse: [
                     function(data: any) { return data; }
                 ],
                 headers: headers
             };
             axios.post(reqObj["url"], params, config).then(function(response: any) {
-                var respObj = {
+                let respObj = {
                     status: "done",
                     status_code: response.status,
                     data: response.data
@@ -204,24 +223,24 @@ var moment: any = window.moment || null;
     })();
     (function(){
         website["post_json"] = function(reqObj: any) {
-            var def = $.Deferred();
+            const def = $.Deferred();
             if (null != reqObj["header"] && false == Array.isArray(reqObj["header"])) {
                 console.error("header 參數必須使用 array 型態");
                 def.reject();
                 return;
             }
-            var headers: any = {};
+            const headers: any = {};
             (function () {
-                var arr = reqObj["header"];
-                for (var index in arr) {
-                    var obj = arr[index];
-                    var key = obj["key"];
-                    var value = obj["value"];
+                let arr = reqObj["header"];
+                for (let index in arr) {
+                    let obj = arr[index];
+                    let key = obj["key"];
+                    let value = obj["value"];
                     headers[key] = value;
                 }
             })();
             axios.post(reqObj["url"], reqObj["text"]).then(function(response: any) {
-                var respObj = {
+                let respObj = {
                     status: "done",
                     status_code: response.status,
                     data: response.data
@@ -237,20 +256,20 @@ var moment: any = window.moment || null;
     // ajax - post form-data multipart
     (function(){
         website["post_form_data"] = function(reqObj: any) {
-            var def = $.Deferred();
+            const def = $.Deferred();
             // req header
             if(null != reqObj["header"] && false == Array.isArray(reqObj["header"])) {
                 console.error("header 參數必須使用 array 型態");
                 def.reject();
                 return;
             }
-            var headers: any = {};
+            const headers: any = {};
             (function(){
-                var arr = reqObj["header"];
-                for(var index in arr) {
-                    var obj = arr[index];
-                    var key = obj["key"];
-                    var value = obj["value"];
+                let arr = reqObj["header"];
+                for(let index in arr) {
+                    let obj = arr[index];
+                    let key = obj["key"];
+                    let value = obj["value"];
                     headers[key] = value;
                 }
             })();
@@ -260,24 +279,24 @@ var moment: any = window.moment || null;
                 def.reject();
                 return;
             }
-            var formData = new FormData();
+            const formData = new FormData();
             (function(){
                 if(null != reqObj["data"]) {
-                    var arr = reqObj["data"];
-                    for(var index in arr) {
-                        var obj = arr[index];
+                    let arr = reqObj["data"];
+                    for(let index in arr) {
+                        let obj = arr[index];
                         formData.append(obj["key"], obj["value"]);
                     }
                 }
             })();
-            var config = {
+            const config = {
                 transformResponse: [function(data: any){ return data; }], // 修正 response 回傳內容格式
                 headers: headers,
                 // maxContentLength: 20000000,
                 onUploadProgress: function(progressEvent: any) {
-                    var percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-                    var percentStr = String(percentCompleted); // percent number
-                    var respObj = {
+                    let percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                    let percentStr = String(percentCompleted); // percent number
+                    let respObj = {
                         status: "upload_progress",
                         progress_value: percentStr
                     };
@@ -286,7 +305,7 @@ var moment: any = window.moment || null;
             };
             // form-data 格式請使用 post method
             axios.post(reqObj["url"], formData, config).then(function(response: any) {
-                var respObj = {
+                let respObj = {
                     status: "done",
                     status_code: response.status,
                     data: response.data
@@ -302,23 +321,23 @@ var moment: any = window.moment || null;
 })();
 
 // dialog
-// ＃210512 更新 esc 按鍵反應
 (function(){
     website["dialog"] = function(initObj: any) {
-        var def = $.Deferred();
-        var dialogId = "_dialog_"+website.randomString(16);
-        var dialogElem = $(buildDialogHtml());
+        const def = $.Deferred();
+        const dialogId = "_dialog_"+website.randomString(16);
+        const dialogElem = $(buildDialogHtml());
         (function(){
             dialogElem.attr("modal_dialog_ssid", dialogId);
             dialogElem.css("z-index", "10");
             dialogElem.css("background-color", "rgba(90,90,90,0.5)");
             if(null != initObj["content"] && initObj["content"].length > 0) {
+                // var content_elem = $(initObj["content"]);
                 dialogElem.find("div[modal_dialog_key=wrap]").append(initObj["content"]);
             }
         })();
         $("body").append(dialogElem);
         dialogElem.css("display", "flex");
-        var dialogObj = {
+        const dialogObj = {
             dialog: dialogElem.find("div[modal_dialog_key=wrap]"),
             overlay: dialogElem,
             close: function(){
@@ -327,7 +346,7 @@ var moment: any = window.moment || null;
         };
         // esc key setting（要配合 tabindex 設定）
         (function(){
-            var enable_esc_key = "true";
+            let enable_esc_key = "true";
             if(null != initObj["escape_key"]) {
                 enable_esc_key = initObj["escape_key"];
             }
@@ -347,11 +366,11 @@ var moment: any = window.moment || null;
         return def;
     };
     function buildDialogHtml() {
-        var overlay_elem = $("<div modal_dialog_key='overlay' tabindex='0'></div>");
+        const overlay_elem = $("<div modal_dialog_key='overlay' tabindex='0'></div>");
         (function(){
             overlay_elem.css("display", "none");
-            overlay_elem.css("align-items", "center");
-            overlay_elem.css("justify-content", "center");
+            overlay_elem.css("align-items", "stretch");
+            overlay_elem.css("justify-content", "stretch");
             overlay_elem.css("position", "fixed");
             overlay_elem.css("top", "0px");
             overlay_elem.css("left", "0px");
@@ -360,7 +379,18 @@ var moment: any = window.moment || null;
             overlay_elem.css("overflow", "auto");
             overlay_elem.css("backdrop-filter", "blur(1px)"); // 毛玻璃效果
         })();
-        overlay_elem.html("<div modal_dialog_key='wrap' style='position: absolute;'></div>");
+        // 藉由 flex 特性，達到水平與垂直置中，若高度超過視器高度則啟用 overflow
+        (function(){
+            const wrap_html = [];
+            wrap_html.push("<div style='flex: 1;'></div>");
+            wrap_html.push("<div style='flex-shrink: 0;display: flex;align-items: stretch;justify-content: stretch;flex-direction: column;'>");
+            wrap_html.push("<div style='flex: 1;'></div>");
+            wrap_html.push("<div modal_dialog_key='wrap' style='flex-shrink: 0;'></div>");
+            wrap_html.push("<div style='flex: 1;'></div>");
+            wrap_html.push("</div>");
+            wrap_html.push("<div style='flex: 1;'></div>");
+            overlay_elem.html(wrap_html.join(""));
+        })();
         return overlay_elem.prop("outerHTML");
     }
 })();
@@ -369,7 +399,7 @@ var moment: any = window.moment || null;
 (function(){
     website["redirect"] = function(url: string, onCache: boolean) {
         if(null == onCache) onCache = true; // GET 預設是快取狀態
-        var targetURL = null;
+        let targetURL = null;
         if(null == url) {
             targetURL = location.protocol + '//' + location.host + location.pathname;
         } else {
@@ -380,32 +410,54 @@ var moment: any = window.moment || null;
             location.href = targetURL;
         } else {
             // 藉由參數取消瀏覽器快取機制
-            var ts = Date.now();
+            const ts = Date.now();
             location.href = targetURL + "?ei=" + ts;
         }
     };
 })();
 
-// base64 url safe
+// native javascript base64 url safe
 (function(){
-    website["base64_url_encode"] = function( content: any ) {
+    website["base64_encode"] = function( content: any ) {
         if(null == content) {
             console.error("b64 encode content is null!");
             return null;
         }
-        var byteArr = CryptoJS.enc.Utf8.parse( content );
-        var res_str = url_safe_withoutPadding( CryptoJS.enc.Base64.stringify(byteArr) );
-        return res_str;
+        const text_encoder = new TextEncoder();
+        const aMyUTF8Input = text_encoder.encode(content);
+        return base64EncArr(aMyUTF8Input);
+    }
+    website["base64_url_encode"] = function( content: any ) {
+        return url_safe_withoutPadding( website["base64_encode"](content) );
     };
-    website["base64_url_decode"] = function( content: any ) {
+    website["base64_decode"] = function( content: any ) {
         if(null == content) {
             console.error("b64 decode content is null!");
             return null;
         }
-        var byteArr = CryptoJS.enc.Base64.parse( decode_url_safe( content ) );
-        var res_str = byteArr.toString(CryptoJS.enc.Utf8);
-        return res_str;
+        const text_decoder = new TextDecoder();
+        const aMyUTF8Output = base64DecToArr(content, 1);
+        return text_decoder.decode(aMyUTF8Output);
     };
+    website["base64_url_decode"] = function( content: any ) {
+        return website["base64_decode"](content);
+    };
+
+    // for byte
+    website["base64_enc_byte"] = function(src_byte: any) {
+        const tmp_arr = new Uint8Array(src_byte);
+        return base64EncArr(tmp_arr);
+    };
+    website["base64_dec_byte"] = function(src_byte: any) {
+        return base64DecToArr(src_byte, 1);
+    };
+    website["base64_url_enc_byte"] = function(src_byte: any) {
+        return url_safe_withoutPadding(website["base64_enc_byte"](src_byte));
+    };
+    website["base64_url_dec_byte"] = function(src_byte: any) {
+        return website["base64_dec_byte"](src_byte);
+    };
+
     // https://jsfiddle.net/magikMaker/7bjaT/
     function url_safe_withoutPadding(str: any) {
         return str.replace(/\+/g, '-').replace(/\//g, '_').replace(/\=+$/, '');
@@ -414,6 +466,92 @@ var moment: any = window.moment || null;
     function decode_url_safe(str: any) {
         return str.replace(/-/g, '+').replace(/_/g, '/');
     }
+
+    /* Base64 string to array encoding */
+    function uint6ToB64(nUint6: any) {
+        return nUint6 < 26
+            ? nUint6 + 65
+        : nUint6 < 52
+            ? nUint6 + 71
+        : nUint6 < 62
+            ? nUint6 - 4
+        : nUint6 === 62
+            ? 43
+        : nUint6 === 63
+            ? 47
+        : 65;
+    }
+
+    function base64EncArr(aBytes: any) {
+        let nMod3 = 2;
+        let sB64Enc = "";
+
+        const nLen = aBytes.length;
+        let nUint24 = 0;
+        for (let nIdx = 0; nIdx < nLen; nIdx++) {
+            nMod3 = nIdx % 3;
+            if (nIdx > 0 && ((nIdx * 4) / 3) % 76 === 0) {
+                // sB64Enc += "\r\n";
+            }
+            nUint24 |= aBytes[nIdx] << ((16 >>> nMod3) & 24);
+            if (nMod3 === 2 || aBytes.length - nIdx === 1) {
+                sB64Enc += String.fromCodePoint(
+                    uint6ToB64((nUint24 >>> 18) & 63),
+                    uint6ToB64((nUint24 >>> 12) & 63),
+                    uint6ToB64((nUint24 >>> 6) & 63),
+                    uint6ToB64(nUint24 & 63)
+                );
+                nUint24 = 0;
+            }
+        }
+        return ( sB64Enc.substring(0, sB64Enc.length - 2 + nMod3) + (nMod3 === 2 ? "" : nMod3 === 1 ? "=" : "==") );
+    }
+
+    // Array of bytes to Base64 string decoding
+    function b64ToUint6(nChr: any) {
+        return nChr > 64 && nChr < 91
+            ? nChr - 65
+        : nChr > 96 && nChr < 123
+            ? nChr - 71
+        : nChr > 47 && nChr < 58
+            ? nChr + 4
+        : nChr === 43
+            ? 62
+        : nChr === 47
+            ? 63
+        : 0;
+    }
+
+    // nBlocksSize -> 1 = utf-8
+    function base64DecToArr(sBase64: any, nBlocksSize: any) {
+        const sB64Enc = sBase64.replace(/[^A-Za-z0-9+/]/g, "");
+        const nInLen = sB64Enc.length;
+        const nOutLen = nBlocksSize
+        ? Math.ceil(((nInLen * 3 + 1) >> 2) / nBlocksSize) * nBlocksSize
+        : (nInLen * 3 + 1) >> 2;
+        const taBytes = new Uint8Array(nOutLen);
+
+        let nMod3;
+        let nMod4;
+        let nUint24 = 0;
+        let nOutIdx = 0;
+        for (let nInIdx = 0; nInIdx < nInLen; nInIdx++) {
+            nMod4 = nInIdx & 3;
+            nUint24 |= b64ToUint6(sB64Enc.charCodeAt(nInIdx)) << (6 * (3 - nMod4));
+            if (nMod4 === 3 || nInLen - nInIdx === 1) {
+                nMod3 = 0;
+                while (nMod3 < 3 && nOutIdx < nOutLen) {
+                    taBytes[nOutIdx] = (nUint24 >>> ((16 >>> nMod3) & 24)) & 255;
+                    nMod3++;
+                    nOutIdx++;
+                }
+                nUint24 = 0;
+            }
+        }
+
+        return taBytes;
+    }
+
 })();
 
 // number format currency style
@@ -429,11 +567,13 @@ var moment: any = window.moment || null;
 // print command
 // https://stackoverflow.com/questions/28343748/google-chrome-print-preview-does-not-load-the-page-the-first-time
 (function(){
-    website["print"] = function( elem: any ){
+    website["print"] = function( elem: any, width: any, height: any ) {
         // default print content preview
         // window.open('tab_url', 'tab_name', 'width=800,height=600');
         var w_width = $(window).width() * 0.9;
+        if(null != width) w_width = width;
         var w_height = $(window).height() * 0.9;
+        if(null != w_height) w_height = height;
         (function(){
             // limit preview size
             if(600 > w_width) w_width = 600;
@@ -446,17 +586,17 @@ var moment: any = window.moment || null;
         if(is_chrome) {
             var b_need_load = false;
             // 確認是否需要使用到 onload 狀態（如頁面沒有這個需求會導致無法觸發 onload）
-            if ( elem.prop("outerHTML").indexOf("<img") == -1 ) b_need_load = true;
+            if( elem.prop("outerHTML").includes("<img") ) b_need_load = true;
             if( b_need_load ) {
-                mywindow.focus(); // necessary for IE >= 10
-                mywindow.print();
-                mywindow.close();
-            } else {
                 mywindow.onload = function() { // wait until all resources loaded
                     mywindow.focus(); // necessary for IE >= 10
                     mywindow.print(); // change window to mywindow
                     mywindow.close(); // change window to mywindow
                 };
+            } else {
+                mywindow.focus(); // necessary for IE >= 10
+                mywindow.print();
+                mywindow.close();
             }
         } else {
             mywindow.document.close(); // necessary for IE >= 10
@@ -468,6 +608,7 @@ var moment: any = window.moment || null;
 })();
 
 // get os browser scroll width size
+// 主要是對於 windows os 時有效
 (function(){
     website["scroll_width"] = function() {
         var scr = null;
@@ -476,7 +617,7 @@ var moment: any = window.moment || null;
         var wScroll = 0;
         // Outer scrolling div
         scr = document.createElement('div');
-        var div_id = "_scroll_test" + website.randomString(16);
+        var div_id = "_scroll_test_" + website.randomString(16);
         scr.id = div_id;
         scr.style.position = 'absolute';
         scr.style.top = '-1000px';
@@ -511,8 +652,15 @@ var moment: any = window.moment || null;
 
 (function(){
     // ( 輸入值, 處理四捨五入到小數點第幾位 )
-    website["proc_float"] = function(number: any, fractionDigits: any) {
+    website["float"] = function(number: any, fractionDigits: any) {
         var def = fractionDigits || 2;
         return Math.round(number* Math.pow(10, def))/ Math.pow(10, def);
+    };
+})();
+
+// https://stackoverflow.com/questions/494035/how-do-you-use-a-variable-in-a-regular-expression
+(function(){
+    website["replace_all"] = function(str: any, scan_str: any, fix_str: any) {
+        return str.split(scan_str).join(fix_str);
     };
 })();

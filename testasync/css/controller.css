@@ -1,15 +1,18 @@
+@import "https://fonts.googleapis.com/css2?family=JetBrains+Mono&family=Noto+Sans+TC&display=swap";
+
 /* css reset */
 * {
     margin: 0px;
     padding: 0px;
     outline: none;
     box-sizing: border-box;
+    font-family: 'JetBrains Mono', 'Noto Sans TC', monospace, sans-serif !important;
 }
 html {
-    font-size: 16px; /* 影響 rem */
+    font-size: 16px; /* rem size */
 }
-img {
-    display: block; /* 修正圖片區塊造成的幽靈空白 */
+img, svg {
+    display: block;
 }
 div {
     font-size: 1rem;

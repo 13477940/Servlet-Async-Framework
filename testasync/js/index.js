@@ -10,7 +10,7 @@ var website = window.website || {};
     (function(){
         $("#label_select_file").html("[未選擇檔案]");
         $("#upfile").on("change", function(){
-            var targetFile = $("#upfile")[0]["files"][0];
+            const targetFile = $("#upfile")[0]["files"][0];
             if(null != targetFile) {
                 $("#label_select_file").html(targetFile.name);
             } else {
@@ -20,9 +20,9 @@ var website = window.website || {};
     })();
     (function(){
         $("#btn_upload_submit").on("click", function(){
-            var targetFile = $("#upfile")[0]["files"][0];
+            const targetFile = $("#upfile")[0]["files"][0];
             (function(){
-                var reqObj = {
+                const reqObj = {
                     url: "/testasync/index",
                     data: [
                         { key: "a", value: "123" },
@@ -100,7 +100,7 @@ var website = window.website || {};
     })();
     (function(){
         function asyncTest() {
-            var reqObj = {
+            const reqObj = {
                 url: "/testasync/index",
                 data: [
                     { key: "A", value: "123" },
@@ -109,7 +109,7 @@ var website = window.website || {};
                 ]
             };
             website.get(reqObj).done(function(respd){
-                var obj = JSON.parse(respd);
+                const obj = JSON.parse(respd);
                 console.log(obj);
             });
         }
@@ -124,24 +124,24 @@ var website = window.website || {};
 // websocket client
 (function(){
     function getRootUri() {
-        var ws_protocal = "ws://";
-        var ws_port = ":80";
+        let ws_protocal = "ws://";
+        let ws_port = ":80";
         if(location.protocol.indexOf("https") > -1) {
             ws_protocal = "wss://";
             ws_port = ":443";
         }
         return ws_protocal + location.host + ws_port;
     }
-    var socketList = [];
-    var ws_uri = getRootUri() + "/testasync/websocket";
-    var web_socket = new WebSocket(ws_uri);
+    const socketList = [];
+    const ws_uri = getRootUri() + "/testasync/websocket";
+    const web_socket = new WebSocket(ws_uri);
     socketList.push(web_socket);
     web_socket.onopen = function(evt) {
         // console.log(evt);
         socketReady();
     };
     web_socket.onmessage = function(evt) {
-        var eventObj = JSON.parse(evt.data);
+        const eventObj = JSON.parse(evt.data);
         // sendMsg(eventObj);
         console.log(eventObj);
     };
@@ -154,19 +154,21 @@ var website = window.website || {};
         reconnectFn();
     };
     function socketReady() {
-        var tmpObj = { "cmd": "viewer_reg" };
+        const tmpObj = { "cmd": "viewer_reg" };
         web_socket.send(JSON.stringify(tmpObj));
     }
     function reconnectFn() {
         setTimeout(function(){
-            var opt = socketList.shift();
+            const opt = socketList.shift();
             opt.close();
             // initWebSocket();
         }, 10000); // 10s
     }
 
     $("button[ui_key=btn_send_msg_to_ws]").on("click", function(){
-        var input_value = $("input[ui_key=send_ws_content]").val();
-        web_socket.send(input_value);
+        const input_elem = $("input[ui_key=send_ws_content]");
+        web_socket.send(input_elem.val());
+        input_elem.val("");
+        alert("send socket message done.");
     });
 })();
