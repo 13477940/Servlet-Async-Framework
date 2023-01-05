@@ -2,10 +2,7 @@ package framework.database.pattern;
 
 import com.google.gson.JsonObject;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 /**
  * [data access object]
@@ -89,7 +86,7 @@ public class DataRow {
         JsonObject obj = new JsonObject();
         if(null == this.instance) return null;
         for(Map.Entry<String, String> entry : prototype().entrySet()) {
-            String key = entry.getKey().toLowerCase(); // Key - LowerCase
+            String key = entry.getKey().toLowerCase(Locale.ENGLISH); // Key - LowerCase
             String value = Objects.requireNonNullElse(entry.getValue(), "");
             obj.addProperty(key, value);
         }

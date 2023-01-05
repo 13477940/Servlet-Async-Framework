@@ -14,70 +14,70 @@
  * limitations under the License.
  */
 
-package upload.util;
+ package upload.util;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.ByteBuffer;
-import java.nio.channels.ClosedChannelException;
-import java.nio.channels.WritableByteChannel;
-import java.util.Objects;
+ import java.io.IOException;
+ import java.io.OutputStream;
+ import java.nio.ByteBuffer;
+ import java.nio.channels.ClosedChannelException;
+ import java.nio.channels.WritableByteChannel;
+ import java.util.Objects;
 
-/**
- * A channel implementation which writes the ByteBuffer data
- * to the given OutputStream instance.
- *
- * <p>This implementation differs from the one returned
- * in {@link java.nio.channels.Channels#newChannel(OutputStream)}
- * by one notable thing, it does not use a temporary buffer, because
- * it will not handle read-only or direct ByteBuffers.</p>
- *
- * <p>The channel honors the close contract, it cannot be used after closing.</p>
- */
-public class OutputStreamBackedChannel implements WritableByteChannel {
+ /**
+  * A channel implementation which writes the ByteBuffer data
+  * to the given OutputStream instance.
+  *
+  * <p>This implementation differs from the one returned
+  * in {@link java.nio.channels.Channels#newChannel(OutputStream)}
+  * by one notable thing, it does not use a temporary buffer, because
+  * it will not handle read-only or direct ByteBuffers.</p>
+  *
+  * <p>The channel honors the close contract, it cannot be used after closing.</p>
+  */
+ public class OutputStreamBackedChannel implements WritableByteChannel {
 
-    /**
-     * Flag to determine whether the channel is closed or not.
-     */
-    private boolean open = true;
+     /**
+      * Flag to determine whether the channel is closed or not.
+      */
+     private boolean open = true;
 
-    /**
-     * The stream the channel will write to.
-     */
-    private final OutputStream outputStream;
+     /**
+      * The stream the channel will write to.
+      */
+     private final OutputStream outputStream;
 
-    /**
-     * Public constructor.
-     * @param outputStream The output stream
-     */
-    public OutputStreamBackedChannel(final OutputStream outputStream) {
-        this.outputStream = Objects.requireNonNull(outputStream);
-    }
+     /**
+      * Public constructor.
+      * @param outputStream The output stream
+      */
+     public OutputStreamBackedChannel(final OutputStream outputStream) {
+         this.outputStream = Objects.requireNonNull(outputStream);
+     }
 
-    @Override
-    public int write(final ByteBuffer src) throws IOException {
-        if (!open) {
-            throw new ClosedChannelException();
-        }
-        if (src.isDirect() || src.isReadOnly()) {
-            throw new IllegalArgumentException("The buffer cannot be direct or read-only!");
-        }
-        final var buf = src.array();
-        final var offset = src.position();
-        final var len = src.remaining();
-        outputStream.write(buf, offset, len);
-        src.position(offset + len);
-        return len;
-    }
+     @Override
+     public int write(final ByteBuffer src) throws IOException {
+         if (!open) {
+             throw new ClosedChannelException();
+         }
+         if (src.isDirect() || src.isReadOnly()) {
+             throw new IllegalArgumentException("The buffer cannot be direct or read-only!");
+         }
+         final var buf = src.array();
+         final var offset = src.position();
+         final var len = src.remaining();
+         outputStream.write(buf, offset, len);
+         src.position(offset + len);
+         return len;
+     }
 
-    @Override
-    public boolean isOpen() {
-        return open;
-    }
+     @Override
+     public boolean isOpen() {
+         return open;
+     }
 
-    @Override
-    public void close() throws IOException {
-        outputStream.close();
-        open = false;
-    }
-}
+     @Override
+     public void close() throws IOException {
+         outputStream.close();
+         open = false;
+     }
+ }

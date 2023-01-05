@@ -14,21 +14,21 @@
  * limitations under the License.
  */
 
-package upload.errors;
+ package upload.errors;
 
-import java.io.IOException;
+ import java.io.IOException;
 
-/**
- * Exception thrown by the multipart parser. Usually it's
- * impossible to recover from this error.
- */
-public class MultipartException extends IOException {
+ /**
+  * Exception thrown by the multipart parser. Usually it's
+  * impossible to recover from this error.
+  */
+ public class MultipartException extends IOException {
 
-    /**
-     * Public constructor.
-     * @param message The exception message.
-     */
-    public MultipartException(final String message) {
-        super(message);
-    }
-}
+     /**
+      * Public constructor.
+      * @param message The exception message.
+      */
+     public MultipartException(final String message) {
+         super(message);
+     }
+ }

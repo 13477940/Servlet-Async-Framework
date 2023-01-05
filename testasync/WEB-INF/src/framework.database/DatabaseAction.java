@@ -11,6 +11,7 @@ import java.lang.ref.WeakReference;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.Objects;
 
 /**
@@ -267,7 +268,7 @@ public class DatabaseAction {
                 JsonObject row = new JsonObject();
                 for (String col : columns) {
                     if(null == col) continue;
-                    String key = col.toLowerCase();
+                    String key = col.toLowerCase(Locale.ENGLISH);
                     String value = rs.getString(col);
                     row.addProperty(key, Objects.requireNonNullElse(value, ""));
                 }

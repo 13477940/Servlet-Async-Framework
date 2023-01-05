@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.lang.ref.WeakReference;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.Locale;
 
 /**
  * #210821 增加檔案名稱及副檔名處理
@@ -171,7 +172,7 @@ public class FileItem {
         if( "extension".equalsIgnoreCase(parse_type) ) {
             String[] sArr = file_name_str.split("\\.");
             if(sArr.length > 1) {
-                res = sArr[sArr.length-1].toLowerCase();
+                res = sArr[sArr.length-1].toLowerCase(Locale.ENGLISH);
             } else {
                 return null;
             }

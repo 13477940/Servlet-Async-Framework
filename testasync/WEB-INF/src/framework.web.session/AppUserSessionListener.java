@@ -2,9 +2,8 @@ package framework.web.session;
 
 import framework.web.session.service.SessionCounter;
 import framework.web.session.service.SessionServiceStatic;
-
-import javax.servlet.http.HttpSessionEvent;
-import javax.servlet.http.HttpSessionListener;
+import jakarta.servlet.http.HttpSessionEvent;
+import jakarta.servlet.http.HttpSessionListener;
 
 /**
  * 此類別使用於 WEB-INF/web.xml -> <listener></listener> 定義之中

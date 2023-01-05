@@ -14,50 +14,50 @@
  * limitations under the License.
  */
 
-package upload.errors;
+ package upload.errors;
 
-/**
- * Base class for the size related exceptions.
- */
-public abstract class UploadSizeException extends RuntimeException {
+ /**
+  * Base class for the size related exceptions.
+  */
+ public abstract class UploadSizeException extends RuntimeException {
 
-    /**
-     * The known size.
-     */
-    private final long actual;
+     /**
+      * The known size.
+      */
+     private final long actual;
 
-    /**
-     * The maximum permitted size.
-     */
-    private final long permitted;
+     /**
+      * The maximum permitted size.
+      */
+     private final long permitted;
 
-    /**
-     * Package private constructor.
-     * @param message The message of the exception
-     * @param actual The known size at the time of the exception in bytes
-     * @param permitted The maximum permitted size in bytes
-     */
-    UploadSizeException(final String message, final long actual, final long permitted) {
-        super(message);
-        this.actual = actual;
-        this.permitted = permitted;
-    }
+     /**
+      * Package private constructor.
+      * @param message The message of the exception
+      * @param actual The known size at the time of the exception in bytes
+      * @param permitted The maximum permitted size in bytes
+      */
+     UploadSizeException(final String message, final long actual, final long permitted) {
+         super(message);
+         this.actual = actual;
+         this.permitted = permitted;
+     }
 
-    /**
-     * Returns the actual size.
-     *
-     * @return The actual size.
-     */
-    public long getActualSize() {
-        return actual;
-    }
+     /**
+      * Returns the actual size.
+      *
+      * @return The actual size.
+      */
+     public long getActualSize() {
+         return actual;
+     }
 
-    /**
-     * Returns the permitted size.
-     *
-     * @return The permitted size.
-     */
-    public long getPermittedSize() {
-        return permitted;
-    }
-}
+     /**
+      * Returns the permitted size.
+      *
+      * @return The permitted size.
+      */
+     public long getPermittedSize() {
+         return permitted;
+     }
+ }

@@ -1,6 +1,7 @@
 package app.websocket;
 
-import javax.websocket.Session;
+import jakarta.websocket.Session;
+
 import java.util.LinkedHashMap;
 
 public class WebSocketChannel {

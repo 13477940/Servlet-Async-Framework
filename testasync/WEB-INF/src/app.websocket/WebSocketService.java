@@ -5,8 +5,8 @@ import com.google.gson.JsonObject;
 import framework.observer.Handler;
 import framework.observer.Message;
 import framework.thread.ThreadPoolStatic;
+import jakarta.websocket.Session;
 
-import javax.websocket.Session;
 import java.lang.ref.WeakReference;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;

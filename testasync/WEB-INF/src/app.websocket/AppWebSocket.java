@@ -2,9 +2,9 @@ package app.websocket;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import jakarta.websocket.*;
+import jakarta.websocket.server.ServerEndpoint;
 
-import javax.websocket.*;
-import javax.websocket.server.ServerEndpoint;
 import java.lang.ref.WeakReference;
 
 /**

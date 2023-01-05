@@ -12,15 +12,15 @@ import framework.web.multipart.FileItemList;
 import framework.web.session.context.UserContext;
 import framework.web.session.pattern.UserMap;
 import framework.web.session.service.SessionServiceStatic;
+import jakarta.servlet.AsyncContext;
+import jakarta.servlet.ServletConfig;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import upload.PartOutput;
 import upload.UploadParser;
 
-import javax.servlet.AsyncContext;
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -76,7 +76,7 @@ public class AsyncContextRunnable implements Runnable {
             parseParams();
             return;
         }
-        String _content_type = content_type.toLowerCase();
+        String _content_type = content_type.toLowerCase(Locale.ENGLISH);
         // structured http request
         if(_content_type.contains("application/x-www-form-urlencoded")) {
             proc_url_encoded_body();
@@ -172,7 +172,7 @@ public class AsyncContextRunnable implements Runnable {
                     try {
                         String key = entry.getKey();
                         String[] values = entry.getValue();
-                        // if single key has more than one value, they will be add in JSONArray String.
+                        // if single key has more than one value, they will add in JSONArray String.
                         if (values.length > 1) {
                             JsonArray arr = new JsonArray();
                             // Collections.addAll(arr, values);
@@ -214,6 +214,7 @@ public class AsyncContextRunnable implements Runnable {
                                 bOut = new WeakReference<>( new BufferedOutputStream(new FileOutputStream(nowFile)) ).get();
                                 assert bOut != null;
                                 bOut.write(buffer.array());
+                                bOut.flush();
                             }
                             return PartOutput.from(bOut);
                         })
@@ -265,7 +266,7 @@ public class AsyncContextRunnable implements Runnable {
             try {
                 String key = entry.getKey();
                 String[] values = entry.getValue();
-                // if single key has more than one value, they will be add in JSONArray String.
+                // if single key has more than one value, they will add in JSONArray String.
                 if (values.length > 1) {
                     JsonArray arr = new JsonArray();
                     for(String str : values) {
@@ -310,7 +311,7 @@ public class AsyncContextRunnable implements Runnable {
                 try {
                     String key = entry.getKey();
                     String[] values = entry.getValue();
-                    // if single key has more than one value, they will be add in JSONArray String.
+                    // if single key has more than one value, they will add in JSONArray String.
                     if (values.length > 1) {
                         JsonArray arr = new JsonArray();
                         // Collections.addAll(arr, values);

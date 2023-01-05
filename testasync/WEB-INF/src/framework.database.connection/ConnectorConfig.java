@@ -1,5 +1,6 @@
 package framework.database.connection;
 
+import java.util.Locale;
 import java.util.Objects;
 
 public abstract class ConnectorConfig {
@@ -9,7 +10,7 @@ public abstract class ConnectorConfig {
      */
     protected static String getDriverClassName(String databaseType) {
         String res = null;
-        String dbType = Objects.requireNonNullElse(databaseType, "").trim().toLowerCase();
+        String dbType = Objects.requireNonNullElse(databaseType, "").trim().toLowerCase(Locale.ENGLISH);
         switch(dbType) {
             // https://dev.mysql.com/doc/connector-j/5.1/en/connector-j-usagenotes-connect-drivermanager.html
             // https://dev.mysql.com/doc/connector-j/8.0/en/connector-j-usagenotes-connect-drivermanager.html
@@ -54,7 +55,7 @@ public abstract class ConnectorConfig {
      */
     protected static String getConnectURI(String DB_Type, String DB_IP, String DB_Port, String DB_Name, Boolean useSecurity) {
         StringBuilder sbd = new StringBuilder();
-        String dbType = Objects.requireNonNullElse(DB_Type, "").trim().toLowerCase();
+        String dbType = Objects.requireNonNullElse(DB_Type, "").trim().toLowerCase(Locale.ENGLISH);
         String ip = Objects.requireNonNullElse(DB_IP, "").trim();
         String port = Objects.requireNonNullElse(DB_Port, "").trim();
         String dbName = Objects.requireNonNullElse(DB_Name, "").trim();

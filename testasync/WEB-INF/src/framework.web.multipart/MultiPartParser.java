@@ -1,13 +1,14 @@
 package framework.web.multipart;
 
 import framework.random.RandomServiceStatic;
+import jakarta.servlet.AsyncContext;
+import jakarta.servlet.ServletContext;
 
-import javax.servlet.AsyncContext;
-import javax.servlet.ServletContext;
 import java.io.*;
 import java.lang.ref.WeakReference;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Locale;
 
 /**
  * [已廢棄，請改用 https://github.com/Elopteryx/upload-parser]
@@ -28,7 +29,7 @@ import java.util.ArrayList;
         {
             String hostOS = System.getProperty("os.name");
             this.dirSlash = System.getProperty("file.separator");
-            if(hostOS.toLowerCase().contains("windows")) { this.dirSlash = "\\\\"; }
+            if(hostOS.toLowerCase(Locale.ENGLISH).contains("windows")) { this.dirSlash = "\\\\"; }
         }
         this.asyncContext = asyncContext;
         this.file = file;

@@ -92,6 +92,9 @@ var website = window.website || {};
                     { key: "b", value: "ABC" },
                     { key: "c", value: "中文測試" },
                     { key: "d", value: "/// //aaa// a//cc[]///" }
+                ],
+                header: [
+                    { key: "my-auth", value: "test_post_123456_hi" }
                 ]
             }).done(function(respd){
                 console.log(respd);

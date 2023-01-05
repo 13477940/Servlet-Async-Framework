@@ -14,21 +14,21 @@
  * limitations under the License.
  */
 
-package upload.errors;
+ package upload.errors;
 
-/**
- * Exception thrown when there is a maximum size limit set for the whole
- * request and it is exceeded for the first time.
- */
-public class RequestSizeException extends UploadSizeException {
+ /**
+  * Exception thrown when there is a maximum size limit set for the whole
+  * request and it is exceeded for the first time.
+  */
+ public class RequestSizeException extends UploadSizeException {
 
-    /**
-     * Public constructor.
-     * @param message The message of the exception
-     * @param actual The known size at the time of the exception in bytes
-     * @param permitted The maximum permitted size in bytes
-     */
-    public RequestSizeException(final String message, final long actual, final long permitted) {
-        super(message, actual, permitted);
-    }
-}
+     /**
+      * Public constructor.
+      * @param message The message of the exception
+      * @param actual The known size at the time of the exception in bytes
+      * @param permitted The maximum permitted size in bytes
+      */
+     public RequestSizeException(final String message, final long actual, final long permitted) {
+         super(message, actual, permitted);
+     }
+ }

@@ -177,6 +177,9 @@ var axios = window.axios || null;
                     let value = obj["value"];
                     headers[key] = value;
                 }
+                (function () {
+                    headers["content-type"] = "application/x-www-form-urlencoded;charset=utf-8";
+                })();
             })();
             if (null != reqObj["data"] && false == Array.isArray(reqObj["data"])) {
                 console.error("data 參數必須使用 array 型態");
@@ -231,6 +234,9 @@ var axios = window.axios || null;
                     let value = obj["value"];
                     headers[key] = value;
                 }
+                (function () {
+                    headers["content-type"] = "application/json;charset=utf-8";
+                })();
             })();
             axios.post(reqObj["url"], reqObj["text"]).then(function (response) {
                 let respObj = {
@@ -264,6 +270,9 @@ var axios = window.axios || null;
                     let value = obj["value"];
                     headers[key] = value;
                 }
+                (function () {
+                    headers["content-type"] = "multipart/form-data";
+                })();
             })();
             if (null != reqObj["data"] && false == Array.isArray(reqObj["data"])) {
                 console.error("data 參數必須使用 array 型態");
@@ -601,14 +610,121 @@ var axios = window.axios || null;
     };
 })();
 (function () {
-    var arr = [];
+    website["aes_gcm"] = function () {
+        const text_encoder = new TextEncoder();
+        const text_decoder = new TextDecoder("UTF-8");
+        function build_aes_key(key_byte) {
+            const def = $.Deferred();
+            crypto.subtle.importKey("raw", key_byte, "aes-gcm", false, ["encrypt", "decrypt"]).then(function (key) {
+                def.resolve(key);
+            }, function (e) {
+                console.log(e.message);
+                def.reject(e);
+            });
+            return def;
+        }
+        function build_key_pair(plain_text) {
+            const def = $.Deferred();
+            (function () {
+                const res = { key: "", key_byte: new ArrayBuffer(1), iv: "", iv_byte: new ArrayBuffer(1) };
+                stringToSha256(plain_text).done(function (hash_str) {
+                    const key_str = hash_str.substr(0, 32);
+                    const key_byte = text_encoder.encode(key_str);
+                    res["key"] = key_str;
+                    res["key_byte"] = key_byte;
+                    stringToSha256(hash_str).done(function (iv_str) {
+                        const iv_byte = text_encoder.encode(iv_str);
+                        res["iv"] = iv_str;
+                        res["iv_byte"] = iv_byte;
+                        def.resolve(res);
+                    });
+                });
+            })();
+            return def;
+        }
+        function stringToSha256(plainText) {
+            const def = $.Deferred();
+            const textAsBuffer = new TextEncoder().encode(plainText);
+            const hashBuffer = window.crypto.subtle.digest('SHA-256', textAsBuffer);
+            hashBuffer.then(function (hash_byte) {
+                const hashArray = Array.from(new Uint8Array(hash_byte));
+                const digest = hashArray.map(b => padStart(b.toString(16), 2, '0')).join('');
+                def.resolve(digest);
+            }, function (e) {
+                console.log(e);
+                def.reject(e);
+            });
+            function padStart(str, targetLength, padString) {
+                targetLength = targetLength >> 0;
+                padString = String(padString || ' ');
+                if (str.length > targetLength) {
+                    return String(str);
+                }
+                else {
+                    targetLength = targetLength - str.length;
+                    if (targetLength > padStart.length) {
+                        padString += padString.repeat(targetLength / padString.length);
+                    }
+                    return padString.slice(0, targetLength) + String(str);
+                }
+            }
+            return def;
+        }
+        return {
+            encrypt_string: function (plain_text, private_key) {
+                const def = $.Deferred();
+                build_key_pair(private_key).done(function (key_pair) {
+                    build_aes_key(key_pair.key_byte).done(function (aes_key) {
+                        const data_byte = text_encoder.encode(plain_text);
+                        const enc_def = crypto.subtle.encrypt({ name: "aes-gcm", iv: key_pair.iv_byte }, aes_key, data_byte);
+                        enc_def.then(function (enc_byte) {
+                            const b64_enc_str = website["base64_url_enc_byte"](enc_byte);
+                            def.resolve(b64_enc_str);
+                        }, function (e) {
+                            console.log(e.message);
+                            def.reject(e);
+                        });
+                    });
+                });
+                return def;
+            },
+            decrypt_string: function (b64_enc_str, private_key) {
+                const def = $.Deferred();
+                build_key_pair(private_key).done(function (key_pair) {
+                    build_aes_key(key_pair.key_byte).done(function (aes_key) {
+                        const enc_byte = website["base64_url_dec_byte"](b64_enc_str);
+                        const dec_def = crypto.subtle.decrypt({ name: "aes-gcm", iv: key_pair.iv_byte }, aes_key, enc_byte);
+                        dec_def.then(function (dec_byte) {
+                            const dec_str = text_decoder.decode(dec_byte);
+                            def.resolve(dec_str);
+                        }, function (e) {
+                            console.log(e.message);
+                            def.reject(e);
+                        });
+                    });
+                });
+                return def;
+            },
+            get_iv: function (private_key) {
+                const def = $.Deferred();
+                build_key_pair(private_key).done(function (key_pair) {
+                    def.resolve(key_pair.iv);
+                });
+                return def;
+            }
+        };
+    };
+})();
+(function () {
+    website["app_name"] = "/testasync";
+    const arr = [];
     (function () {
-        arr.push("/testasync/js/jquery/jquery.min.js");
-        arr.push("/testasync/js/axios/axios.min.js");
-        arr.push("/testasync/js/index.js");
+        arr.push(website["app_name"] + "/js/jquery/jquery.min.js");
+        arr.push(website["app_name"] + "/js/axios/axios.min.js");
+        arr.push(website["app_name"] + "/js/index.js");
     })();
     (function () {
-        var tmpPath = null;
+        let tmpPath = null;
         loadNext();
         function loadNext() {
             tmpPath = arr.shift();

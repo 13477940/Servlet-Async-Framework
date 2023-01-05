@@ -4,6 +4,7 @@ import java.io.File;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 
 /**
  * FileFinder 並不是萬能的，搜尋原理為每一個資料夾階層查詢一次檔案名稱，
@@ -25,7 +26,7 @@ public class FileFinder {
     public File find(String fileName) {
         if(null == fileName || fileName.length() == 0) return null;
         // for Windows directory root path
-        if(System.getProperty("os.name").toLowerCase().contains("windows")) {
+        if(System.getProperty("os.name").toLowerCase(Locale.ENGLISH).contains("windows")) {
             if("/".equals(fileName) || "\\".equals(fileName)) {
                 URL resourceURL = this.getClass().getClassLoader().getResource("");
                 if(null != resourceURL) {

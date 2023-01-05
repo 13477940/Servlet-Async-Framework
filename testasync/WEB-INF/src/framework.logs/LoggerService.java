@@ -9,6 +9,7 @@ import java.net.URL;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Locale;
 import java.util.Objects;
 
 /**
@@ -159,7 +160,7 @@ public class LoggerService {
             if(null != get_top_node()) {
                 String hostOS = System.getProperty("os.name");
                 String dirSlash;
-                if (hostOS.toLowerCase().contains("windows")) {
+                if (hostOS.toLowerCase(Locale.ENGLISH).contains("windows")) {
                     dirSlash = "\\\\";
                 } else {
                     dirSlash = System.getProperty("file.separator");

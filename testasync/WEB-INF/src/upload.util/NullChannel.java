@@ -14,54 +14,54 @@
  * limitations under the License.
  */
 
-package upload.util;
+ package upload.util;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.ClosedChannelException;
-import java.nio.channels.ReadableByteChannel;
-import java.nio.channels.WritableByteChannel;
+ import java.io.IOException;
+ import java.nio.ByteBuffer;
+ import java.nio.channels.ClosedChannelException;
+ import java.nio.channels.ReadableByteChannel;
+ import java.nio.channels.WritableByteChannel;
 
-/**
- * A channel implementation which provides no data and discards the data supplied.
- * Used by the parser if it doesn't have a channel to write to.
- * The purpose of this is to make the {@link OnPartBegin} callback
- * optional, which is useful for testing.
- *
- * <p>The channel honors the close contract, it cannot be used after closing.</p>
- */
-public class NullChannel implements ReadableByteChannel, WritableByteChannel {
+ /**
+  * A channel implementation which provides no data and discards the data supplied.
+  * Used by the parser if it doesn't have a channel to write to.
+  * The purpose of this is to make the {@link OnPartBegin} callback
+  * optional, which is useful for testing.
+  *
+  * <p>The channel honors the close contract, it cannot be used after closing.</p>
+  */
+ public class NullChannel implements ReadableByteChannel, WritableByteChannel {
 
-    /**
-     * Flag to determine whether the channel is closed or not.
-     */
-    private boolean open = true;
+     /**
+      * Flag to determine whether the channel is closed or not.
+      */
+     private boolean open = true;
 
-    @Override
-    public int read(final ByteBuffer dst) throws IOException {
-        if (!open) {
-            throw new ClosedChannelException();
-        }
-        return -1;
-    }
+     @Override
+     public int read(final ByteBuffer dst) throws IOException {
+         if (!open) {
+             throw new ClosedChannelException();
+         }
+         return -1;
+     }
 
-    @Override
-    public int write(final ByteBuffer src) throws IOException {
-        if (!open) {
-            throw new ClosedChannelException();
-        }
-        final var remaining = src.remaining();
-        src.position(src.limit());
-        return remaining;
-    }
+     @Override
+     public int write(final ByteBuffer src) throws IOException {
+         if (!open) {
+             throw new ClosedChannelException();
+         }
+         final var remaining = src.remaining();
+         src.position(src.limit());
+         return remaining;
+     }
 
-    @Override
-    public boolean isOpen() {
-        return open;
-    }
+     @Override
+     public boolean isOpen() {
+         return open;
+     }
 
-    @Override
-    public void close() {
-        open = false;
-    }
-}
+     @Override
+     public void close() {
+         open = false;
+     }
+ }

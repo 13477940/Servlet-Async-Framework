@@ -14,143 +14,143 @@
  * limitations under the License.
  */
 
-package upload.internal;
+ package upload.internal;
 
-import upload.PartOutput;
-import upload.interfaces.PartStream;
+ import upload.PartOutput;
+ import upload.interfaces.PartStream;
 
-import java.util.Collection;
+ import java.util.Collection;
 
-/**
- * Default implementation of {@link PartStream}.
- */
-public class PartStreamImpl implements PartStream {
+ /**
+  * Default implementation of {@link PartStream}.
+  */
+ public class PartStreamImpl implements PartStream {
 
-    /**
-     * The content type of the part.
-     */
-    private final String contentType;
-    /**
-     * The file name of the part.
-     */
-    private final String fileName;
-    /**
-     * The field name of the part.
-     */
-    private final String fieldName;
-    /**
-     * Whether the part is a file field.
-     */
-    private final boolean fileField;
-    /**
-     * The headers, if any.
-     */
-    private final Headers headers;
-    /**
-     * The size of the part, updated on each read.
-     */
-    private long size;
-    /**
-     * Boolean flag storing whether the part is
-     * completely uploaded.
-     */
-    private boolean finished;
-    /**
-     * The output object supplied by the caller. Not used here, but for
-     * the Jax-Rs module it has to be made available.
-     */
-    protected PartOutput output;
+     /**
+      * The content type of the part.
+      */
+     private final String contentType;
+     /**
+      * The file name of the part.
+      */
+     private final String fileName;
+     /**
+      * The field name of the part.
+      */
+     private final String fieldName;
+     /**
+      * Whether the part is a file field.
+      */
+     private final boolean fileField;
+     /**
+      * The headers, if any.
+      */
+     private final Headers headers;
+     /**
+      * The size of the part, updated on each read.
+      */
+     private long size;
+     /**
+      * Boolean flag storing whether the part is
+      * completely uploaded.
+      */
+     private boolean finished;
+     /**
+      * The output object supplied by the caller. Not used here, but for
+      * the Jax-Rs module it has to be made available.
+      */
+     protected PartOutput output;
 
-    /**
-     * Creates a new instance.
-     * @param fileName The file name.
-     * @param fieldName The form field name.
-     * @param headers The object containing the headers
-     */
-    public PartStreamImpl(final String fileName, final String fieldName, final Headers headers) {
-        this.fileName = fileName;
-        this.fieldName = fieldName;
-        this.contentType = headers.getHeader(Headers.CONTENT_TYPE);
-        this.fileField = fileName != null;
-        this.headers = headers;
-    }
+     /**
+      * Creates a new instance.
+      * @param fileName The file name.
+      * @param fieldName The form field name.
+      * @param headers The object containing the headers
+      */
+     public PartStreamImpl(final String fileName, final String fieldName, final Headers headers) {
+         this.fileName = fileName;
+         this.fieldName = fieldName;
+         this.contentType = headers.getHeader(Headers.CONTENT_TYPE);
+         this.fileField = fileName != null;
+         this.headers = headers;
+     }
 
-    @Override
-    public String getContentType() {
-        return contentType;
-    }
+     @Override
+     public String getContentType() {
+         return contentType;
+     }
 
-    @Override
-    public String getName() {
-        return fieldName;
-    }
+     @Override
+     public String getName() {
+         return fieldName;
+     }
 
-    @Override
-    public long getKnownSize() {
-        return size;
-    }
+     @Override
+     public long getKnownSize() {
+         return size;
+     }
 
-    @Override
-    public String getSubmittedFileName() {
-        return checkFileName(fileName);
-    }
+     @Override
+     public String getSubmittedFileName() {
+         return checkFileName(fileName);
+     }
 
-    @Override
-    public boolean isFile() {
-        return fileField;
-    }
+     @Override
+     public boolean isFile() {
+         return fileField;
+     }
 
-    @Override
-    public boolean isFinished() {
-        return finished;
-    }
+     @Override
+     public boolean isFinished() {
+         return finished;
+     }
 
-    @Override
-    public String getHeader(final String name) {
-        return headers.getHeader(name);
-    }
+     @Override
+     public String getHeader(final String name) {
+         return headers.getHeader(name);
+     }
 
-    @Override
-    public Collection<String> getHeaderNames() {
-        return headers.getHeaderNames();
-    }
+     @Override
+     public Collection<String> getHeaderNames() {
+         return headers.getHeaderNames();
+     }
 
-    @Override
-    public Collection<String> getHeaders(final String name) {
-        return headers.getHeaders(name);
-    }
+     @Override
+     public Collection<String> getHeaders(final String name) {
+         return headers.getHeaders(name);
+     }
 
-    public Headers getHeadersObject() {
-        return headers;
-    }
+     public Headers getHeadersObject() {
+         return headers;
+     }
 
-    void setSize(final long size) {
-        this.size = size;
-    }
+     void setSize(final long size) {
+         this.size = size;
+     }
 
-    void markAsFinished() {
-        this.finished = true;
-    }
+     void markAsFinished() {
+         this.finished = true;
+     }
 
-    public PartOutput getOutput() {
-        return output;
-    }
+     public PartOutput getOutput() {
+         return output;
+     }
 
-    void setOutput(final PartOutput output) {
-        this.output = output;
-    }
+     void setOutput(final PartOutput output) {
+         this.output = output;
+     }
 
-    private String checkFileName(final String fileName) {
-        if (fileName != null && fileName.indexOf('\u0000') != -1) {
-            final var sb = new StringBuilder();
-            for (var i = 0; i < fileName.length(); i++) {
-                final var character = fileName.charAt(i);
-                final var append = character == 0 ? "\\0" : character;
-                sb.append(append);
-            }
-            throw new IllegalArgumentException(fileName + " Invalid file name: " + sb);
-        }
-        return fileName;
-    }
+     private String checkFileName(final String fileName) {
+         if (fileName != null && fileName.indexOf('\u0000') != -1) {
+             final var sb = new StringBuilder();
+             for (var i = 0; i < fileName.length(); i++) {
+                 final var character = fileName.charAt(i);
+                 final var append = character == 0 ? "\\0" : character;
+                 sb.append(append);
+             }
+             throw new IllegalArgumentException(fileName + " Invalid file name: " + sb);
+         }
+         return fileName;
+     }
 
-}
+ }

@@ -14,33 +14,33 @@
  * limitations under the License.
  */
 
-package upload.interfaces;
+ package upload.interfaces;
 
-import upload.PartOutput;
-import upload.UploadParser;
+ import upload.PartOutput;
+ import upload.UploadParser;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
+ import java.io.IOException;
+ import java.nio.ByteBuffer;
 
-/**
- * A functional interface. An implementation of it must be passed in the
- * {@link UploadParser#onPartBegin(OnPartBegin)} method to call it at the start of parsing for each part.
- */
-@FunctionalInterface
-public interface OnPartBegin {
+ /**
+  * A functional interface. An implementation of it must be passed in the
+  * {@link UploadParser#onPartBegin(OnPartBegin)} method to call it at the start of parsing for each part.
+  */
+ @FunctionalInterface
+ public interface OnPartBegin {
 
-    /**
-     * The function to implement. When it's called depends on the size threshold. If enough bytes
-     * have been read or if the part is fully uploaded then this method is called
-     * with a buffer containing the read bytes. Note that the buffer is only passed
-     * for validation, it should not be written out. The buffered and the upcoming
-     * bytes will be written out to the output object returned by this method. If the callback
-     * is not set then the uploaded bytes are discarded.
-     * @param context The upload context
-     * @param buffer The byte buffer containing the first bytes of the part
-     * @return A non-null output object (a channel or stream) to write out the part
-     * @throws IOException If an error occurred with the channel
-     */
-    PartOutput onPartBegin(UploadContext context, ByteBuffer buffer) throws IOException;
+     /**
+      * The function to implement. When it's called depends on the size threshold. If enough bytes
+      * have been read or if the part is fully uploaded then this method is called
+      * with a buffer containing the read bytes. Note that the buffer is only passed
+      * for validation, it should not be written out. The buffered and the upcoming
+      * bytes will be written out to the output object returned by this method. If the callback
+      * is not set then the uploaded bytes are discarded.
+      * @param context The upload context
+      * @param buffer The byte buffer containing the first bytes of the part
+      * @return A non-null output object (a channel or stream) to write out the part
+      * @throws IOException If an error occurred with the channel
+      */
+     PartOutput onPartBegin(UploadContext context, ByteBuffer buffer) throws IOException;
 
-}
+ }

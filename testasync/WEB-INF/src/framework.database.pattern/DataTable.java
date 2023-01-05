@@ -6,6 +6,7 @@ import java.lang.ref.WeakReference;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.util.ArrayList;
+import java.util.Locale;
 import java.util.Objects;
 
 /**
@@ -95,7 +96,7 @@ public class DataTable {
                 DataRow row = new DataRow();
                 for(String col : cols) {
                     if(null == col || col.length() == 0) continue;
-                    String key = col.toLowerCase();
+                    String key = col.toLowerCase(Locale.ENGLISH);
                     String value = rs.getString(col);
                     row.put(key, Objects.requireNonNullElse(value, ""));
                 }

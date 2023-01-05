@@ -1,6 +1,7 @@
 package framework.web.context;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import framework.observer.Bundle;
 import framework.observer.Handler;
@@ -11,12 +12,12 @@ import framework.text.TextFileWriter;
 import framework.web.listener.AsyncWriteListener;
 import framework.web.multipart.FileItem;
 import framework.web.multipart.FileItemList;
+import jakarta.servlet.*;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import org.apache.tika.Tika;
 
-import javax.servlet.*;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import java.io.*;
 import java.lang.ref.WeakReference;
 import java.net.URLDecoder;
@@ -405,7 +406,9 @@ public class AsyncActionContext {
      * 此方法會以 text/plain 格式回傳至前端
      */
     public void printToResponse(JsonObject jsonObject, Handler handler) {
-        printToResponse(new Gson().toJson(jsonObject), handler);
+        // printToResponse(new Gson().toJson(jsonObject), handler);
+        // 221019 解決 html escaping string 會被轉換為 unicode 的問題
+        printToResponse(new GsonBuilder().disableHtmlEscaping().create().toJson(jsonObject), handler);
     }
 
     /**
@@ -693,40 +696,50 @@ public class AsyncActionContext {
      * #200806 修正因 stream 模式造成重複取值會為空值的問題
      */
     public String getRequestTextContent() {
-        // 如果已建立過暫存檔案
+        boolean is_disk_mode = false; // 是否先將資料寫入硬碟
         String res = null;
-        if(null != temp_file_req_text) {
+        if(is_disk_mode) {
+            // 如果已建立過暫存檔案
+            if(null != temp_file_req_text) {
+                try {
+                    BufferedInputStream bis = new BufferedInputStream(new FileInputStream(temp_file_req_text));
+                    res = new String(bis.readAllBytes(), StandardCharsets.UTF_8);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                return res;
+            }
+            // 第一次建立暫存檔案
+            AppSetting appSetting = new AppSetting.Builder().build();
+            {
+                boolean file_create_status = false;
+                temp_file_req_text = new File(appSetting.getPathContext().getTempDirPath()+"temp_txt_"+RandomServiceStatic.getInstance().getTimeHash(8));
+                try {
+                    file_create_status = temp_file_req_text.createNewFile();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                if(file_create_status) temp_file_req_text.deleteOnExit(); // temp file
+            }
+            TextFileWriter textFileWriter = new TextFileWriter.Builder()
+                    .setTargetFile(temp_file_req_text)
+                    .setIsAppend(true)
+                    .build();
             try {
-                BufferedInputStream bis = new BufferedInputStream(new FileInputStream(temp_file_req_text));
+                BufferedInputStream bis = new BufferedInputStream(asyncContext.getRequest().getInputStream());
+                res = new String(bis.readAllBytes(), StandardCharsets.UTF_8);
+                textFileWriter.write(res);
+                textFileWriter.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } else {
+            try {
+                BufferedInputStream bis = new BufferedInputStream(asyncContext.getRequest().getInputStream());
                 res = new String(bis.readAllBytes(), StandardCharsets.UTF_8);
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            return res;
-        }
-        // 第一次建立暫存檔案
-        AppSetting appSetting = new AppSetting.Builder().build();
-        {
-            boolean file_create_status = false;
-            temp_file_req_text = new File(appSetting.getPathContext().getTempDirPath()+"temp_txt_"+RandomServiceStatic.getInstance().getTimeHash(8));
-            try {
-                file_create_status = temp_file_req_text.createNewFile();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            if(file_create_status) temp_file_req_text.deleteOnExit(); // temp file
-        }
-        TextFileWriter textFileWriter = new TextFileWriter.Builder()
-                .setTargetFile(temp_file_req_text)
-                .setIsAppend(true)
-                .build();
-        try {
-            BufferedInputStream bis = new BufferedInputStream(asyncContext.getRequest().getInputStream());
-            res = new String(bis.readAllBytes(), StandardCharsets.UTF_8);
-            textFileWriter.write(res);
-            textFileWriter.close();
-        } catch (Exception e) {
-            e.printStackTrace();
         }
         return res;
     }
@@ -787,7 +800,7 @@ public class AsyncActionContext {
         HashMap<String, String> headers = new HashMap<>();
         for(String key : names) {
             String value = req.getHeader(key);
-            headers.put(key.toLowerCase(), value);
+            headers.put(key.toLowerCase(Locale.ENGLISH), value);
         }
         String ip = headers.get("x-forwarded-for");
         if(null == ip || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
@@ -803,8 +816,12 @@ public class AsyncActionContext {
     }
 
     /**
-     * 非同步架構下 ServletOutputStream 綁定於 WriteListener 管理，
-     * 所以會只有一次的輸出機制，請將輸出資料合併輸出至單一個 WriteListener
+     * 非同步架構下 ServletOutputStream 將綁定於 WriteListener 管理，
+     * 為方便管理整體流程限制其 OutputStream 只能執行一次的機制，
+     * 請將輸出資料以 JSON, Text 等格式單次輸出作為該次 HTTP 請求回傳內容
+     * --
+     * -- 1. 通常會看到此錯誤要注意是否 switch 條件未正確 break 而造成多個條件觸發
+     * -- 2. 請檢查 if 等判斷式條件是否有重複執行的行為造成重複執行
      */
     private boolean checkIsOutput() {
         if(isOutput) {

@@ -14,28 +14,28 @@
  * limitations under the License.
  */
 
-package upload.interfaces;
+ package upload.interfaces;
 
-import upload.UploadParser;
+ import upload.UploadParser;
 
-import java.io.IOException;
+ import java.io.IOException;
 
-/**
- * A functional interface. An implementation of it must be passed in the
- * {@link UploadParser#onPartEnd(OnPartEnd)} method to call it at the end of parsing for each part.
- *
- * <p>This function is called after every byte has been read for the given part. There will be
- * an attempt to close the current output object just before calling this. That means setting
- * this can be skipped if all you want to do is to close the provided channel or stream.</p>
- */
-@FunctionalInterface
-public interface OnPartEnd {
+ /**
+  * A functional interface. An implementation of it must be passed in the
+  * {@link UploadParser#onPartEnd(OnPartEnd)} method to call it at the end of parsing for each part.
+  *
+  * <p>This function is called after every byte has been read for the given part. There will be
+  * an attempt to close the current output object just before calling this. That means setting
+  * this can be skipped if all you want to do is to close the provided channel or stream.</p>
+  */
+ @FunctionalInterface
+ public interface OnPartEnd {
 
-    /**
-     * The consumer function to implement.
-     * @param context The upload context
-     * @throws IOException If an error occurred with the current channel
-     */
-    void onPartEnd(UploadContext context) throws IOException;
+     /**
+      * The consumer function to implement.
+      * @param context The upload context
+      * @throws IOException If an error occurred with the current channel
+      */
+     void onPartEnd(UploadContext context) throws IOException;
 
-}
+ }

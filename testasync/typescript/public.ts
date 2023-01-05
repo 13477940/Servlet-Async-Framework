@@ -1,4 +1,4 @@
-// 通用腳本 - modify:2022-12-16
+// 通用腳本 - modify:2023-01-05
 
 // namespace define
 var debug_mode: boolean = true; // for try-catch, scope: ajax
@@ -114,6 +114,7 @@ var axios: any = window.axios || null;
 
 // axios module
 (function(){
+    // get
     (function(){
         website["get"] = function(reqObj: any) {
             const def = $.Deferred();
@@ -168,6 +169,7 @@ var axios: any = window.axios || null;
             return def;
         };
     })();
+    // post - application/x-www-form-urlencoded
     (function(){
         website["post"] = function(reqObj: any) {
             const def = $.Deferred();
@@ -185,6 +187,9 @@ var axios: any = window.axios || null;
                     let value = obj["value"];
                     headers[key] = value;
                 }
+                (function(){
+                    headers["content-type"] = "application/x-www-form-urlencoded;charset=utf-8";
+                })();
             })();
             if (null != reqObj["data"] && false == Array.isArray(reqObj["data"])) {
                 console.error("data 參數必須使用 array 型態");
@@ -221,6 +226,7 @@ var axios: any = window.axios || null;
             return def;
         };
     })();
+    // post - application/json
     (function(){
         website["post_json"] = function(reqObj: any) {
             const def = $.Deferred();
@@ -238,6 +244,9 @@ var axios: any = window.axios || null;
                     let value = obj["value"];
                     headers[key] = value;
                 }
+                (function(){
+                    headers["content-type"] = "application/json;charset=utf-8";
+                })();
             })();
             axios.post(reqObj["url"], reqObj["text"]).then(function(response: any) {
                 let respObj = {
@@ -253,7 +262,7 @@ var axios: any = window.axios || null;
             return def;
         };
     })();
-    // ajax - post form-data multipart
+    // post - multipart/form-data
     (function(){
         website["post_form_data"] = function(reqObj: any) {
             const def = $.Deferred();
@@ -272,6 +281,9 @@ var axios: any = window.axios || null;
                     let value = obj["value"];
                     headers[key] = value;
                 }
+                (function(){
+                    headers["content-type"] = "multipart/form-data";
+                })();
             })();
             // req params
             if(null != reqObj["data"] && false == Array.isArray(reqObj["data"])) {
@@ -662,5 +674,134 @@ var axios: any = window.axios || null;
 (function(){
     website["replace_all"] = function(str: any, scan_str: any, fix_str: any) {
         return str.split(scan_str).join(fix_str);
+    };
+})();
+
+// AES GCM
+(function(){
+    website["aes_gcm"] = function(){
+        // byte encode, decode
+        const text_encoder = new TextEncoder();
+        const text_decoder = new TextDecoder("UTF-8");
+
+        function build_aes_key(key_byte: any) {
+            const def = $.Deferred();
+            // importKey(format, keyData, algorithm, extractable, keyUsages)
+            crypto.subtle.importKey (
+                "raw",
+                key_byte,
+                "aes-gcm",
+                false,
+                ["encrypt","decrypt"]
+            ).then(function(key) {
+                def.resolve(key);
+            }, function(e){
+                console.log(e.message);
+                def.reject(e);
+            });
+            return def;
+        }
+
+        // key 長度會影響 gcm-128 或 gcm-256 結果
+        // An 8 bit array with 16 elements = 128 bits.
+        // An 8 bit array with 32 elements = 256 bits.
+        // 將明文密鑰經由自定義流程建立流程創建鑰匙組（private_key+iv）
+        function build_key_pair(plain_text: any) {
+            const def = $.Deferred();
+            (function(){
+                const res = { key: "", key_byte: new ArrayBuffer(1), iv: "", iv_byte: new ArrayBuffer(1) };
+                stringToSha256(plain_text).done(function(hash_str: any){
+                    const key_str = hash_str.substr(0, 32); // 16 or 32
+                    const key_byte = text_encoder.encode(key_str);
+                    res["key"] = key_str;
+                    res["key_byte"] = key_byte;
+                    stringToSha256(hash_str).done(function(iv_str: any){
+                        const iv_byte = text_encoder.encode(iv_str);
+                        res["iv"] = iv_str;
+                        res["iv_byte"] = iv_byte;
+                        def.resolve(res);
+                    });
+                });
+            })();
+            return def;
+        }
+
+        // PlainText to SHA256
+        function stringToSha256(plainText: any) {
+            const def = $.Deferred();
+            const textAsBuffer = new TextEncoder().encode(plainText);
+            const hashBuffer = window.crypto.subtle.digest('SHA-256', textAsBuffer);
+            hashBuffer.then(function(hash_byte){
+                const hashArray = Array.from(new Uint8Array(hash_byte));
+                const digest = hashArray.map(b => padStart(b.toString(16), 2, '0')).join('');
+                def.resolve(digest);
+            }, function(e){
+                console.log(e);
+                def.reject(e);
+            });
+            // String.prototype.padStart 相容
+            // https://www.freecodecamp.org/news/how-does-string-padstart-actually-work-abba34d982e/
+            function padStart(str: any, targetLength: any, padString: any) {
+                // floor if number of convert non-number to 0;
+                targetLength = targetLength >> 0;
+                padString = String(padString || ' ');
+                if(str.length > targetLength) {
+                    return String(str);
+                } else {
+                    targetLength = targetLength - str.length;
+                    if(targetLength > padStart.length) {
+                        // append to original to ensure we are longer than needed
+                        padString += padString.repeat(targetLength / padString.length);
+                    }
+                    return padString.slice(0, targetLength) + String(str);
+                }
+            }
+            return def;
+        }
+
+        // public call functions
+        return {
+            encrypt_string: function(plain_text: any, private_key: any) {
+                const def = $.Deferred();
+                build_key_pair(private_key).done(function(key_pair: any){
+                    build_aes_key(key_pair.key_byte).done(function(aes_key: any){
+                        const data_byte = text_encoder.encode(plain_text);
+                        const enc_def = crypto.subtle.encrypt({name: "aes-gcm", iv: key_pair.iv_byte}, aes_key, data_byte);
+                        enc_def.then(function(enc_byte){
+                            const b64_enc_str = website["base64_url_enc_byte"](enc_byte);
+                            def.resolve(b64_enc_str);
+                        }, function(e){
+                            console.log(e.message);
+                            def.reject(e);
+                        });
+                    });
+                });
+                return def;
+            },
+            decrypt_string: function(b64_enc_str: any, private_key: any) {
+                const def = $.Deferred();
+                build_key_pair(private_key).done(function(key_pair: any){
+                    build_aes_key(key_pair.key_byte).done(function(aes_key: any){
+                        const enc_byte = website["base64_url_dec_byte"](b64_enc_str);
+                        const dec_def = crypto.subtle.decrypt({name: "aes-gcm", iv: key_pair.iv_byte}, aes_key, enc_byte);
+                        dec_def.then(function(dec_byte){
+                            const dec_str = text_decoder.decode(dec_byte);
+                            def.resolve(dec_str);
+                        }, function(e){
+                            console.log(e.message);
+                            def.reject(e);
+                        });
+                    });
+                });
+                return def;
+            },
+            get_iv: function(private_key: any) {
+                const def = $.Deferred();
+                build_key_pair(private_key).done(function(key_pair: any){
+                    def.resolve(key_pair.iv);
+                });
+                return def;
+            }
+        };
     };
 })();

@@ -5,6 +5,7 @@ import framework.file.FileFinder;
 import java.io.File;
 
 /**
+ * 此為新版本規則 #20220902 -> 以 "WebAppFiles" 作為預設資料夾名稱
  * webapp_file -> 指提供 webapp 檔案存放的本機位址（上傳、下載、暫存等形式）
  * webapp_name -> 當下 webapp 專案名稱，此為重要參數（非 Tomcat 環境建議手動設定）
  * webapp_project -> 指當下正在使用的 webapp 專案專屬的檔案資料夾

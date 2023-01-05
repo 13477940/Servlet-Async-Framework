@@ -12,6 +12,7 @@ import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 
 /**
  * AppSetting 主要管理作業系統判斷、WebApp 名稱與統一的檔案路徑，
@@ -39,7 +40,7 @@ public class AppSetting {
             this.pathContext = pathContext;
         }
         this.hostOS = System.getProperty("os.name");
-        if ( hostOS.toLowerCase().contains("windows") ) {
+        if ( hostOS.toLowerCase(Locale.ENGLISH).contains("windows") ) {
             this.dirSlash = "\\\\";
         } else {
             this.dirSlash = System.getProperty("file.separator");
@@ -123,7 +124,7 @@ public class AppSetting {
                             res.add("config", new Gson().fromJson(content, JsonArray.class));
                         } catch (Exception e) {
                             e.printStackTrace();
-                            res = null;
+                            res = null;;
                         }
                     }
                     // 既不是 JSONObject 也不是 JSONArray

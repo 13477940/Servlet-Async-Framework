@@ -14,65 +14,65 @@
  * limitations under the License.
  */
 
-package upload.interfaces;
+ package upload.interfaces;
 
-import upload.PartOutput;
+ import jakarta.servlet.http.HttpServletRequest;
+ import upload.PartOutput;
 
-import javax.servlet.http.HttpServletRequest;
-import java.util.List;
+ import java.util.List;
 
-/**
- * The context object which is passed to the user-supplied functions,
- * allowing the user to get the necessary objects during the various
- * stages of the parsing.
- */
-public interface UploadContext {
+ /**
+  * The context object which is passed to the user-supplied functions,
+  * allowing the user to get the necessary objects during the various
+  * stages of the parsing.
+  */
+ public interface UploadContext {
 
-    /**
-     * Returns the given request object for this parser,
-     * allowing customization during the stages of the
-     * asynchronous processing.
-     *
-     * @return The request object
-     */
-    HttpServletRequest getRequest();
+     /**
+      * Returns the given request object for this parser,
+      * allowing customization during the stages of the
+      * asynchronous processing.
+      *
+      * @return The request object
+      */
+     HttpServletRequest getRequest();
 
-    /**
-     * Returns the given user object for this parser,
-     * allowing customization during the stages of the
-     * asynchronous processing.
-     *
-     * @param clazz The class used for casting
-     * @param <T> Type parameter
-     * @return The user object, or null if it was not supplied
-     */
-    <T> T getUserObject(Class<T> clazz);
+     /**
+      * Returns the given user object for this parser,
+      * allowing customization during the stages of the
+      * asynchronous processing.
+      *
+      * @param clazz The class used for casting
+      * @param <T> Type parameter
+      * @return The user object, or null if it was not supplied
+      */
+     <T> T getUserObject(Class<T> clazz);
 
-    /**
-     * Returns the currently processed part stream,
-     * allowing the caller to get available information.
-     *
-     * @return The currently processed part
-     */
-    PartStream getCurrentPart();
+     /**
+      * Returns the currently processed part stream,
+      * allowing the caller to get available information.
+      *
+      * @return The currently processed part
+      */
+     PartStream getCurrentPart();
 
-    /**
-     * Returns the currently active output, which was returned
-     * in the latest UploadParser#onPartBegin method. This will
-     * return a null during the part begin stage and might be
-     * null during the error stage.
-     *
-     * @return The latest output provided by the caller
-     */
-    PartOutput getCurrentOutput();
+     /**
+      * Returns the currently active output, which was returned
+      * in the latest UploadParser#onPartBegin method. This will
+      * return a null during the part begin stage and might be
+      * null during the error stage.
+      *
+      * @return The latest output provided by the caller
+      */
+     PartOutput getCurrentOutput();
 
-    /**
-     * Returns the parts which have already been processed. Before
-     * the onPartBegin method is called the current PartStream is
-     * added into the List returned by this method, meaning that
-     * the UploadContext#getCurrentPart will return with the last
-     * element of the list.
-     * @return The list of the processed parts, in the order they are uploaded
-     */
-    List<PartStream> getPartStreams();
-}
+     /**
+      * Returns the parts which have already been processed. Before
+      * the onPartBegin method is called the current PartStream is
+      * added into the List returned by this method, meaning that
+      * the UploadContext#getCurrentPart will return with the last
+      * element of the list.
+      * @return The list of the processed parts, in the order they are uploaded
+      */
+     List<PartStream> getPartStreams();
+ }

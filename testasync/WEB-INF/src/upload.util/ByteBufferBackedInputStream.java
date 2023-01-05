@@ -14,72 +14,72 @@
  * limitations under the License.
  */
 
-package upload.util;
+ package upload.util;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.ByteBuffer;
-import java.util.Objects;
+ import java.io.IOException;
+ import java.io.InputStream;
+ import java.nio.ByteBuffer;
+ import java.util.Objects;
 
-/**
- * An input stream implementation which reads from the given byte buffer.
- * The stream will not copy bytes to a temporary buffer, therefore read-only
- * and direct buffers are not supported.
- */
-public class ByteBufferBackedInputStream extends InputStream {
+ /**
+  * An input stream implementation which reads from the given byte buffer.
+  * The stream will not copy bytes to a temporary buffer, therefore read-only
+  * and direct buffers are not supported.
+  */
+ public class ByteBufferBackedInputStream extends InputStream {
 
-    /**
-     * The byte buffer. Cannot be read-only or direct.
-     */
-    private final ByteBuffer buffer;
+     /**
+      * The byte buffer. Cannot be read-only or direct.
+      */
+     private final ByteBuffer buffer;
 
-    /**
-     * Flag to determine whether the channel is closed or not.
-     */
-    private boolean open = true;
+     /**
+      * Flag to determine whether the channel is closed or not.
+      */
+     private boolean open = true;
 
-    /**
-     * Public constructor.
-     * @param buffer The byte buffer
-     */
-    public ByteBufferBackedInputStream(final ByteBuffer buffer) {
-        this.buffer = Objects.requireNonNull(buffer);
-        if (buffer.isDirect() || buffer.isReadOnly()) {
-            throw new IllegalArgumentException("The buffer cannot be direct or read-only!");
-        }
-    }
+     /**
+      * Public constructor.
+      * @param buffer The byte buffer
+      */
+     public ByteBufferBackedInputStream(final ByteBuffer buffer) {
+         this.buffer = Objects.requireNonNull(buffer);
+         if (buffer.isDirect() || buffer.isReadOnly()) {
+             throw new IllegalArgumentException("The buffer cannot be direct or read-only!");
+         }
+     }
 
-    @Override
-    public int available() throws IOException {
-        return buffer.remaining();
-    }
+     @Override
+     public int available() throws IOException {
+         return buffer.remaining();
+     }
 
-    @Override
-    public int read() throws IOException {
-        if (!open) {
-            throw new IOException("The stream was closed!");
-        }
-        if (!buffer.hasRemaining()) {
-            return -1;
-        }
-        return buffer.get() & 0xFF;
-    }
+     @Override
+     public int read() throws IOException {
+         if (!open) {
+             throw new IOException("The stream was closed!");
+         }
+         if (!buffer.hasRemaining()) {
+             return -1;
+         }
+         return buffer.get() & 0xFF;
+     }
 
-    @Override
-    public int read(final byte[] bytes, final int off, int len) throws IOException {
-        if (!open) {
-            throw new IOException("The stream was closed!");
-        }
-        if (!buffer.hasRemaining()) {
-            return -1;
-        }
-        len = Math.min(len, buffer.remaining());
-        buffer.get(bytes, off, len);
-        return len;
-    }
+     @Override
+     public int read(final byte[] bytes, final int off, int len) throws IOException {
+         if (!open) {
+             throw new IOException("The stream was closed!");
+         }
+         if (!buffer.hasRemaining()) {
+             return -1;
+         }
+         len = Math.min(len, buffer.remaining());
+         buffer.get(bytes, off, len);
+         return len;
+     }
 
-    @Override
-    public void close() {
-        open = false;
-    }
-}
+     @Override
+     public void close() {
+         open = false;
+     }
+ }

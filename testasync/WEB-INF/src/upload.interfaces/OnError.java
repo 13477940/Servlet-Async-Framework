@@ -14,27 +14,27 @@
  * limitations under the License.
  */
 
-package upload.interfaces;
+ package upload.interfaces;
 
-import upload.UploadParser;
+ import jakarta.servlet.ServletException;
+ import upload.UploadParser;
 
-import javax.servlet.ServletException;
-import java.io.IOException;
+ import java.io.IOException;
 
-/**
- * A functional interface. An implementation of it must be passed in the
- * {@link UploadParser#onError(OnError)} method to call it after an error occurs.
- */
-@FunctionalInterface
-public interface OnError {
+ /**
+  * A functional interface. An implementation of it must be passed in the
+  * {@link UploadParser#onError(OnError)} method to call it after an error occurs.
+  */
+ @FunctionalInterface
+ public interface OnError {
 
-    /**
-     * The consumer function to implement.
-     * @param context The upload context
-     * @param throwable The error that occurred
-     * @throws IOException If an error occurs with the IO
-     * @throws ServletException If and error occurred with the servlet
-     */
-    void onError(UploadContext context, Throwable throwable) throws IOException, ServletException;
+     /**
+      * The consumer function to implement.
+      * @param context The upload context
+      * @param throwable The error that occurred
+      * @throws IOException If an error occurs with the IO
+      * @throws ServletException If and error occurred with the servlet
+      */
+     void onError(UploadContext context, Throwable throwable) throws IOException, ServletException;
 
-}
+ }
