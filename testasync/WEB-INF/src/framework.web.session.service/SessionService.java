@@ -4,8 +4,8 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import framework.web.session.context.UserContext;
 import framework.web.session.pattern.UserMap;
+import jakarta.servlet.http.HttpSession;
 
-import javax.servlet.http.HttpSession;
 import java.util.Map;
 
 public abstract class SessionService {

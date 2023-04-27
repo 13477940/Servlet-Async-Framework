@@ -1,6 +1,7 @@
 package framework.web.session.service;
 
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSession;
+
 import java.util.HashMap;
 
 public class SessionCounter {
