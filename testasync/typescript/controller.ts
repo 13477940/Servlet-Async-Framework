@@ -1,3 +1,5 @@
+// 通用腳本 - modify:2023-01-05
+
 // script controller function
 (function(){
     // set webapp name - 所有腳本中對於 webapp 根路徑請統一修改此處

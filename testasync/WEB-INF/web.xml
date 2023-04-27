@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<web-app xmlns="http://xmlns.jcp.org/xml/ns/javaee"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee
-	                    http://xmlns.jcp.org/xml/ns/javaee/web-app_4_0.xsd"
-	version="4.0"
-	metadata-complete="true">
+<web-app xmlns="https://jakarta.ee/xml/ns/jakartaee"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee
+    https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd"
+    version="6.0"
+    metadata-complete="true">
 
-	<!-- 指定的根路徑名稱 -->
-	<!-- 這個數值會影響到 .war 檔案部署的資料夾名稱 -->
-	<display-name>testasync</display-name>
+    <!-- 指定的根路徑名稱 -->
+    <!-- 這個數值會影響到 .war 檔案部署的資料夾名稱 -->
+    <display-name>testasync</display-name>
 
     <!-- 此 framework 僅由一個中樞 servlet 控制即可 -->
     <servlet>
@@ -22,13 +22,13 @@
     </servlet-mapping>
 
     <!-- 服務實例任務鏈建立 -->
-	<!-- 這個 listener 會監聽 web app 啟動與結束的事件 -->
+    <!-- 這個 listener 會監聽 web app 啟動與結束的事件 -->
     <listener>
         <listener-class>app.listener.AppContextListener</listener-class>
     </listener>
 
     <!-- 啟用此 listener 使 UserContext 應用正常 -->
-	<!-- 若是採用 microservice 等不需要 session 的架構則不需要此 listener -->
+    <!-- 若是採用 microservice 等不需要 session 的架構則不需要此 listener -->
     <listener>
         <listener-class>framework.web.session.AppUserSessionListener</listener-class>
     </listener>

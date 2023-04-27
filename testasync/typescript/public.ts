@@ -112,6 +112,50 @@ var axios: any = window.axios || null;
     };
 })();
 
+// cookie function
+// Cookie -> https://developer.mozilla.org/zh-CN/docs/Web/API/Document/cookie
+// LocalStorage -> https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage
+(function(){
+    website["cookie"] = {
+        getItem: function(sKey: any) {
+            return decodeURIComponent(document.cookie.replace(new RegExp("(?:(?:^|.*;)\\s*" + encodeURIComponent(sKey).replace(/[-.+*]/g, "\\$&") + "\\s*\\=\\s*([^;]*).*$)|^.*$"), "$1")) || null;
+        },
+        setItem: function(sKey: any, sValue: any, vEnd: any, sPath: any, sDomain: any, bSecure: any) {
+            if (!sKey || /^(?:expires|max\-age|path|domain|secure)$/i.test(sKey)) { return false; }
+            let sExpires = "";
+            if (vEnd) {
+                switch (vEnd.constructor) {
+                    case Number: { sExpires = vEnd === Infinity ? "; expires=Fri, 31 Dec 9999 23:59:59 GMT" : "; max-age=" + vEnd; } break;
+                    case String: { sExpires = "; expires=" + vEnd; } break;
+                    case Date: { sExpires = "; expires=" + vEnd.toUTCString(); } break;
+                }
+            }
+            document.cookie = encodeURIComponent(sKey) + "=" + encodeURIComponent(sValue) + sExpires + (sDomain ? "; domain=" + sDomain : "") + (sPath ? "; path=" + sPath : "") + (bSecure ? "; secure" : "");
+            return true;
+        },
+        removeItem: function(sKey: any, sPath: any, sDomain: any) {
+            if (!sKey || !this.hasItem(sKey)) { return false; }
+            document.cookie = encodeURIComponent(sKey) + "=; expires=Thu, 01 Jan 1970 00:00:00 GMT" + ( sDomain ? "; domain=" + sDomain : "") + ( sPath ? "; path=" + sPath : "");
+            return true;
+        },
+        hasItem: function(sKey: any) {
+            return (new RegExp("(?:^|;\\s*)" + encodeURIComponent(sKey).replace(/[-.+*]/g, "\\$&") + "\\s*\\=")).test(document.cookie);
+        },
+        keys: function() { /* optional */
+            const aKeys = document.cookie.replace(/((?:^|\s*;)[^\=]+)(?=;|$)|^\s*|\s*(?:\=[^;]*)?(?:\1|$)/g, "").split(/\s*(?:\=[^;]*)?;\s*/);
+            for (var nIdx = 0; nIdx < aKeys.length; nIdx++) { aKeys[nIdx] = decodeURIComponent(aKeys[nIdx]); }
+            return aKeys;
+        },
+        clear: function() { /* optional */
+            const key_arr = website["cookie"].keys();
+            for(let i = 0, len = key_arr.length; i < len; i++) {
+                const key = key_arr[i];
+                website["cookie"].removeItem(key);
+            }
+        }
+    };
+})();
+
 // axios module
 (function(){
     // get

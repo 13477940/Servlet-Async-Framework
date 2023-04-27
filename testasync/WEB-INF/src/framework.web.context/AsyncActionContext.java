@@ -3,11 +3,12 @@ package framework.web.context;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
+import framework.file.FileFinder;
+import framework.logs.LoggerService;
 import framework.observer.Bundle;
 import framework.observer.Handler;
 import framework.observer.Message;
 import framework.random.RandomServiceStatic;
-import framework.setting.AppSetting;
 import framework.text.TextFileWriter;
 import framework.web.listener.AsyncWriteListener;
 import framework.web.multipart.FileItem;
@@ -23,7 +24,11 @@ import java.lang.ref.WeakReference;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 /**
@@ -58,6 +63,8 @@ public class AsyncActionContext {
 
     private File temp_file_req_text = null; // 暫存的請求內容純文字檔
     private File temp_file_req_byte = null; // 暫存的請求內容二進位檔
+
+    private CharSequence preview_already_output_content = null;
 
     private AsyncActionContext(ServletContext servletContext, ServletConfig servletConfig, AsyncContext asyncContext) {
         this.servletContext = servletContext;
@@ -345,7 +352,7 @@ public class AsyncActionContext {
      * 於 safari, ie 要注意匯出檔案名稱不能過長，要不然會被瀏覽器重新命名
      */
     public void outputInputStream(InputStream inputStream, String fileName, String mimeType, boolean isAttachment, Handler handler) {
-        if(checkIsOutput()) return;
+        if(checkIsOutput(fileName)) return;
 
         String encodeFileName = encodeOutputFileName(fileName);
 
@@ -392,30 +399,41 @@ public class AsyncActionContext {
         }
         // 使用 WriteListener 非同步輸出
         {
-            AsyncWriteListener asyncWriteListener = new AsyncWriteListener.Builder()
-                    .setAsyncActionContext(this)
-                    .setInputStream(inputStream)
-                    .setHandler(handler)
-                    .build();
-            setOutputWriteListener(asyncWriteListener);
+            try {
+                ServletOutputStream servletOutputStream = response.getOutputStream();
+                AsyncWriteListener asyncWriteListener = new AsyncWriteListener.Builder()
+                        .setServletOutputStream(servletOutputStream)
+                        .setInputStream(inputStream)
+                        .setHandler(handler)
+                        .build();
+                setOutputWriteListener(servletOutputStream, asyncWriteListener);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 
     /**
-     * 輸出 Gson JsonObject 至 Response
+     * 直接輸出 Gson JsonObject 至 Response
      * 此方法會以 text/plain 格式回傳至前端
+     * -
+     * #221019 解決 html escaping string 會被轉換為 unicode 的問題
+     * #230412 解決 null 值的 key 不會被序列化的問題
      */
     public void printToResponse(JsonObject jsonObject, Handler handler) {
-        // printToResponse(new Gson().toJson(jsonObject), handler);
-        // 221019 解決 html escaping string 會被轉換為 unicode 的問題
-        printToResponse(new GsonBuilder().disableHtmlEscaping().create().toJson(jsonObject), handler);
+        GsonBuilder gson_builder = new GsonBuilder();
+        gson_builder.disableHtmlEscaping();
+        gson_builder.serializeNulls();
+        // gson_builder.setDateFormat()
+        Gson gson = gson_builder.create();
+        printToResponse(gson.toJson(jsonObject), handler);
     }
 
     /**
      * 輸出純文本內容至 Response
      */
     public void printToResponse(String content, Handler handler) {
-        if(checkIsOutput()) return;
+        if(checkIsOutput(content)) return;
         HttpServletResponse response = ((HttpServletResponse) asyncContext.getResponse());
         // 因為採用 byte 輸出，如果沒有 Response Header 容易在瀏覽器端發生錯誤
         {
@@ -434,12 +452,17 @@ public class AsyncActionContext {
         }
         // 使用 WriteListener 非同步輸出
         {
-            AsyncWriteListener asyncWriteListener = new AsyncWriteListener.Builder()
-                    .setAsyncActionContext(this)
-                    .setCharSequence(content)
-                    .setHandler(handler)
-                    .build();
-            setOutputWriteListener(asyncWriteListener);
+            try {
+                ServletOutputStream servletOutputStream = response.getOutputStream();
+                AsyncWriteListener asyncWriteListener = new AsyncWriteListener.Builder()
+                        .setServletOutputStream(servletOutputStream)
+                        .setCharSequence(content)
+                        .setHandler(handler)
+                        .build();
+                setOutputWriteListener(servletOutputStream, asyncWriteListener);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -448,7 +471,7 @@ public class AsyncActionContext {
      * 此方法會以 application/json 格式回傳至前端
      */
     public void outputJSONToResponse(JsonObject obj, Handler handler) {
-        if(checkIsOutput()) return;
+        if(checkIsOutput(new Gson().toJson(obj))) return;
         HttpServletResponse response = ((HttpServletResponse) asyncContext.getResponse());
         final String outputString = new Gson().toJson(obj);
         // 因為採用 byte 輸出，如果沒有 Response Header 容易在瀏覽器端發生錯誤
@@ -468,12 +491,17 @@ public class AsyncActionContext {
         }
         // 使用 WriteListener 非同步輸出
         {
-            AsyncWriteListener asyncWriteListener = new AsyncWriteListener.Builder()
-                    .setAsyncActionContext(this)
-                    .setCharSequence(outputString)
-                    .setHandler(handler)
-                    .build();
-            setOutputWriteListener(asyncWriteListener);
+            try {
+                ServletOutputStream servletOutputStream = response.getOutputStream();
+                AsyncWriteListener asyncWriteListener = new AsyncWriteListener.Builder()
+                        .setServletOutputStream(servletOutputStream)
+                        .setCharSequence(outputString)
+                        .setHandler(handler)
+                        .build();
+                setOutputWriteListener(servletOutputStream, asyncWriteListener);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -483,7 +511,7 @@ public class AsyncActionContext {
      * isAttachment 影響到瀏覽器是否能預覽（true 時會被當作一般檔案來下載）
      */
     public void outputFileToResponse(String path, String fileName, String mimeType, boolean isAttachment, Handler handler) {
-        if(checkIsOutput()) return;
+        if(checkIsOutput(fileName)) return;
         if(null == path || path.length() == 0) {
             {
                 Bundle b = new Bundle();
@@ -517,7 +545,7 @@ public class AsyncActionContext {
      * 於 safari, ie 要注意匯出檔案名稱不能過長，要不然會被瀏覽器重新命名
      */
     public void outputFileToResponse(File file, String fileName, String mimeType, boolean isAttachment, Handler handler) {
-        if(checkIsOutput()) return;
+        if(checkIsOutput(fileName)) return;
 
         // 檢查檔案是否正常
         if(null == file || file.length() == 0 || !file.exists()) {
@@ -583,12 +611,17 @@ public class AsyncActionContext {
 
         // 使用 WriteListener 非同步輸出
         {
-            AsyncWriteListener asyncWriteListener = new AsyncWriteListener.Builder()
-                    .setAsyncActionContext(this)
-                    .setFile(file)
-                    .setHandler(handler)
-                    .build();
-            setOutputWriteListener(asyncWriteListener);
+            try {
+                ServletOutputStream servletOutputStream = response.getOutputStream();
+                AsyncWriteListener asyncWriteListener = new AsyncWriteListener.Builder()
+                        .setServletOutputStream(servletOutputStream)
+                        .setFile(file)
+                        .setHandler(handler)
+                        .build();
+                setOutputWriteListener(servletOutputStream, asyncWriteListener);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -710,10 +743,24 @@ public class AsyncActionContext {
                 return res;
             }
             // 第一次建立暫存檔案
-            AppSetting appSetting = new AppSetting.Builder().build();
+            Path temp_file_dir = null;
+            String dir_slash = System.getProperty("file.separator");
             {
+                File app_dir = new FileFinder.Builder().build().find("WEB-INF").getParentFile();
+                String app_name = app_dir.getName();
+                File app_temp_dir = new FileFinder.Builder().build().find("WebAppFiles");
+                if(null == app_temp_dir) {
+                    LoggerService.logERROR("尚未建立 WebAppFiles 資料夾");
+                    System.err.println("尚未建立 WebAppFiles 資料夾");
+                } else {
+                    temp_file_dir = Paths.get(app_temp_dir + dir_slash + app_name + dir_slash + "temp");
+                    if (!temp_file_dir.toFile().exists()) {
+                        temp_file_dir.toFile().mkdirs();
+                    }
+                }
                 boolean file_create_status = false;
-                temp_file_req_text = new File(appSetting.getPathContext().getTempDirPath()+"temp_txt_"+RandomServiceStatic.getInstance().getTimeHash(8));
+                String file_name = "temp_txt_"+RandomServiceStatic.getInstance().getTimeHash(8);
+                temp_file_req_text = Paths.get(temp_file_dir + dir_slash + file_name).toFile();
                 try {
                     file_create_status = temp_file_req_text.createNewFile();
                 } catch (IOException e) {
@@ -748,34 +795,37 @@ public class AsyncActionContext {
      * 若是 Request 為純檔案傳輸（image/jpeg, image/png...），
      * 可由此方法將 InputStream 內容轉換為 File 的型態，
      * 這個檔案會被暫存至 Tomcat or Jetty 被關閉為止（deleteOnExit）
-     *
+     * -
      * #200806 修正因 stream 模式造成重複取值會為空值的問題
      */
     public File getRequestByteContent() {
         if(null != temp_file_req_byte) return temp_file_req_byte;
-        File targetFile = null;
-        AppSetting appSetting = new AppSetting.Builder().build();
-        try {
-            targetFile = new File(appSetting.getPathContext().getTempDirPath());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        File nowFile = null;
-        try {
-            String prefixName = "upload_temp_" + System.currentTimeMillis() + "_";
-            try {
-                nowFile = new WeakReference<>( File.createTempFile(prefixName, null, targetFile) ).get();
-            } catch (Exception e) {
-                e.printStackTrace();
+        Path temp_file_dir = null;
+        String dir_slash = System.getProperty("file.separator");
+        {
+            File app_dir = new FileFinder.Builder().build().find("WEB-INF").getParentFile();
+            String app_name = app_dir.getName();
+            File app_temp_dir = new FileFinder.Builder().build().find("WebAppFiles");
+            if(null == app_temp_dir) {
+                LoggerService.logERROR("尚未建立 WebAppFiles 資料夾");
+                System.err.println("尚未建立 WebAppFiles 資料夾");
+            } else {
+                temp_file_dir = Paths.get(app_temp_dir + dir_slash + app_name + dir_slash + "temp");
+                if (!temp_file_dir.toFile().exists()) {
+                    temp_file_dir.toFile().mkdirs();
+                }
             }
-            assert nowFile != null;
-            nowFile.deleteOnExit();
+        }
+        try {
+            String file_name = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss_SSS")) + "_" + RandomServiceStatic.getInstance().getLowerCaseRandomString(4);
+            File multi_part_file = Paths.get(temp_file_dir + dir_slash + file_name).toFile();
+            multi_part_file.deleteOnExit(); // temp file delete setting
             Files.copy(
                     asyncContext.getRequest().getInputStream(),
-                    nowFile.toPath(),
+                    multi_part_file.toPath(),
                     StandardCopyOption.REPLACE_EXISTING
             );
-            temp_file_req_byte = nowFile;
+            temp_file_req_byte = multi_part_file;
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -819,17 +869,33 @@ public class AsyncActionContext {
      * 非同步架構下 ServletOutputStream 將綁定於 WriteListener 管理，
      * 為方便管理整體流程限制其 OutputStream 只能執行一次的機制，
      * 請將輸出資料以 JSON, Text 等格式單次輸出作為該次 HTTP 請求回傳內容
-     * --
+     * -
      * -- 1. 通常會看到此錯誤要注意是否 switch 條件未正確 break 而造成多個條件觸發
      * -- 2. 請檢查 if 等判斷式條件是否有重複執行的行為造成重複執行
+     * -
+     * #230427 增加判斷上一筆成功輸出的記錄，檔案以檔名提醒、純文本則列印原內容等
      */
-    private boolean checkIsOutput() {
+    private boolean checkIsOutput(String check_str) {
+        if(null == this.preview_already_output_content) {
+            if(check_str.length() > 100) check_str = check_str.substring(0, 100);
+            StackTraceElement[] stackTraceElements = Thread.currentThread().getStackTrace();
+            JsonObject obj = new JsonObject();
+            obj.addProperty("stack_trace", Arrays.toString(Arrays.stream(stackTraceElements).toArray()));
+            obj.addProperty("check_str", check_str);
+            this.preview_already_output_content = new Gson().toJson(obj);
+        } else {
+            String msg_zht = "上一筆輸出內容為（有可能為部分內容），同一個請求中應該只有一個輸出狀態，確保非同步下一進一出原則：" + this.preview_already_output_content;
+            LoggerService.logERROR(msg_zht);
+            System.err.println(msg_zht);
+        }
         if(isOutput) {
             try {
-                throw new Exception("Only have one output command for a WriteListener.");
+                throw new Exception("In a request only have one output command for WriteListener.");
             } catch (Exception e) {
                 e.printStackTrace();
-                AsyncActionContext.this.complete();
+                if( !this.isComplete ) {
+                    this.asyncContext.complete();
+                }
             }
         }
         return isOutput;
@@ -905,10 +971,10 @@ public class AsyncActionContext {
 
     /**
      * 解決 output 下載檔案時 unicode 檔案名稱編碼
-     *
-     * https://tools.ietf.org/html/rfc3986
-     * https://stackoverflow.com/questions/4737841/urlencoder-not-able-to-translate-space-character
-     *
+     * -
+     * <a href="https://tools.ietf.org/html/rfc3986">rfc3986</a>
+     * <a href="https://stackoverflow.com/questions/4737841/urlencoder-not-able-to-translate-space-character">...</a>
+     * -
      * #201117 補充說明
      * 依照 rfc3986 java.net.URLEncoder.encode 將空格轉換為 "+" 是正確的，
      * 但 org.apache.catalina.util.URLEncoder.encode 的會轉換為 "%20" 較能正常使用，
@@ -928,28 +994,11 @@ public class AsyncActionContext {
     }
 
     /**
-     * 統一檢查與設定 AsyncWriteListener，以此管控每個請求只能輸出一次的機制，
-     * 藉由此單一輸出機制簡化非同步與原本同步架構的 output 差異性
+     * use WriteListener output
      */
-    private void setOutputWriteListener(AsyncWriteListener asyncWriteListener) {
+    private void setOutputWriteListener(ServletOutputStream servletOutputStream, WriteListener writeListener) {
         isOutput = true;
-        try {
-            asyncContext.getResponse().getOutputStream().setWriteListener(asyncWriteListener);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * 解析檔案名稱為檔名與副檔名
-     * https://stackoverflow.com/questions/4545937/java-splitting-the-filename-into-a-base-and-extension
-     */
-    private String[] parseFileName(String str) {
-        String[] tokens = str.split("\\.(?=[^.]+$)");
-        for(int i = 0, len = tokens.length; i < len; i++) {
-            tokens[i] = tokens[i].trim();
-        }
-        return tokens;
+        servletOutputStream.setWriteListener(writeListener);
     }
 
     public static class Builder {

@@ -7,7 +7,6 @@ import java.io.InputStream;
 import java.lang.ref.WeakReference;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.util.Locale;
 
 /**
  * #210821 增加檔案名稱及副檔名處理
@@ -145,39 +144,23 @@ public class FileItem {
      * 取得檔案名稱，type = "name", "extension"
      */
     private String parse_file_name(String file_name_str, String parse_type) {
-        // null check
         if(null == file_name_str || file_name_str.length() == 0) return null;
-        String res = null;
+        int lastDot = file_name_str.lastIndexOf('.');
+        String name;
+        String extension = "";
+        if (lastDot > 0) {
+            name = file_name_str.substring(0, lastDot);
+            extension = file_name_str.substring(lastDot + 1);
+        } else {
+            name = file_name_str;
+        }
         if( "name".equalsIgnoreCase(parse_type) ) {
-            String[] sArr = file_name_str.split("\\.");
-            StringBuilder sbd = new StringBuilder();
-            for (int i = 0, len = sArr.length; i < len; i++) {
-                String s = sArr[i];
-                // 如果沒有副檔名時
-                if (sArr.length == 1) {
-                    sbd.append(s);
-                    break;
-                }
-                // 正常處理繼續以下步驟
-                int max = len - 1;
-                if (i != max) {
-                    sbd.append(s);
-                }
-                if (i < max - 1) {
-                    sbd.append(".");
-                }
-            }
-            res = sbd.toString();
+            return name;
         }
         if( "extension".equalsIgnoreCase(parse_type) ) {
-            String[] sArr = file_name_str.split("\\.");
-            if(sArr.length > 1) {
-                res = sArr[sArr.length-1].toLowerCase(Locale.ENGLISH);
-            } else {
-                return null;
-            }
+            return extension;
         }
-        return res;
+        return name;
     }
 
 }

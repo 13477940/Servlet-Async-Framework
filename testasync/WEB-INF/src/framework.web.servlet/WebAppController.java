@@ -1,23 +1,52 @@
 package framework.web.servlet;
 
+import framework.file.FileFinder;
 import framework.thread.ThreadPoolStatic;
 import framework.web.runnable.AsyncContextRunnable;
 import jakarta.servlet.AsyncContext;
+import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+import java.io.File;
 import java.lang.ref.WeakReference;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.Driver;
 import java.sql.DriverManager;
 import java.util.Enumeration;
 
+
 /**
- * ＃2021-05-05 fixed for tomcat 10 to jakarta -> 前期相容先使用 tomcat migration tool 遷移（相容舊版本）
- * https://github.com/apache/tomcat-jakartaee-migration
+ * 使用本套件後所有 HTTP 服務進入點為此處
  */
 public class WebAppController extends HttpServlet {
+
+    @Override
+    public void init() throws ServletException {
+        super.init();
+        // 刪除既有暫存檔
+        {
+            File app_dir = new FileFinder.Builder().build().find("WEB-INF").getParentFile();
+            String app_name = app_dir.getName();
+            File app_temp_dir = new FileFinder.Builder().build().find("WebAppFiles");
+            String dir_slash = System.getProperty("file.separator");
+            Path temp_file_dir = Paths.get(app_temp_dir + dir_slash + app_name + dir_slash + "temp");
+            if (temp_file_dir.toFile().exists()) {
+                try (DirectoryStream<Path> stream = Files.newDirectoryStream(temp_file_dir)) {
+                    for (Path _path : stream) {
+                        _path.toFile().delete();
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
 
     // 以 service() 處理請求，自行決定各 http method 處理方式
     @Override

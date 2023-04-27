@@ -2,11 +2,13 @@ package framework.web.runnable;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import framework.logs.LoggerService;
 import framework.observer.Handler;
 import framework.observer.Message;
-import framework.setting.AppSetting;
 import framework.web.context.AsyncActionContext;
 import framework.web.executor.WebAppServiceExecutor;
+import framework.web.listener.AsyncReadListener;
 import framework.web.multipart.FileItem;
 import framework.web.multipart.FileItemList;
 import framework.web.session.context.UserContext;
@@ -15,19 +17,21 @@ import framework.web.session.service.SessionServiceStatic;
 import jakarta.servlet.AsyncContext;
 import jakarta.servlet.ServletConfig;
 import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletInputStream;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
-import upload.PartOutput;
-import upload.UploadParser;
+import org.apache.tika.Tika;
+import org.apache.tomcat.util.http.fileupload.ParameterParser;
 
-import java.io.BufferedOutputStream;
+import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileOutputStream;
+import java.io.FileInputStream;
 import java.lang.ref.WeakReference;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 
 /**
@@ -68,47 +72,69 @@ public class AsyncContextRunnable implements Runnable {
         processRequest();
     }
 
-    // proc request by Content-Type header value
+    // process request by content type
     private void processRequest() {
-        String content_type = asyncContext.getRequest().getContentType();
+        String content_type = null;
+        if(null != asyncContext.getRequest().getContentType()) {
+            content_type = asyncContext.getRequest().getContentType().toLowerCase(Locale.ENGLISH);
+        }
         // from browser
         if(null == content_type || content_type.length() == 0) {
-            parseParams();
+            LinkedHashMap<String, String> params = parse_params();
+            webAppStartup(params, null);
             return;
         }
         String _content_type = content_type.toLowerCase(Locale.ENGLISH);
         // structured http request
         if(_content_type.contains("application/x-www-form-urlencoded")) {
-            proc_url_encoded_body();
+            LinkedHashMap<String, String> params = parse_url_encoded_body();
+            webAppStartup(params, null);
             return;
         }
         // structured http request
         if(_content_type.contains("multipart/form-data")) {
-            parseFormData();
+            parse_multipart_form();
+            return;
+        }
+        if(_content_type.contains("application/octet-stream")) {
+            parse_binary_req();
             return;
         }
         // for GraphQL, JSON
         if(_content_type.contains("application/json")) {
-            parseParams();
+            LinkedHashMap<String, String> params = parse_params();
+            webAppStartup(params, null);
             return;
         }
         // for XML
         if(_content_type.contains("application/xml")) {
-            parseParams();
+            LinkedHashMap<String, String> params = parse_params();
+            webAppStartup(params, null);
             return;
         }
         // for YAML
         if(_content_type.contains("text/yaml")) {
-            parseParams();
+            LinkedHashMap<String, String> params = parse_params();
+            webAppStartup(params, null);
             return;
         }
         // for EDN
         if(_content_type.contains("application/edn")) {
-            parseParams();
+            LinkedHashMap<String, String> params = parse_params();
+            webAppStartup(params, null);
+            return;
+        }
+        // for text/plain
+        if(_content_type.contains("text/plain")) {
+            LinkedHashMap<String, String> params = parse_params();
+            webAppStartup(params, null);
             return;
         }
         // when unstructured http request return 'error 400 bad request'
         {
+            String msg_zht = "未支援的請求格式："+content_type;
+            LoggerService.logERROR(msg_zht);
+            System.err.println(msg_zht);
             response400(new Handler(){
                 @Override
                 public void handleMessage(Message m) {
@@ -149,118 +175,95 @@ public class AsyncContextRunnable implements Runnable {
         executor.startup();
     }
 
-    // 採用檔案處理方式解析 multipart/form-data 資料內容
-    // 由 Session 處理上傳進度值會影響伺服器效率，僅建議由前端處理上傳進度即可
-    // 前端 AJAX 操作推薦採用 https://github.com/axios/axios
-    private void parseFormData() {
-        // Elopteryx/upload-parser
-        // https://github.com/Elopteryx/upload-parser
-        // 使用該模組解決原本 byte to byte 的無 Buffer 效率問題
-        {
-            File targetFile = null;
-            AppSetting appSetting = new AppSetting.Builder().build();
-            try {
-                targetFile = new File(appSetting.getPathContext().getTempDirPath());
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            final File _targetFile = targetFile;
+    /**
+     * 採用檔案處理方式解析 multipart/form-data 資料內容
+     * 因為由 Session 處理上傳進度值會影響伺服器效率，僅建議由前端處理上傳進度監聽即可
+     * 前端 AJAX 操作推薦採用 <a href="https://github.com/axios/axios">axios</a>
+     */
+    private void parse_multipart_form() {
+        LinkedHashMap<String, String> params = parse_params();
+        // 透過自定義的 AsyncReadListener 處理 MultiPart
+        try {
             FileItemList fileItemList = new FileItemList();
-            LinkedHashMap<String, String> params = new LinkedHashMap<>();
-            {
-                for ( Map.Entry<String, String[]> entry : asyncContext.getRequest().getParameterMap().entrySet() ) {
-                    try {
-                        String key = entry.getKey();
-                        String[] values = entry.getValue();
-                        // if single key has more than one value, they will add in JSONArray String.
-                        if (values.length > 1) {
-                            JsonArray arr = new JsonArray();
-                            // Collections.addAll(arr, values);
-                            for(String str : values) {
-                                arr.add(str);
-                            }
-                            params.put(key, new Gson().toJson(arr));
-                        } else {
-                            String value = values[0];
-                            params.put(key, value);
-                        }
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-            final HashMap<String, File> fileTmp = new HashMap<>();
-            fileTmp.put("file", null);
-            int bMaxSize = 1024 * 16; // buffer size limit
-            try {
-                // https://github.com/Elopteryx/upload-parser
-                UploadParser uploadParser = new WeakReference<>( UploadParser.newParser() ).get();
-                {
-                    assert uploadParser != null;
-                    uploadParser
-                        // https://github.com/Elopteryx/upload-parser/blob/master/upload-parser-core/src/main/java/com/github/elopteryx/upload/OnPartBegin.java
-                        .onPartBegin((context, buffer) -> {
-                            // multipart 內容檔案化
-                            String prefixName = "upload_temp_" + System.currentTimeMillis() + "_";
-                            File nowFile = new WeakReference<>( File.createTempFile(prefixName, null, _targetFile) ).get();
-                            {
-                                assert nowFile != null;
-                                nowFile.deleteOnExit(); // when close webapp
-                                fileTmp.put("file", nowFile);
-                            }
-                            // 建立檔案輸出 OutputStream
-                            BufferedOutputStream bOut;
-                            {
-                                bOut = new WeakReference<>( new BufferedOutputStream(new FileOutputStream(nowFile)) ).get();
-                                assert bOut != null;
-                                bOut.write(buffer.array());
-                                bOut.flush();
-                            }
-                            return PartOutput.from(bOut);
-                        })
-                        .onPartEnd((context) -> {
-                            String field_name = context.getCurrentPart().getName();
-                            if(context.getCurrentPart().isFile()) {
+            // get boundary string
+            ParameterParser parameterParser = new ParameterParser();
+            parameterParser.setLowerCaseNames(true);
+            Map<String, String> req_content_type = parameterParser.parse(requestContext.getHttpRequest().getContentType(), new char[] {';', ','});
+            String boundary_string = req_content_type.get("boundary");
+
+            ServletInputStream servletInputStream = requestContext.getHttpRequest().getInputStream();
+            servletInputStream.setReadListener(new AsyncReadListener(servletInputStream, boundary_string, new Handler(){
+                @Override
+                public void handleMessage(Message m) {
+                    super.handleMessage(m);
+                    String status = m.getData().getString("status");
+                    if("done".equalsIgnoreCase(status)) {
+                        JsonArray data_arr = new Gson().fromJson(m.getData().getString("data"), JsonArray.class);
+                        for(int i = 0, len = data_arr.size(); i < len; i++) {
+                            JsonObject obj = data_arr.get(i).getAsJsonObject();
+                            if(obj.has("filename")) {
+                                Path file_path = Paths.get(obj.get("file_path").getAsString());
                                 FileItem fileItem = new FileItem.Builder()
-                                        .setFile(fileTmp.get("file"))
-                                        .setContentType(context.getCurrentPart().getContentType())
-                                        .setName(context.getCurrentPart().getSubmittedFileName())
-                                        .setSize(context.getCurrentPart().getKnownSize())
+                                        .setFile(file_path.toFile())
+                                        .setName(obj.get("filename").getAsString())
+                                        .setContentType(obj.get("content-type").getAsString())
+                                        .setFieldName(obj.get("name").getAsString())
+                                        .setSize(file_path.toFile().length())
                                         .setIsFormField(false)
-                                        .setFieldName(context.getCurrentPart().getName())
                                         .build();
                                 fileItemList.add(fileItem);
                             } else {
-                                File nowFile = fileTmp.get("file");
-                                String param_value = Files.readString(nowFile.toPath());
-                                params.put(field_name, param_value.trim());
-                            }
-                        })
-                        .onRequestComplete(context -> {
-                            fileTmp.clear();
-                            {
-                                if(fileItemList.size() == 0) {
-                                    webAppStartup(params, null);
-                                } else {
-                                    webAppStartup(params, fileItemList);
+                                Path file_path = Paths.get(obj.get("file_path").getAsString());
+                                try {
+                                    FileInputStream fis = new FileInputStream(file_path.toString());
+                                    String key = obj.get("name").getAsString();
+                                    String value = new String(fis.readAllBytes(), StandardCharsets.UTF_8);
+                                    params.put(key, value);
+                                } catch (Exception e) {
+                                    e.printStackTrace();
                                 }
                             }
-                        })
-                        .onError((context, throwable) -> throwable.printStackTrace())
-                        .sizeThreshold( 0 ) // buffer 起始值（建議為 0，要不然會有 buffer 內容重複的問題）
-                        .maxBytesUsed( bMaxSize ) // max buffer size
-                        .maxPartSize( Long.MAX_VALUE ) // 單個 form-data 項目大小限制
-                        .maxRequestSize( Long.MAX_VALUE ) // 整體 request 大小限制
-                        .setupAsyncParse( (HttpServletRequest) asyncContext.getRequest() );
+                        }
+                        if(fileItemList.size() == 0) {
+                            webAppStartup(params, null);
+                        } else {
+                            webAppStartup(params, fileItemList);
+                        }
+                    }
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            }));
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
+    public String getRequestTextContent() {
+        String str = null;
+        try {
+            BufferedInputStream bis = new BufferedInputStream(asyncContext.getRequest().getInputStream());
+            str = new String(bis.readAllBytes(), StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return str;
+    }
+
+    // parse application/x-www-form-urlencoded
+    private LinkedHashMap<String, String> parse_url_encoded_body() {
+        LinkedHashMap<String, String> params = parse_params();
+        String param_str = getRequestTextContent();
+        if(null == param_str || param_str.length() == 0) {
+            return params;
+        }
+        Arrays.stream(param_str.split("&"))
+                .map(s -> s.split("=", 2))
+                .forEach(kv -> params.put(URLDecoder.decode(kv[0], StandardCharsets.UTF_8),
+                        URLDecoder.decode(kv[1], StandardCharsets.UTF_8)));
+        return params;
+    }
+
     // 處理 HttpRequest Parameters
-    private void parseParams() {
+    private LinkedHashMap<String, String> parse_params() {
         LinkedHashMap<String, String> params = new LinkedHashMap<>();
         for ( Map.Entry<String, String[]> entry : asyncContext.getRequest().getParameterMap().entrySet() ) {
             try {
@@ -281,7 +284,7 @@ public class AsyncContextRunnable implements Runnable {
                 e.printStackTrace();
             }
         }
-        webAppStartup(params, null);
+        return params;
     }
 
     // 檢查使用者登入資訊是否已存在於 Session
@@ -301,97 +304,8 @@ public class AsyncContextRunnable implements Runnable {
         }
     }
 
-    // proc application/x-www-form-urlencoded
-    private void proc_url_encoded_body() {
-        String param_str = requestContext.getRequestTextContent();
-        String mode = "key"; // 'key' or 'value' mode, default is key
-        LinkedHashMap<String, String> params = new LinkedHashMap<>();
-        {
-            for ( Map.Entry<String, String[]> entry : asyncContext.getRequest().getParameterMap().entrySet() ) {
-                try {
-                    String key = entry.getKey();
-                    String[] values = entry.getValue();
-                    // if single key has more than one value, they will add in JSONArray String.
-                    if (values.length > 1) {
-                        JsonArray arr = new JsonArray();
-                        // Collections.addAll(arr, values);
-                        for(String str : values) {
-                            arr.add(str);
-                        }
-                        params.put(key, new Gson().toJson(arr));
-                    } else {
-                        String value = values[0];
-                        params.put(key, value);
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-        if(null == param_str || param_str.length() == 0) {
-            webAppStartup(params, null);
-            return;
-        }
-        // proc request content value
-        String now_key = null;
-        {
-            StringBuilder sbd = new StringBuilder(); // char pool
-            for(int i = 0, len = param_str.length(); i < len; i++) {
-                String str = String.valueOf(param_str.charAt(i)); // by word
-                switch (str) {
-                    // value
-                    case "=": {
-                        // if duplicate
-                        if("value".equals(mode)) continue;
-                        // key is over
-                        {
-                            now_key = URLDecoder.decode(sbd.toString(), StandardCharsets.UTF_8);
-                            params.put(now_key, "");
-                        }
-                        // next
-                        mode = "value";
-                        sbd.delete(0, sbd.length());
-                    } break;
-                    // key
-                    case "&": {
-                        // if duplicate
-                        if("key".equals(mode)) continue;
-                        // value is over
-                        {
-                            params.put(now_key, URLDecoder.decode(sbd.toString(), StandardCharsets.UTF_8));
-                        }
-                        // next
-                        mode = "key";
-                        sbd.delete(0, sbd.length());
-                    } break;
-                    default: {
-                        switch (mode) {
-                            case "key":
-                            case "value": {
-                                sbd.append(str);
-                            } break;
-                        }
-                    } break;
-                }
-            }
-            // flush
-            {
-                switch (mode) {
-                    case "key": {
-                        now_key = URLDecoder.decode(sbd.toString(), StandardCharsets.UTF_8);
-                        params.put(now_key, "");
-                    } break;
-                    case "value": {
-                        params.put(now_key, URLDecoder.decode(sbd.toString(), StandardCharsets.UTF_8));
-                    } break;
-                }
-            }
-        }
-        webAppStartup(params, null);
-    }
-
-    // proc application/octet-stream - single file byte
-    private void proc_octet_stream() {
+    // parse application/octet-stream - single file byte
+    private void parse_binary_req() {
         File file = requestContext.getRequestByteContent();
         FileItemList fileItemList = new FileItemList();
         if(null == file) {
@@ -405,7 +319,7 @@ public class AsyncContextRunnable implements Runnable {
         String file_content_type = "application/octet-stream";
         {
             try {
-                file_content_type = Files.probeContentType(file.toPath());
+                file_content_type = new Tika().detect(file);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -417,8 +331,8 @@ public class AsyncContextRunnable implements Runnable {
                     .setContentType(file_content_type)
                     .setName(file.getName())
                     .setSize(file.length())
-                    .setIsFormField(false)
                     .setFieldName(file.getName())
+                    .setIsFormField(false)
                     .build();
             fileItemList.add(fileItem);
         }
