@@ -6,7 +6,7 @@ import java.nio.ByteBuffer;
 import java.util.Objects;
 
 /**
- * https://stackoverflow.com/questions/4332264/wrapping-a-bytebuffer-with-an-inputstream
+ * <a href="https://stackoverflow.com/questions/4332264/wrapping-a-bytebuffer-with-an-inputstream">...</a>
  */
 public class ByteBufferBackedOutputStream extends OutputStream {
 

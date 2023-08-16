@@ -95,7 +95,7 @@ public class DataTable {
             while(rs.next()) {
                 DataRow row = new DataRow();
                 for(String col : cols) {
-                    if(null == col || col.length() == 0) continue;
+                    if(null == col || col.isEmpty()) continue;
                     String key = col.toLowerCase(Locale.ENGLISH);
                     String value = rs.getString(col);
                     row.put(key, Objects.requireNonNullElse(value, ""));

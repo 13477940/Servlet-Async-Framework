@@ -11,9 +11,9 @@ import java.time.format.DateTimeFormatter;
  * SecureRandom 為相較安全的亂數產生類別，除了系統時間種子外會加上其他因素來達成不可預測的隨機數因子
  * "在密碼學中，安全的隨機數非常重要。如果使用不安全的僞隨機數，
  * 所有加密體系都將被攻破。因此，時刻牢記必須使用 SecureRandom 來產生安全的隨機數。"
- *
- * https://www.cnblogs.com/deng-cc/p/8064481.html
- * https://www.twblogs.net/a/5e51442bbd9eee21167f63d1
+ * -
+ * <a href="https://www.cnblogs.com/deng-cc/p/8064481.html">...</a>
+ * <a href="https://www.twblogs.net/a/5e51442bbd9eee21167f63d1">...</a>
  */
 public abstract class RandomService {
 
@@ -63,7 +63,7 @@ public abstract class RandomService {
     /**
      * 標準的英數亂數字串產生，使用 ThreadLocalRandom 加快亂數產生效率
      * 要注意這只適用於大小寫敏感的用途，若大小寫不敏感則建議改用 getUpCaseRandomString()
-     * https://juejin.im/post/5b8742eb6fb9a019ba68480f
+     * <a href="https://juejin.im/post/5b8742eb6fb9a019ba68480f">...</a>
      */
     public String getRandomString(int ranStrLength) {
         StringBuilder sbd = new StringBuilder();

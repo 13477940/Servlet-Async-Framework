@@ -39,6 +39,10 @@ var axios = window.axios || null;
         (function () {
             if (Array.isArray(script_url)) {
                 target_count = script_url.length;
+                if (0 == target_count) {
+                    ready_fn();
+                    return;
+                }
                 for (let url_index in script_url) {
                     let url = script_url[url_index];
                     rm_rep_script(url);
@@ -90,7 +94,7 @@ var axios = window.axios || null;
     }
 })();
 (function () {
-    website["randomString"] = function (len) {
+    website["random_string"] = function (len) {
         const t = "abcdefghijklmnopqrstuvwxyz0123456789";
         let r = [];
         let l = 16;
@@ -148,7 +152,7 @@ var axios = window.axios || null;
         },
         keys: function () {
             const aKeys = document.cookie.replace(/((?:^|\s*;)[^\=]+)(?=;|$)|^\s*|\s*(?:\=[^;]*)?(?:\1|$)/g, "").split(/\s*(?:\=[^;]*)?;\s*/);
-            for (var nIdx = 0; nIdx < aKeys.length; nIdx++) {
+            for (let nIdx = 0; nIdx < aKeys.length; nIdx++) {
                 aKeys[nIdx] = decodeURIComponent(aKeys[nIdx]);
             }
             return aKeys;
@@ -161,6 +165,23 @@ var axios = window.axios || null;
             }
         }
     };
+})();
+(function () {
+    website["websocket"] = function (config_obj) {
+        let protocol = get_websocket_protocol();
+        if (null != config_obj["protocol"])
+            protocol = config_obj["protocol"];
+        const ws_uri = protocol + config_obj["path"];
+        const web_socket = new WebSocket(ws_uri);
+        web_socket.onopen = config_obj["onopen"];
+        web_socket.onmessage = config_obj["onmessage"];
+        web_socket.onerror = config_obj["onerror"];
+        web_socket.onclose = config_obj["onclose"];
+        return web_socket;
+    };
+    function get_websocket_protocol() {
+        return location.protocol.includes('https') ? 'wss://' : 'ws://';
+    }
 })();
 (function () {
     (function () {
@@ -379,7 +400,7 @@ var axios = window.axios || null;
 (function () {
     website["dialog"] = function (initObj) {
         const def = $.Deferred();
-        const dialogId = "_dialog_" + website.randomString(16);
+        const dialogId = "_dialog_" + website.random_string(16);
         const dialogElem = $(buildDialogHtml());
         (function () {
             dialogElem.attr("modal_dialog_ssid", dialogId);
@@ -426,8 +447,10 @@ var axios = window.axios || null;
             overlay_elem.css("position", "fixed");
             overlay_elem.css("top", "0px");
             overlay_elem.css("left", "0px");
-            overlay_elem.css("width", "100vw");
-            overlay_elem.css("height", "100vh");
+            const fix_window_width = window.innerWidth;
+            overlay_elem.css("width", fix_window_width);
+            const fix_window_height = window.innerHeight;
+            overlay_elem.css("height", fix_window_height);
             overlay_elem.css("overflow", "auto");
             overlay_elem.css("backdrop-filter", "blur(1px)");
         })();
@@ -488,7 +511,7 @@ var axios = window.axios || null;
         return text_decoder.decode(aMyUTF8Output);
     };
     website["base64_url_decode"] = function (content) {
-        return website["base64_decode"](content);
+        return website["base64_decode"](decode_url_safe(content));
     };
     website["base64_enc_byte"] = function (src_byte) {
         const tmp_arr = new Uint8Array(src_byte);
@@ -501,7 +524,7 @@ var axios = window.axios || null;
         return url_safe_withoutPadding(website["base64_enc_byte"](src_byte));
     };
     website["base64_url_dec_byte"] = function (src_byte) {
-        return website["base64_dec_byte"](src_byte);
+        return website["base64_dec_byte"](decode_url_safe(src_byte));
     };
     function url_safe_withoutPadding(str) {
         return str.replace(/\+/g, '-').replace(/\//g, '_').replace(/\=+$/, '');
@@ -580,30 +603,25 @@ var axios = window.axios || null;
     }
 })();
 (function () {
-    website["currency_number"] = function (num_val) {
-        return new Intl.NumberFormat('zh-TW', { style: 'decimal', currency: 'TWD' }).format(num_val);
-    };
-})();
-(function () {
     website["print"] = function (elem, width, height) {
-        var w_width = $(window).width() * 0.9;
+        const window_elem = $(window);
+        let w_width = parseInt(window_elem.width() * 0.9 + "", 10);
         if (null != width)
             w_width = width;
-        var w_height = $(window).height() * 0.9;
-        if (null != w_height)
+        let w_height = parseInt(window_elem.height() * 0.9 + "", 10);
+        if (null != height)
             w_height = height;
-        (function () {
-            if (600 > w_width)
-                w_width = 600;
-            if (600 > w_height)
-                w_height = 600;
-        })();
-        var mywindow = window.open('', '', 'left=0,top=0,width=' + w_width + ',height=' + w_height + ',toolbar=0,scrollbars=0,status=0,addressbar=0');
-        var is_chrome = Boolean(mywindow.chrome);
+        setTimeout(function () {
+            open_print_window(elem, w_width, w_height);
+        }, 1);
+    };
+    function open_print_window(elem, width, height) {
+        const mywindow = window.open('', '', 'left=0,top=0,width=' + width + ',height=' + height + ',toolbar=0,scrollbars=0,status=0,addressbar=0');
+        const is_chrome = Boolean(mywindow.chrome);
         mywindow.document.write(elem.prop("outerHTML"));
         mywindow.document.close();
         if (is_chrome) {
-            var b_need_load = false;
+            let b_need_load = false;
             if (elem.prop("outerHTML").includes("<img"))
                 b_need_load = true;
             if (b_need_load) {
@@ -625,41 +643,90 @@ var axios = window.axios || null;
             mywindow.print();
             mywindow.close();
         }
-    };
+    }
 })();
 (function () {
     website["scroll_width"] = function () {
-        var scr = null;
-        var inn = null;
-        var wNoScroll = 0;
-        var wScroll = 0;
-        scr = document.createElement('div');
-        var div_id = "_scroll_test_" + website.randomString(16);
-        scr.id = div_id;
-        scr.style.position = 'absolute';
-        scr.style.top = '-1000px';
-        scr.style.left = '-1000px';
-        scr.style.width = '100px';
-        scr.style.height = '50px';
-        scr.style.overflow = 'hidden';
-        inn = document.createElement('div');
-        inn.style.width = '100%';
-        inn.style.height = '200px';
-        scr.appendChild(inn);
-        document.getElementsByTagName('html')[0].appendChild(scr);
-        wNoScroll = inn.offsetWidth;
-        scr.style.overflow = 'auto';
-        wScroll = inn.offsetWidth;
-        var elem = document.getElementById(div_id);
+        let scr = null;
+        let inn = null;
+        let wNoScroll = 0;
+        let wScroll = 0;
+        const div_id = "_scroll_test_" + website.random_string(16);
+        (function () {
+            scr = document.createElement("div");
+            scr.id = div_id;
+            scr.style.position = "absolute";
+            scr.style.top = "-1000px";
+            scr.style.left = "-1000px";
+            scr.style.width = "100px";
+            scr.style.height = "100px";
+            scr.style.overflow = "hidden";
+        })();
+        (function () {
+            inn = document.createElement("div");
+            inn.style.width = "100%";
+            inn.style.height = "200px";
+        })();
+        (function () {
+            scr.appendChild(inn);
+            document.getElementsByTagName("html")[0].appendChild(scr);
+            wNoScroll = inn.offsetWidth;
+            scr.style.overflow = "auto";
+            wScroll = inn.offsetWidth;
+        })();
+        const elem = document.getElementById(div_id);
         if (null != elem)
             elem.remove();
         return (wNoScroll - wScroll);
     };
 })();
 (function () {
-    website["float"] = function (number, fractionDigits) {
-        var def = fractionDigits || 2;
-        return Math.round(number * Math.pow(10, def)) / Math.pow(10, def);
+    website["number_format"] = function (num_val, style) {
+        const locales = "zh-tw";
+        const options = {
+            style: "currency",
+            currency: "TWD",
+        };
+        return new Intl.NumberFormat(locales, options).format(num_val);
+    };
+    website["number_currency"] = function (num_val, min_digits) {
+        let _min_digits = 2;
+        if (null != min_digits)
+            _min_digits = min_digits;
+        const locales = "zh-tw";
+        const options = {
+            style: "decimal",
+            minimumFractionDigits: _min_digits,
+            maximumFractionDigits: _min_digits,
+            useGrouping: true,
+        };
+        return new Intl.NumberFormat(locales, options).format(num_val);
+    };
+    website["percent"] = function (num_val, min_digits) {
+        let _min_digits = 2;
+        if (null != min_digits)
+            _min_digits = min_digits;
+        const locales = "zh-tw";
+        const options = {
+            style: "percent",
+            minimumFractionDigits: _min_digits,
+            maximumFractionDigits: _min_digits,
+            useGrouping: false,
+        };
+        return new Intl.NumberFormat(locales, options).format(num_val);
+    };
+    website["float"] = function (num_val, min_digits) {
+        let _min_digits = 2;
+        if (null != min_digits)
+            _min_digits = min_digits;
+        const locales = "zh-tw";
+        const options = {
+            style: "decimal",
+            minimumFractionDigits: _min_digits,
+            maximumFractionDigits: _min_digits,
+            useGrouping: false,
+        };
+        return new Intl.NumberFormat(locales, options).format(num_val);
     };
 })();
 (function () {
@@ -668,9 +735,63 @@ var axios = window.axios || null;
     };
 })();
 (function () {
+    website["hash_string"] = function () {
+        return {
+            sha_256: function (plainText) {
+                const def = $.Deferred();
+                const text_byte_buffer = new TextEncoder().encode(plainText);
+                const hashBuffer = window.crypto.subtle.digest('sha-256', text_byte_buffer);
+                hashBuffer.then(function (hash_byte) {
+                    const hashArray = Array.from(new Uint8Array(hash_byte));
+                    const digest = hashArray.map(b => padStart(b.toString(16), 2, '0')).join('');
+                    def.resolve(digest);
+                }, function (e) {
+                    console.log(e);
+                    def.reject(e);
+                });
+                function padStart(str, targetLength, padString) {
+                    targetLength = targetLength >> 0;
+                    padString = String(padString || ' ');
+                    if (str.length > targetLength) {
+                        return String(str);
+                    }
+                    else {
+                        targetLength = targetLength - str.length;
+                        if (targetLength > padStart.length) {
+                            padString += padString.repeat(targetLength / padString.length);
+                        }
+                        return padString.slice(0, targetLength) + String(str);
+                    }
+                }
+                return def;
+            },
+            hmac_sha_256: function (plainText, private_key) {
+                const def = $.Deferred();
+                const encoder = new TextEncoder();
+                const pkey_str = encoder.encode(private_key);
+                const key_gen = window.crypto.subtle.importKey("raw", pkey_str, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+                key_gen.then(function (key) {
+                    const text_byte = encoder.encode(plainText);
+                    const signature = window.crypto.subtle.sign("HMAC", key, text_byte);
+                    signature.then(function (sign_data) {
+                        const hashArray = Array.from(new Uint8Array(sign_data));
+                        const hashHex = website["base64_url_enc_byte"](hashArray);
+                        def.resolve(hashHex);
+                    }, function (e) {
+                        def.reject(e);
+                    });
+                }, function (e) {
+                    def.reject(e);
+                });
+                return def;
+            },
+        };
+    };
+})();
+(function () {
     website["aes_gcm"] = function () {
         const text_encoder = new TextEncoder();
-        const text_decoder = new TextDecoder("UTF-8");
+        const text_decoder = new TextDecoder("utf-8");
         function build_aes_key(key_byte) {
             const def = $.Deferred();
             crypto.subtle.importKey("raw", key_byte, "aes-gcm", false, ["encrypt", "decrypt"]).then(function (key) {
@@ -685,12 +806,12 @@ var axios = window.axios || null;
             const def = $.Deferred();
             (function () {
                 const res = { key: "", key_byte: new ArrayBuffer(1), iv: "", iv_byte: new ArrayBuffer(1) };
-                stringToSha256(plain_text).done(function (hash_str) {
+                website.hash_string().sha_256(plain_text).done(function (hash_str) {
                     const key_str = hash_str.substr(0, 32);
                     const key_byte = text_encoder.encode(key_str);
                     res["key"] = key_str;
                     res["key_byte"] = key_byte;
-                    stringToSha256(hash_str).done(function (iv_str) {
+                    website.hash_string().sha_256(hash_str).done(function (iv_str) {
                         const iv_byte = text_encoder.encode(iv_str);
                         res["iv"] = iv_str;
                         res["iv_byte"] = iv_byte;
@@ -698,34 +819,6 @@ var axios = window.axios || null;
                     });
                 });
             })();
-            return def;
-        }
-        function stringToSha256(plainText) {
-            const def = $.Deferred();
-            const textAsBuffer = new TextEncoder().encode(plainText);
-            const hashBuffer = window.crypto.subtle.digest('SHA-256', textAsBuffer);
-            hashBuffer.then(function (hash_byte) {
-                const hashArray = Array.from(new Uint8Array(hash_byte));
-                const digest = hashArray.map(b => padStart(b.toString(16), 2, '0')).join('');
-                def.resolve(digest);
-            }, function (e) {
-                console.log(e);
-                def.reject(e);
-            });
-            function padStart(str, targetLength, padString) {
-                targetLength = targetLength >> 0;
-                padString = String(padString || ' ');
-                if (str.length > targetLength) {
-                    return String(str);
-                }
-                else {
-                    targetLength = targetLength - str.length;
-                    if (targetLength > padStart.length) {
-                        padString += padString.repeat(targetLength / padString.length);
-                    }
-                    return padString.slice(0, targetLength) + String(str);
-                }
-            }
             return def;
         }
         return {
@@ -739,7 +832,7 @@ var axios = window.axios || null;
                             const b64_enc_str = website["base64_url_enc_byte"](enc_byte);
                             def.resolve(b64_enc_str);
                         }, function (e) {
-                            console.log(e.message);
+                            console.log("aes_exception: " + e.message);
                             def.reject(e);
                         });
                     });
@@ -756,7 +849,7 @@ var axios = window.axios || null;
                             const dec_str = text_decoder.decode(dec_byte);
                             def.resolve(dec_str);
                         }, function (e) {
-                            console.log(e.message);
+                            console.log("aes_exception: " + e.message);
                             def.reject(e);
                         });
                     });
@@ -774,12 +867,71 @@ var axios = window.axios || null;
     };
 })();
 (function () {
-    website["app_name"] = "/testasync";
+    website["observer"] = function (_process_fn) {
+        class DefaultObserver {
+            update(data) {
+                if (null != _process_fn && (typeof _process_fn === 'function')) {
+                    _process_fn(data);
+                }
+                else {
+                    console.error("observer 的 _process_fn 未定義為 function，無法正常接收監聽內容回傳");
+                }
+            }
+        }
+        return new DefaultObserver();
+    };
+    website["subject"] = function () {
+        class Subject {
+            constructor() {
+                this.observers = [];
+            }
+            subscribe(observer) {
+                this.observers.push(observer);
+            }
+            unsubscribe(observer) {
+                const observerIndex = this.observers.indexOf(observer);
+                if (observerIndex > -1) {
+                    this.observers.splice(observerIndex, 1);
+                }
+            }
+            notify(data) {
+                this.observers.forEach(observer => observer.update(data));
+            }
+        }
+        return new Subject();
+    };
+})();
+(function () {
+    website["app_name"] = null;
+    (function () {
+        if (window.location.protocol.indexOf("http") > -1) {
+            const path_name = window.location.pathname;
+            const path_arr = path_name.split("/");
+            const tmp_arr = [];
+            while (1 < path_arr.length) {
+                const tmp = path_arr.pop();
+                if (null == tmp || 0 == tmp.length) {
+                    if (path_arr.length > 0)
+                        continue;
+                    break;
+                }
+                tmp_arr.unshift(tmp);
+            }
+            website.app_name = "/" + tmp_arr[0];
+        }
+        else {
+            const path_href = window.location.href;
+            const path_arr = path_href.split("/");
+            path_arr.pop();
+            website.app_name = path_arr.join("/");
+        }
+        if ("/undefined" == website.app_name)
+            website.app_name = "/testasync";
+    })();
     const arr = [];
     (function () {
         arr.push(website["app_name"] + "/js/jquery/jquery.min.js");
         arr.push(website["app_name"] + "/js/axios/axios.min.js");
-        arr.push(website["app_name"] + "/js/index.js");
     })();
     (function () {
         let tmpPath = null;
@@ -813,11 +965,11 @@ var axios = window.axios || null;
         switch (page_key) {
             case "index":
                 {
-                    page_index();
+                    website.script(website["app_name"] + "/js/index.js", function () {
+                        website["index_fn"]();
+                    });
                 }
                 break;
         }
     };
-    function page_index() {
-    }
 })();

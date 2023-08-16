@@ -35,7 +35,7 @@ public class ParameterHandler extends RequestHandler {
         if(asyncActionContext.getHeaders().containsKey("content-type")) {
             if (asyncActionContext.getHeaders().get("content-type").contains("application/json")) return true;
         }
-        return asyncActionContext.getParameters().size() > 0;
+        return !asyncActionContext.getParameters().isEmpty();
     }
 
     private void processRequest() {

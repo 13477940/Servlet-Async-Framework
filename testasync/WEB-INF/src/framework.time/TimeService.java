@@ -64,7 +64,7 @@ public class TimeService {
         }
 
         public TimeService.Builder setLocalDate(String date) {
-            if(null == date || date.length() == 0) {
+            if(null == date || date.isEmpty()) {
                 try {
                     throw new Exception("TimeService.setLocalDate 必須帶入有效的日期內容");
                 } catch (Exception e) {

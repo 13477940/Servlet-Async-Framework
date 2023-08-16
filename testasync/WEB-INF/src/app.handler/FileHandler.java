@@ -35,7 +35,7 @@ public class FileHandler extends RequestHandler {
 
     private void process_request() {
         String file_path = requestContext.getParameters().get("file_path");
-        if(null == file_path || file_path.length() == 0) {
+        if(null == file_path || file_path.isEmpty()) {
             JsonObject obj = new JsonObject();
             {
                 obj.addProperty("status", "fail");
@@ -100,7 +100,7 @@ public class FileHandler extends RequestHandler {
     // 取出該路徑下所有資料
     private JsonObject getDirContent(String path) {
         String _path = "/";
-        if(null != path && path.length() > 0) _path = path;
+        if(null != path && !path.isEmpty()) _path = path;
         File target = new File(_path);
         JsonObject obj = new JsonObject();
         if(target.isFile()) {
@@ -110,7 +110,7 @@ public class FileHandler extends RequestHandler {
         }
         JsonArray arr = new JsonArray();
         String[] list = target.list();
-        if(null != list && list.length > 0) {
+        if(null != list) {
             for(String str : list) {
                 arr.add(str);
             }

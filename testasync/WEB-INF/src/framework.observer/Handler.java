@@ -4,7 +4,7 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 
 /**
- * https://stackoverflow.com/questions/9558779/is-there-any-class-in-java-similar-to-android-os-handler-in-android
+ * <a href="https://stackoverflow.com/questions/9558779/is-there-any-class-in-java-similar-to-android-os-handler-in-android">...</a>
  * 非同步回傳處理方案之一，藉由觀察者模式（Observer Pattern）思維實作，
  * 核心概念模擬來自 Android Handler 實作原始碼，
  * 觀察者模式階層關係：Handler > Message > Bundle
@@ -32,7 +32,7 @@ public class Handler {
     }
 
     public boolean isEmpty() {
-        return msgList.size() == 0;
+        return msgList.isEmpty();
     }
 
 }

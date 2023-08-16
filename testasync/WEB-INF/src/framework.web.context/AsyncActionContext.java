@@ -21,7 +21,8 @@ import org.apache.tika.Tika;
 
 import java.io.*;
 import java.lang.ref.WeakReference;
-import java.net.URLDecoder;
+import java.net.URI;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -34,7 +35,7 @@ import java.util.*;
 /**
  * 請求封裝層類別關係：
  * WebAppController > AsyncContextRunnable > AsyncActionContext
- *
+ * -
  * 2020-04-16 修正 IE 與現代化瀏覽器下載 unicode 檔案名稱亂碼的問題
  * 2020-04-20 修正下載檔案名稱包含空格會被轉換為 + 符號的問題（因為 java 只有一種 URL Encode 模式）
  */
@@ -167,7 +168,7 @@ public class AsyncActionContext {
      * Map 型態的 HTTP Request 上傳檔案內容
      */
     public HashMap<String, FileItem> getFilesMap() {
-        if( null == this.files || this.files.size() == 0 ) return null;
+        if( null == this.files || this.files.isEmpty()) return null;
         HashMap<String, Integer> sort_map = new HashMap<>(); // 同 key 多檔案排序
         HashMap<String, FileItem> map = new HashMap<>();
         for( FileItem fileItem : this.files.prototype() ) {
@@ -281,7 +282,7 @@ public class AsyncActionContext {
             m.sendToTarget();
             return;
         }
-        if(null == path || path.length() == 0) {
+        if(null == path || path.isEmpty()) {
             Bundle b = new Bundle();
             b.putString("status", "fail");
             b.putString("msg_zht", "必須設定一個可用的資料夾路徑");
@@ -290,7 +291,7 @@ public class AsyncActionContext {
             m.sendToTarget();
             return;
         }
-        if(null == fileName || fileName.length() == 0) {
+        if(null == fileName || fileName.isEmpty()) {
             Bundle b = new Bundle();
             b.putString("status", "fail");
             b.putString("msg_zht", "必須設定一個可用的檔案名稱");
@@ -359,7 +360,7 @@ public class AsyncActionContext {
         // 本地檔案 MIME 解析處理
         String fileMIME = null;
         {
-            if (null == mimeType || mimeType.length() == 0) {
+            if (null == mimeType || mimeType.isEmpty()) {
                 try {
                     fileMIME = new Tika().detect(inputStream);
                 } catch (Exception e) {
@@ -370,7 +371,7 @@ public class AsyncActionContext {
             }
             // MIME types (IANA media types)
             // https://developer.mozilla.org/zh-TW/docs/Web/HTTP/Basics_of_HTTP/MIME_types
-            if (null == fileMIME || fileMIME.length() == 0) {
+            if (null == fileMIME || fileMIME.isEmpty()) {
                 fileMIME = "application/octet-stream";
             }
         }
@@ -466,6 +467,44 @@ public class AsyncActionContext {
         }
     }
 
+    public void printToResponse(String content, String mime, Handler handler) {
+        if(checkIsOutput(content)) return;
+        HttpServletResponse response = ((HttpServletResponse) asyncContext.getResponse());
+        // 因為採用 byte 輸出，如果沒有 Response Header 容易在瀏覽器端發生錯誤
+        {
+            String _mime = "text/plain";
+            if(null != mime) _mime = mime;
+            response.setContentType(_mime+";charset=" + StandardCharsets.UTF_8.name());
+            StringBuilder sbd = new StringBuilder();
+            {
+                sbd.append("inline;filename=\"");
+                String tmpRespName = RandomServiceStatic.getInstance().getTimeHash(6);
+                // sbd.append(encodeOutputFileName(tmpRespName)).append(".txt");
+                sbd.append(encodeOutputFileName(tmpRespName));
+                sbd.append("\"");
+                sbd.append("filename*=utf-8''"); // use for modern browser
+                // sbd.append(encodeOutputFileName(tmpRespName)).append(".txt");
+                sbd.append(encodeOutputFileName(tmpRespName));
+            }
+            response.setHeader("Content-Disposition", sbd.toString());
+            response.setHeader("Content-Length", String.valueOf(content.getBytes(StandardCharsets.UTF_8).length));
+        }
+        // 使用 WriteListener 非同步輸出
+        {
+            try {
+                ServletOutputStream servletOutputStream = response.getOutputStream();
+                AsyncWriteListener asyncWriteListener = new AsyncWriteListener.Builder()
+                        .setServletOutputStream(servletOutputStream)
+                        .setCharSequence(content)
+                        .setHandler(handler)
+                        .build();
+                setOutputWriteListener(servletOutputStream, asyncWriteListener);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
     /**
      * 輸出 JSON 格式的字串至 Response
      * 此方法會以 application/json 格式回傳至前端
@@ -512,7 +551,7 @@ public class AsyncActionContext {
      */
     public void outputFileToResponse(String path, String fileName, String mimeType, boolean isAttachment, Handler handler) {
         if(checkIsOutput(fileName)) return;
-        if(null == path || path.length() == 0) {
+        if(null == path || path.isEmpty()) {
             {
                 Bundle b = new Bundle();
                 b.putString("status", "fail");
@@ -567,7 +606,7 @@ public class AsyncActionContext {
         // 本地檔案 MIME 解析處理
         String fileMIME = null;
         {
-            if (null == mimeType || mimeType.length() == 0) {
+            if (null == mimeType || mimeType.isEmpty()) {
                 try {
                     // fileMIME = Files.probeContentType(Paths.get(file.getPath()));
                     fileMIME = new Tika().detect(file);
@@ -579,7 +618,7 @@ public class AsyncActionContext {
             }
             // MIME types (IANA media types)
             // https://developer.mozilla.org/zh-TW/docs/Web/HTTP/Basics_of_HTTP/MIME_types
-            if (null == fileMIME || fileMIME.length() == 0) {
+            if (null == fileMIME || fileMIME.isEmpty()) {
                 fileMIME = "application/octet-stream";
             }
         }
@@ -725,7 +764,7 @@ public class AsyncActionContext {
     /**
      * 若是 Request 為 text/plain, application/json 等上傳格式，
      * 可由此方法將 InputStream 內容轉換為 String 的型態
-     *
+     * -
      * #200806 修正因 stream 模式造成重複取值會為空值的問題
      */
     public String getRequestTextContent() {
@@ -842,7 +881,7 @@ public class AsyncActionContext {
 
     /**
      * 取得 Request 端 IP
-     * https://stackoverflow.com/questions/18570747/servlet-get-client-public-ip
+     * <a href="https://stackoverflow.com/questions/18570747/servlet-get-client-public-ip">...</a>
      */
     public String getRemoteIP() {
         HttpServletRequest req = (HttpServletRequest) asyncContext.getRequest();
@@ -853,13 +892,13 @@ public class AsyncActionContext {
             headers.put(key.toLowerCase(Locale.ENGLISH), value);
         }
         String ip = headers.get("x-forwarded-for");
-        if(null == ip || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+        if(null == ip || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
             ip = headers.get("proxy-client-ip");
         }
-        if(null == ip || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+        if(null == ip || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
             ip = headers.get("wl-proxy-client-ip");
         }
-        if(null == ip || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+        if(null == ip || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
             ip = req.getRemoteAddr();
         }
         return ip;
@@ -874,17 +913,18 @@ public class AsyncActionContext {
      * -- 2. 請檢查 if 等判斷式條件是否有重複執行的行為造成重複執行
      * -
      * #230427 增加判斷上一筆成功輸出的記錄，檔案以檔名提醒、純文本則列印原內容等
+     * #230509 修正錯誤表達語意
      */
     private boolean checkIsOutput(String check_str) {
         if(null == this.preview_already_output_content) {
-            if(check_str.length() > 100) check_str = check_str.substring(0, 100);
+            if(check_str.length() > 100) check_str = check_str.substring(0, 100); // 僅擷取一百字元內容
             StackTraceElement[] stackTraceElements = Thread.currentThread().getStackTrace();
             JsonObject obj = new JsonObject();
             obj.addProperty("stack_trace", Arrays.toString(Arrays.stream(stackTraceElements).toArray()));
             obj.addProperty("check_str", check_str);
             this.preview_already_output_content = new Gson().toJson(obj);
         } else {
-            String msg_zht = "上一筆輸出內容為（有可能為部分內容），同一個請求中應該只有一個輸出狀態，確保非同步下一進一出原則：" + this.preview_already_output_content;
+            String msg_zht = "非同步套件將限制單個請求只能輸出一次，上一筆已輸出內容為（有可能為部分內容）：" + this.preview_already_output_content;
             LoggerService.logERROR(msg_zht);
             System.err.println(msg_zht);
         }
@@ -904,9 +944,9 @@ public class AsyncActionContext {
     /**
      * 處理 URL 路徑的解析（去除協定、域名及參數）
      * 191112 修改為保留前端輸入網址的大小寫（確保大小寫敏感磁區運作邏輯）
+     * 230629 藉由 chatGPT 建議採用 URL, URI api 改進網址路徑處理
      */
     private void processUrlParse() {
-        // HttpServletRequest 取得
         HttpServletRequest httpRequest = null;
         {
             try {
@@ -916,7 +956,6 @@ public class AsyncActionContext {
             }
         }
         if(null == httpRequest) return;
-        // 檢查 ServletContextName 是否為空值
         {
             if(null == servletContext.getServletContextName()) {
                 try {
@@ -934,21 +973,14 @@ public class AsyncActionContext {
                 if(null == httpRequest.getRequestURL()) {
                     this.urlPath = null;
                 } else {
-                    String url = httpRequest.getRequestURL().toString();
-                    String[] sHttp = url.split("://");
-                    String[] sLoca = sHttp[sHttp.length - 1].split("/");
-                    StringBuilder sURL = new StringBuilder();
-                    sURL.append("/"); // root path
-                    for (int i = 0, len = sLoca.length; i < len; i++) {
-                        String tmp = URLDecoder.decode(Objects.requireNonNullElse(sLoca[i], "").trim(), StandardCharsets.UTF_8);
-                        if( i == 0 ) { continue; } // domain name
-                        if( i == 1 && tmp.equals(servletContext.getServletContextName()) ) { continue; } // app name
-                        // 網址處理後除了 domain name 及 app name 之外都會被當作 URI 字串內容
-                        // example > http://localhost/webappname/a/index 處理後會變成 /a/index 字串
-                        sURL.append(tmp);
-                        if (i != sLoca.length - 1) sURL.append("/");
-                    }
-                    this.urlPath = sURL.toString();
+                    URL url = new URL(httpRequest.getRequestURL().toString());
+                    URI uri = url.toURI();
+                    String path = uri.getPath();
+                    String app_name = servletContext.getServletContextName();
+                    // 原則以除去 webapp name 作為根目錄路徑
+                    path = path.replaceFirst("/"+app_name, "");
+                    if(path.trim().isEmpty()) path = "/";
+                    this.urlPath = path;
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -956,21 +988,21 @@ public class AsyncActionContext {
         }
         if(null == this.urlPath) return;
         // 處理資源連結副檔名
-        {
-            try {
-                String[] pathStrArr = this.urlPath.split("/");
-                if(pathStrArr.length <= 1) return;
-                String[] fileNameSplit = pathStrArr[pathStrArr.length - 1].split("\\.");
-                if(fileNameSplit.length <= 1) return;
-                this.resourceExten = fileNameSplit[fileNameSplit.length - 1];
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+        { this.resourceExten = get_path_file_extension(this.urlPath); }
+    }
+
+    private String get_path_file_extension(String path) {
+        String res_exten = null;
+        int lastSlashIndex = path.lastIndexOf("/");
+        int lastDotIndex = path.lastIndexOf(".");
+        if (lastDotIndex > lastSlashIndex) {
+            res_exten = path.substring(lastDotIndex + 1);
         }
+        return res_exten;
     }
 
     /**
-     * 解決 output 下載檔案時 unicode 檔案名稱編碼
+     * 關於 output 下載檔案時採用 utf8 字串編碼的修正
      * -
      * <a href="https://tools.ietf.org/html/rfc3986">rfc3986</a>
      * <a href="https://stackoverflow.com/questions/4737841/urlencoder-not-able-to-translate-space-character">...</a>

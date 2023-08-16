@@ -11,34 +11,35 @@ public abstract class ConnectorConfig {
     protected static String getDriverClassName(String databaseType) {
         String res = null;
         String dbType = Objects.requireNonNullElse(databaseType, "").trim().toLowerCase(Locale.ENGLISH);
-        switch(dbType) {
+        switch (dbType) {
             // https://dev.mysql.com/doc/connector-j/5.1/en/connector-j-usagenotes-connect-drivermanager.html
             // https://dev.mysql.com/doc/connector-j/8.0/en/connector-j-usagenotes-connect-drivermanager.html
-            case "mysql": {
+            case "mysql" -> {
                 // res = "com.mysql.jdbc.Driver"; // MySQL 5.x
                 res = "com.mysql.cj.jdbc.Driver"; // MySQL 8.0+
-            } break;
+            }
+
             // https://mariadb.com/kb/en/about-mariadb-connector-j/
-            case "mariadb": {
+            case "mariadb" -> {
                 res = "org.mariadb.jdbc.Driver";
-            } break;
+            }
+
             // https://jdbc.postgresql.org/documentation/81/load.html
-            case "postgres":
-            case "postgresql": {
+            case "postgres", "postgresql" -> {
                 res = "org.postgresql.Driver";
-            } break;
+            }
+
             // https://docs.microsoft.com/zh-tw/sql/connect/jdbc/using-the-jdbc-driver?view=sql-server-ver15#making-a-simple-connection-to-a-database
-            case "mssql":
-            case "sqlserver": {
+            case "mssql", "sqlserver" -> {
                 res = "com.microsoft.sqlserver.jdbc.SQLServerDriver";
-            } break;
-            default: {
+            }
+            default -> {
                 try {
                     throw new Exception("錯誤的資料庫類型(step1)，可用的類型：mysql, mariadb, postgresql, mssql, sqlserver");
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-            } break;
+            }
         }
         return res;
     }
@@ -59,8 +60,8 @@ public abstract class ConnectorConfig {
         String ip = Objects.requireNonNullElse(DB_IP, "").trim();
         String port = Objects.requireNonNullElse(DB_Port, "").trim();
         String dbName = Objects.requireNonNullElse(DB_Name, "").trim();
-        switch(dbType) {
-            case "mysql": {
+        switch (dbType) {
+            case "mysql" -> {
                 sbd.append("jdbc:mysql://");
                 sbd.append(ip);
                 sbd.append(":");
@@ -88,8 +89,8 @@ public abstract class ConnectorConfig {
                 sbd.append("&useServerPrepStmts=true");
                 // https://segmentfault.com/a/1190000021870318
                 sbd.append("&allowPublicKeyRetrieval=true");
-            } break;
-            case "mariadb": {
+            }
+            case "mariadb" -> {
                 sbd.append("jdbc:mariadb://");
                 sbd.append(ip);
                 sbd.append(":");
@@ -107,40 +108,37 @@ public abstract class ConnectorConfig {
                     // 但設定為 false 需要注意是否可能具有中間人攻擊的機率（未經過 VPN 時）
                     sbd.append("&verifyServerCertificate=false");
                 }
-            } break;
-            case "postgres":
-            case "postgresql": {
+            }
+            case "postgres", "postgresql" -> {
                 sbd.append("jdbc:postgresql://");
                 sbd.append(ip);
                 sbd.append(":");
                 sbd.append(port);
                 sbd.append("/");
                 sbd.append(dbName);
-            } break;
-            case "mssql":
-            case "sqlserver": {
+            }
+            case "mssql", "sqlserver" -> {
                 sbd.append("jdbc:sqlserver://");
                 sbd.append(ip);
                 sbd.append(":");
                 sbd.append(port);
                 sbd.append(";databaseName=");
                 sbd.append(dbName);
-                /*
                 if (!useSecurity) {
                     sbd.append(";encrypt=false");
                     sbd.append(";authentication=NotSpecified");
                 } else {
                     sbd.append(";encrypt=true");
                     sbd.append(";integratedSecurity=true;trustServerCertificate=true");
-                }*/
-            } break;
-            default: {
+                }
+            }
+            default -> {
                 try {
                     throw new Exception("錯誤的資料庫類型(step2)，可用的類型：mysql, mariadb, postgres, postgresql, mssql, sqlserver");
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-            } break;
+            }
         }
         return sbd.toString();
     }

@@ -38,7 +38,7 @@ public class PageHandler extends RequestHandler {
             if (asyncActionContext.getHeaders().get("content-type").contains("application/json")) return false;
         }
         if("page".equalsIgnoreCase(asyncActionContext.getParameters().get("act"))) return true;
-        return ( asyncActionContext.getParameters().size() == 0 );
+        return (asyncActionContext.getParameters().isEmpty());
     }
 
     private void process_request() {

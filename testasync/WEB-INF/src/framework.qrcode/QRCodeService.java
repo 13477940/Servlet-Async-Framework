@@ -23,11 +23,11 @@ import java.util.HashMap;
 
 /**
  * 實作 QRCode 圖形產生器
- *
+ * -
  * require jar
- * https://mvnrepository.com/artifact/com.google.zxing/core
- * https://mvnrepository.com/artifact/com.google.zxing/javase/3.4.1
- *
+ * <a href="https://mvnrepository.com/artifact/com.google.zxing/core">...</a>
+ * <a href="https://mvnrepository.com/artifact/com.google.zxing/javase/3.4.1">...</a>
+ * -
  * QRCode Image Generator
  */
 public class QRCodeService {

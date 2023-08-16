@@ -3,6 +3,7 @@ package framework.setting;
 import framework.file.FileFinder;
 
 import java.io.File;
+import java.nio.file.Path;
 
 /**
  * 此為新版本規則 #20220902 -> 以 "WebAppFiles" 作為預設資料夾名稱
@@ -89,7 +90,7 @@ public class PathContext {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-                return null;
+                // return null;
             }
         }
         return sbd.toString();
@@ -107,10 +108,19 @@ public class PathContext {
                 this.webapp_project_folder_path = web_app_folder.getPath();
             }
         }
-        // init set base path folder
-        var target_file = new File(this.base_webapp_file_folder_path);
-        FileFinder finder = new FileFinder.Builder().setBaseFile(target_file).build();
-        File webapp_file_folder = finder.find(this.base_webapp_file_folder_name);
+        File webapp_file_folder;
+        {
+            // step 1 - 從當前使用者主資料夾搜尋
+            File target_file = new File(this.base_webapp_file_folder_path);
+            FileFinder finder = new FileFinder.Builder().setBaseFile(target_file).build();
+            webapp_file_folder = finder.find(this.base_webapp_file_folder_name);
+        }
+        if(null == webapp_file_folder || !webapp_file_folder.exists() || !webapp_file_folder.isDirectory()) {
+            // step 2 - 從當前 jar 檔路徑搜尋
+            Path targetFilePath = Path.of(this.getClass().getProtectionDomain().getCodeSource().getLocation().getPath());
+            FileFinder finder = new FileFinder.Builder().setBaseFile(targetFilePath.toFile()).build();
+            webapp_file_folder = finder.find(this.base_webapp_file_folder_name);
+        }
         if(null == webapp_file_folder || !webapp_file_folder.exists() || !webapp_file_folder.isDirectory()) {
             try {
                 throw new Exception("請於同一個磁碟區之中建立 "+this.base_webapp_file_folder_name +" 資料夾");

@@ -144,7 +144,7 @@ public class FileItem {
      * 取得檔案名稱，type = "name", "extension"
      */
     private String parse_file_name(String file_name_str, String parse_type) {
-        if(null == file_name_str || file_name_str.length() == 0) return null;
+        if(null == file_name_str || file_name_str.isEmpty()) return null;
         int lastDot = file_name_str.lastIndexOf('.');
         String name;
         String extension = "";

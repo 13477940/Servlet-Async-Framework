@@ -7,8 +7,8 @@ import jakarta.servlet.http.HttpSessionListener;
 
 /**
  * 此類別使用於 WEB-INF/web.xml -> <listener></listener> 定義之中
- *
- * https://openhome.cc/Gossip/ServletJSP/BehindHttpSession.html
+ * -
+ * <a href="https://openhome.cc/Gossip/ServletJSP/BehindHttpSession.html">...</a>
  */
 public class AppUserSessionListener implements HttpSessionListener {
 

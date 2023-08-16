@@ -19,7 +19,7 @@ import java.util.Locale;
  * 在運行 Tomcat 的 WebApp 中會直接藉由當前專案 WEB-INF 資料夾作為定位點，
  * 非 Tomcat 環境中則需要由使用者自行創建一個 baseFileDir 作為定位點。
  * 要注意 AppSetting 於多層次的 jar 檔封裝後可能會有路徑無法取得的問題發生。
- *
+ * -
  * #201116 已確認之前 AppSetting 無法正常初始化是被 ThreadPool 卡死的關係影響到
  */
 public class AppSetting {
@@ -63,23 +63,6 @@ public class AppSetting {
         return this.pathContext;
     }
 
-    // 預設於 WEB-INF 資料夾底下尋找設定檔
-    public JsonObject getConfig() {
-        FileFinder finder = new FileFinder.Builder().setBaseFile(AppSettingStatic.get_web_inf_dir()).build();
-        File file = finder.find(this.configDirName, this.configFileName);
-        return getConfig(file);
-    }
-
-    // 預設於 WEB-INF 資料夾底下尋找設定檔
-    public JsonObject getConfig(String configDirName, String configFileName) {
-        return getConfig(
-                new FileFinder.Builder()
-                        .setBaseFile(AppSettingStatic.get_web_inf_dir())
-                        .build()
-                        .find(configDirName, configFileName)
-        );
-    }
-
     // 於任意位址尋找設定檔
     public JsonObject getConfig(String filePath) {
         File file = new File(filePath);
@@ -109,7 +92,7 @@ public class AppSetting {
         if(null != file) {
             if(file.exists()) {
                 String content = readFileText(file);
-                if (null != content && content.length() > 0) {
+                if (null != content && !content.isEmpty()) {
                     {
                         try {
                             res = new Gson().fromJson(content, JsonObject.class);
@@ -205,7 +188,7 @@ public class AppSetting {
             }
             // check is webapp(in servlet container)
             {
-                if(null == this.appName || this.appName.length() == 0) {
+                if(null == this.appName || this.appName.isEmpty()) {
                     ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
                     if(null != classLoader) {
                         URL url = classLoader.getResource("");

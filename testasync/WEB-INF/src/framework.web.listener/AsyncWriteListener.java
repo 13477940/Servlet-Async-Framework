@@ -11,9 +11,9 @@ import java.lang.ref.WeakReference;
 import java.nio.charset.StandardCharsets;
 
 /**
- * https://medium.com/@clu1022/%E6%B7%BA%E8%AB%87i-o-model-32da09c619e6
- * https://www.slideshare.net/SimoneBordet/servlet-31-async-io
- * https://openhome.cc/Gossip/ServletJSP/WriteListener.html
+ * <a href="https://medium.com/@clu1022/%E6%B7%BA%E8%AB%87i-o-model-32da09c619e6">...</a>
+ * <a href="https://www.slideshare.net/SimoneBordet/servlet-31-async-io">...</a>
+ * <a href="https://openhome.cc/Gossip/ServletJSP/WriteListener.html">...</a>
  * -
  * 當每個獨立輸出的內容希望被非同步輸出時，要封裝於 WriteListener 才能確保完整的輸出，
  * 因為 onWritePossible 和 ServletOutputStream.isReady() 兩者狀態是持續變動的，
@@ -26,7 +26,7 @@ import java.nio.charset.StandardCharsets;
  */
 public class AsyncWriteListener implements WriteListener {
 
-    private ServletOutputStream servletOutputStream;
+    private final ServletOutputStream servletOutputStream;
     private InputStream inputStream;
     private final Handler handler;
 
@@ -70,13 +70,6 @@ public class AsyncWriteListener implements WriteListener {
         this.handler = handler;
     }
 
-    /**
-     * 非同步輸出實作
-     * 2019-06-17 修改 while 處理邏輯及中斷條件，解決 CPU 高使用率的問題
-     * 2019-12-31 取消自旋鎖
-     * 2020-04-13 修正 Buffer Size 為 inputStream.available() 自動取值
-     * 2020-05-05 修正 inputStream.available() 會達到物理記憶體最大值造成溢位的問題
-     */
     @Override
     public void onWritePossible() throws IOException {
         byte[] buffer = new byte[4096];

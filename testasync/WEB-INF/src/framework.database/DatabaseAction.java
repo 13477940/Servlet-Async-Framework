@@ -62,7 +62,7 @@ public class DatabaseAction {
         {
             try {
                 PreparedStatement preState = new WeakReference<>( conn.prepareStatement(sql) ).get();
-                if(null != parameters && parameters.size() > 0) {
+                if(null != parameters && !parameters.isEmpty()) {
                     for(int i = 0, len = parameters.size(); i < len; i++) {
                         String value = parameters.get(i);
                         // PreparedStatement is start at 1 to N

@@ -15,7 +15,7 @@ public class TextFileReader {
     private final File file;
 
     private TextFileReader(String encoding, File file) {
-        if(null != encoding && encoding.length() > 0) this.encoding = encoding;
+        if(null != encoding && !encoding.isEmpty()) this.encoding = encoding;
         this.file = file;
     }
 

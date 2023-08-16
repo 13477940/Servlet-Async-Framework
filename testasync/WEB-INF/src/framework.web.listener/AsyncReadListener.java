@@ -32,10 +32,10 @@ import java.util.regex.Pattern;
 /**
  * #230426 已採用 ChatGPT 重構並確認效率
  * -
- * https://tomcat.apache.org/tomcat-7.0-doc/api/org/apache/tomcat/util/http/fileupload/MultipartStream.html
- * https://medium.com/@clu1022/%E6%B7%BA%E8%AB%87i-o-model-32da09c619e6
- * https://www.slideshare.net/SimoneBordet/servlet-31-async-io
- * https://openhome.cc/Gossip/ServletJSP/ReadListener.html
+ * <a href="https://tomcat.apache.org/tomcat-7.0-doc/api/org/apache/tomcat/util/http/fileupload/MultipartStream.html">...</a>
+ * <a href="https://medium.com/@clu1022/%E6%B7%BA%E8%AB%87i-o-model-32da09c619e6">...</a>
+ * <a href="https://www.slideshare.net/SimoneBordet/servlet-31-async-io">...</a>
+ * <a href="https://openhome.cc/Gossip/ServletJSP/ReadListener.html">...</a>
  * -
  * 當每個獨立的上傳請求希望被非同步處理時，要採用 ReadListener，
  * 當伺服器有空閒的時間可以處理上傳資料時會調用 onDataAvailable，

@@ -32,10 +32,10 @@ import java.util.*;
 
 /**
  * [required JDK 11+]
- * https://docs.oracle.com/en/java/javase/11/docs/api/java.net.http/java/net/http/HttpClient.html
- * http://openjdk.java.net/groups/net/httpclient/intro.html
- * https://golb.hplar.ch/2019/01/java-11-http-client.html
- *
+ * <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.net.http/java/net/http/HttpClient.html">...</a>
+ * <a href="http://openjdk.java.net/groups/net/httpclient/intro.html">...</a>
+ * <a href="https://golb.hplar.ch/2019/01/java-11-http-client.html">...</a>
+ * -
  * get(only_url_params),
  * post(x-www-form-urlencoded)
  * post(application/json)
@@ -120,9 +120,7 @@ public class JdkHttpClient {
                 _params = parse_url_parameter(this.url);
                 if(null != this.parameters && this.parameters.size() > 0) {
                     // 若有重複的 key 以 params map 值為主
-                    for (Map.Entry<String, String> params : this.parameters.entrySet()) {
-                        _params.put(params.getKey(), params.getValue());
-                    }
+                    _params.putAll(this.parameters);
                 }
             }
             // 建立正規化 parameter string 於請求網址後
@@ -186,9 +184,7 @@ public class JdkHttpClient {
                 _params = parse_url_parameter(this.url);
                 if(null != this.parameters && this.parameters.size() > 0) {
                     // 若有重複的 key 以 params map 值為主
-                    for (Map.Entry<String, String> params : this.parameters.entrySet()) {
-                        _params.put(params.getKey(), params.getValue());
-                    }
+                    _params.putAll(this.parameters);
                 }
             }
             if (null != _params && _params.size() > 0) {
@@ -278,21 +274,15 @@ public class JdkHttpClient {
             _params = parse_url_parameter(this.url);
             if(null != this.parameters && this.parameters.size() > 0) {
                 // 若有重複的 key 以 params map 值為主
-                for (Map.Entry<String, String> params : this.parameters.entrySet()) {
-                    _params.put(params.getKey(), params.getValue());
-                }
+                _params.putAll(this.parameters);
             }
         }
         if(null != _params && _params.size() > 0) {
-            for (Map.Entry<String, String> param : _params.entrySet()) {
-                bMap.put(param.getKey(), param.getValue());
-            }
+            bMap.putAll(_params);
         }
         // 設定 Files
         if(null != files && files.size() > 0) {
-            for (Map.Entry<String, File> file : files.entrySet()) {
-                bMap.put(file.getKey(), file.getValue());
-            }
+            bMap.putAll(files);
         }
         HttpRequest.Builder requestBuilder = HttpRequest.newBuilder();
         {
@@ -382,7 +372,7 @@ public class JdkHttpClient {
                             m.sendToTarget();
                         }
                     } else {
-                        // proc resp header
+                        // process response header
                         {
                             LinkedHashMap<String, String> headers = new LinkedHashMap<>();
                             for (Map.Entry<String, List<String>> entry : resp_input_stream.headers().map().entrySet()) {
@@ -522,8 +512,8 @@ public class JdkHttpClient {
     }
 
     /**
-     * https://golb.hplar.ch/2019/01/java-11-http-client.html
-     * https://github.com/ralscha/blog2019/blob/master/java11httpclient/client/src/main/java/ch/rasc/httpclient/File.java
+     * <a href="https://golb.hplar.ch/2019/01/java-11-http-client.html">...</a>
+     * <a href="https://github.com/ralscha/blog2019/blob/master/java11httpclient/client/src/main/java/ch/rasc/httpclient/File.java">...</a>
      */
     private static HttpRequest.BodyPublisher ofMimeMultipartData(Map<String, Object> data, String boundary) {
         var byteArrays = new ArrayList<byte[]>();
@@ -555,7 +545,7 @@ public class JdkHttpClient {
 
     /**
      * 解析網址夾帶的參數內容（正規的 URL 參數內容要是 URL encoding 格式）
-     * https://developer.mozilla.org/en-US/docs/Glossary/percent-encoding
+     * <a href="https://developer.mozilla.org/en-US/docs/Glossary/percent-encoding">...</a>
      */
     private LinkedHashMap<String, String> parse_url_parameter(String url) {
         if(null == url || url.length() == 0) return null; // is error url
@@ -564,7 +554,7 @@ public class JdkHttpClient {
         String param_str = url.substring(start_index + 1); // +1 skip '?'
         String mode = "key"; // 'key' or 'value' mode, default is key
         LinkedHashMap<String, String> params = new LinkedHashMap<>();
-        // proc request content value
+        // process request content value
         String now_key = null;
         {
             StringBuilder sbd = new StringBuilder(); // char pool
@@ -572,9 +562,9 @@ public class JdkHttpClient {
                 String str = String.valueOf(param_str.charAt(i)); // by word
                 switch (str) {
                     // value
-                    case "=": {
+                    case "=" -> {
                         // if duplicate
-                        if("value".equals(mode)) continue;
+                        if ("value".equals(mode)) continue;
                         // key is over
                         {
                             now_key = URLDecoder.decode(sbd.toString(), StandardCharsets.UTF_8);
@@ -583,11 +573,12 @@ public class JdkHttpClient {
                         // next
                         mode = "value";
                         sbd.delete(0, sbd.length());
-                    } break;
+                    }
+
                     // key
-                    case "&": {
+                    case "&" -> {
                         // if duplicate
-                        if("key".equals(mode)) continue;
+                        if ("key".equals(mode)) continue;
                         // value is over
                         {
                             params.put(now_key, URLDecoder.decode(sbd.toString(), StandardCharsets.UTF_8));
@@ -595,27 +586,26 @@ public class JdkHttpClient {
                         // next
                         mode = "key";
                         sbd.delete(0, sbd.length());
-                    } break;
-                    default: {
+                    }
+                    default -> {
                         switch (mode) {
-                            case "key":
-                            case "value": {
+                            case "key", "value" -> {
                                 sbd.append(str);
-                            } break;
+                            }
                         }
-                    } break;
+                    }
                 }
             }
             // flush
             {
                 switch (mode) {
-                    case "key": {
+                    case "key" -> {
                         now_key = URLDecoder.decode(sbd.toString(), StandardCharsets.UTF_8);
                         params.put(now_key, "");
-                    } break;
-                    case "value": {
+                    }
+                    case "value" -> {
                         params.put(now_key, URLDecoder.decode(sbd.toString(), StandardCharsets.UTF_8));
-                    } break;
+                    }
                 }
             }
         }
@@ -624,7 +614,7 @@ public class JdkHttpClient {
 
     /**
      * JDK HttpClient 忽略 HTTPS 證書驗證實作
-     * https://stackoverflow.com/a/5308658
+     * <a href="https://stackoverflow.com/a/5308658">...</a>
      */
     private SSLContext get_insecure_ssl_context() {
         SSLContext sslContext = null;

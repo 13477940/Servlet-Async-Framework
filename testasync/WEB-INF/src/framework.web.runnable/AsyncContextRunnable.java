@@ -79,7 +79,7 @@ public class AsyncContextRunnable implements Runnable {
             content_type = asyncContext.getRequest().getContentType().toLowerCase(Locale.ENGLISH);
         }
         // from browser
-        if(null == content_type || content_type.length() == 0) {
+        if(null == content_type || content_type.isEmpty()) {
             LinkedHashMap<String, String> params = parse_params();
             webAppStartup(params, null);
             return;
@@ -162,7 +162,7 @@ public class AsyncContextRunnable implements Runnable {
         // 處理參數內容及上傳檔案
         {
             requestContext.setParameters(params);
-            if (null == files || files.size() == 0) {
+            if (null == files || files.isEmpty()) {
                 requestContext.setIsFileAction(false); // 不具有檔案上傳請求
                 requestContext.setFiles(null);
             } else {
@@ -214,8 +214,7 @@ public class AsyncContextRunnable implements Runnable {
                                 fileItemList.add(fileItem);
                             } else {
                                 Path file_path = Paths.get(obj.get("file_path").getAsString());
-                                try {
-                                    FileInputStream fis = new FileInputStream(file_path.toString());
+                                try ( FileInputStream fis = new FileInputStream(file_path.toString()) ) {
                                     String key = obj.get("name").getAsString();
                                     String value = new String(fis.readAllBytes(), StandardCharsets.UTF_8);
                                     params.put(key, value);
@@ -224,7 +223,7 @@ public class AsyncContextRunnable implements Runnable {
                                 }
                             }
                         }
-                        if(fileItemList.size() == 0) {
+                        if(fileItemList.isEmpty()) {
                             webAppStartup(params, null);
                         } else {
                             webAppStartup(params, fileItemList);
@@ -252,13 +251,13 @@ public class AsyncContextRunnable implements Runnable {
     private LinkedHashMap<String, String> parse_url_encoded_body() {
         LinkedHashMap<String, String> params = parse_params();
         String param_str = getRequestTextContent();
-        if(null == param_str || param_str.length() == 0) {
+        if(null == param_str || param_str.isEmpty()) {
             return params;
         }
         Arrays.stream(param_str.split("&"))
-                .map(s -> s.split("=", 2))
-                .forEach(kv -> params.put(URLDecoder.decode(kv[0], StandardCharsets.UTF_8),
-                        URLDecoder.decode(kv[1], StandardCharsets.UTF_8)));
+            .map(s -> s.split("=", 2))
+            .forEach(kv -> params.put(URLDecoder.decode(kv[0], StandardCharsets.UTF_8),
+            URLDecoder.decode(kv[1], StandardCharsets.UTF_8)));
         return params;
     }
 

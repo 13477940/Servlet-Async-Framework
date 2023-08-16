@@ -15,13 +15,11 @@ import java.util.Objects;
 /**
  * Log Tool
  * 輔助不方便記錄 log 的環境時使用，例如 service 化的 tomcat 等
- *
+ * -
  * 自定義路徑初始化、若無設定檔名則以 log_file_日期.txt 規則建立
  * 內容格式以 { json_object } 為一列，讀取時自行加工 [] 前後結尾及每行逗號即可當作 json_array
  */
 public class LoggerService {
-
-    static {}
 
     /**
      * 測試 log 檔案建立路徑
@@ -64,7 +62,7 @@ public class LoggerService {
         }
         // 寫入 log 資料至檔案中
         String file_name = "log_" + now_date;
-        if(null != var_holder.app_name && var_holder.app_name.length() > 0) {
+        if(null != var_holder.app_name && !var_holder.app_name.isEmpty()) {
             file_name = var_holder.app_name + "_log_" + now_date;
         }
         File logFile = new File(var_holder.file_path + var_holder.dir_slash + file_name);
@@ -196,7 +194,7 @@ public class LoggerService {
             } catch (Exception e) {
                 // e.printStackTrace();
             }
-            if(0 == files.size()) return null; // if exception
+            if(files.isEmpty()) return null; // if exception
             return files.get(files.size() - 2);
         }
 

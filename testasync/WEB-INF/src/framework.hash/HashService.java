@@ -8,7 +8,7 @@ import java.util.Base64;
 import java.util.Formatter;
 
 /**
- * https://tools.ietf.org/html/rfc6234
+ * <a href="https://tools.ietf.org/html/rfc6234">...</a>
  * 雜湊碼標準中英文大小寫不敏感，但預設為 LowerCase 輸出
  */
 public abstract class HashService {

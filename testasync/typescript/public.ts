@@ -1,4 +1,4 @@
-// 通用腳本 - modify:2023-01-05
+// 此為通用腳本, modify:2023-08-02
 
 // namespace define
 var debug_mode: boolean = true; // for try-catch, scope: ajax
@@ -8,7 +8,8 @@ var axios: any = window.axios || null;
 
 // script loader
 (function(){
-    website["script"] = function(script_url: string, ready_fn: any) {
+    // script_url 可為 array[string] 或 string，載入完成後會調用 ready_fn
+    website["script"] = function(script_url: any, ready_fn: any) {
         // https://developer.mozilla.org/zh-TW/docs/Web/API/Document/createElement
         // https://developer.mozilla.org/zh-TW/docs/Web/API/Document/readyState
         // https://developer.mozilla.org/en-US/docs/Web/API/Node/appendChild
@@ -47,6 +48,11 @@ var axios: any = window.axios || null;
         (function(){
             if(Array.isArray(script_url)) {
                 target_count = script_url.length;
+                // 當為空陣列傳入時終止處理
+                if(0 == target_count) {
+                    ready_fn();
+                    return;
+                }
                 // 當腳本路徑為陣列載入時會以讀取最久的腳本內容作為回應時間點
                 for(let url_index in script_url) {
                     let url = script_url[url_index];
@@ -98,7 +104,7 @@ var axios: any = window.axios || null;
 
 // 亂數產生器
 (function(){
-    website["randomString"] = function(len: any) {
+    website["random_string"] = function(len: any) {
         const t = "abcdefghijklmnopqrstuvwxyz0123456789";
         let r = [];
         let l = 16; // default
@@ -143,7 +149,7 @@ var axios: any = window.axios || null;
         },
         keys: function() { /* optional */
             const aKeys = document.cookie.replace(/((?:^|\s*;)[^\=]+)(?=;|$)|^\s*|\s*(?:\=[^;]*)?(?:\1|$)/g, "").split(/\s*(?:\=[^;]*)?;\s*/);
-            for (var nIdx = 0; nIdx < aKeys.length; nIdx++) { aKeys[nIdx] = decodeURIComponent(aKeys[nIdx]); }
+            for (let nIdx = 0; nIdx < aKeys.length; nIdx++) { aKeys[nIdx] = decodeURIComponent(aKeys[nIdx]); }
             return aKeys;
         },
         clear: function() { /* optional */
@@ -154,6 +160,29 @@ var axios: any = window.axios || null;
             }
         }
     };
+})();
+
+// javascript websocket client
+(function(){
+    // { path, onopen(), onmessage(), onerror(), oncloase() }
+    website["websocket"] = function(config_obj: any){
+        let protocol = get_websocket_protocol();
+        if(null != config_obj["protocol"]) protocol = config_obj["protocol"];
+        const ws_uri = protocol + config_obj["path"];
+        const web_socket = new WebSocket(ws_uri);
+        web_socket.onopen = config_obj["onopen"];
+        web_socket.onmessage = config_obj["onmessage"];
+        web_socket.onerror = config_obj["onerror"];
+        web_socket.onclose = config_obj["onclose"];
+        // send data to websocket server
+        // web_socket.send("test");
+        return web_socket;
+    };
+    // 判斷當下 http 使用協定去決定 websocket 協定
+    // 預設 port 的情況下可省略 port 指定（80, 443）
+    function get_websocket_protocol() {
+        return location.protocol.includes('https') ? 'wss://' : 'ws://';
+    }
 })();
 
 // axios module
@@ -380,14 +409,13 @@ var axios: any = window.axios || null;
 (function(){
     website["dialog"] = function(initObj: any) {
         const def = $.Deferred();
-        const dialogId = "_dialog_"+website.randomString(16);
+        const dialogId = "_dialog_"+website.random_string(16);
         const dialogElem = $(buildDialogHtml());
         (function(){
             dialogElem.attr("modal_dialog_ssid", dialogId);
             dialogElem.css("z-index", "10");
             dialogElem.css("background-color", "rgba(90,90,90,0.5)");
             if(null != initObj["content"] && initObj["content"].length > 0) {
-                // var content_elem = $(initObj["content"]);
                 dialogElem.find("div[modal_dialog_key=wrap]").append(initObj["content"]);
             }
         })();
@@ -430,8 +458,10 @@ var axios: any = window.axios || null;
             overlay_elem.css("position", "fixed");
             overlay_elem.css("top", "0px");
             overlay_elem.css("left", "0px");
-            overlay_elem.css("width", "100vw");
-            overlay_elem.css("height", "100vh");
+            const fix_window_width = window.innerWidth;
+            overlay_elem.css("width", fix_window_width);
+            const fix_window_height = window.innerHeight;
+            overlay_elem.css("height", fix_window_height);
             overlay_elem.css("overflow", "auto");
             overlay_elem.css("backdrop-filter", "blur(1px)"); // 毛玻璃效果
         })();
@@ -472,7 +502,7 @@ var axios: any = window.axios || null;
     };
 })();
 
-// native javascript base64 url safe
+// native javascript base64 url safe, unicode
 (function(){
     website["base64_encode"] = function( content: any ) {
         if(null == content) {
@@ -482,7 +512,7 @@ var axios: any = window.axios || null;
         const text_encoder = new TextEncoder();
         const aMyUTF8Input = text_encoder.encode(content);
         return base64EncArr(aMyUTF8Input);
-    }
+    };
     website["base64_url_encode"] = function( content: any ) {
         return url_safe_withoutPadding( website["base64_encode"](content) );
     };
@@ -496,7 +526,7 @@ var axios: any = window.axios || null;
         return text_decoder.decode(aMyUTF8Output);
     };
     website["base64_url_decode"] = function( content: any ) {
-        return website["base64_decode"](content);
+        return website["base64_decode"](decode_url_safe(content));
     };
 
     // for byte
@@ -511,7 +541,7 @@ var axios: any = window.axios || null;
         return url_safe_withoutPadding(website["base64_enc_byte"](src_byte));
     };
     website["base64_url_dec_byte"] = function(src_byte: any) {
-        return website["base64_dec_byte"](src_byte);
+        return website["base64_dec_byte"](decode_url_safe(src_byte));
     };
 
     // https://jsfiddle.net/magikMaker/7bjaT/
@@ -610,37 +640,26 @@ var axios: any = window.axios || null;
 
 })();
 
-// number format currency style
-// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/NumberFormat
-(function(){
-    website["currency_number"] = function( num_val: number ) {
-        // for taiwan used
-        // return new Intl.NumberFormat('zh-TW', { style: 'currency', currency: 'TWD' }).format( num_val );
-        return new Intl.NumberFormat('zh-TW', { style: 'decimal', currency: 'TWD' }).format( num_val );
-    };
-})();
-
 // print command
 // https://stackoverflow.com/questions/28343748/google-chrome-print-preview-does-not-load-the-page-the-first-time
 (function(){
     website["print"] = function( elem: any, width: any, height: any ) {
-        // default print content preview
-        // window.open('tab_url', 'tab_name', 'width=800,height=600');
-        var w_width = $(window).width() * 0.9;
+        const window_elem = $(window);
+        let w_width = parseInt( window_elem.width() * 0.9 + "", 10 );
         if(null != width) w_width = width;
-        var w_height = $(window).height() * 0.9;
-        if(null != w_height) w_height = height;
-        (function(){
-            // limit preview size
-            if(600 > w_width) w_width = 600;
-            if(600 > w_height) w_height = 600;
-        })();
-        var mywindow: any = window.open('','','left=0,top=0,width='+w_width+',height='+w_height+',toolbar=0,scrollbars=0,status=0,addressbar=0');
-        var is_chrome = Boolean(mywindow.chrome);
+        let w_height = parseInt( window_elem.height() * 0.9 + "", 10 );
+        if(null != height) w_height = height;
+        setTimeout(function(){
+            open_print_window(elem, w_width, w_height);
+        }, 1);
+    };
+    function open_print_window(elem: any, width: any, height: any) {
+        const mywindow: any = window.open('','','left=0,top=0,width='+width+',height='+height+',toolbar=0,scrollbars=0,status=0,addressbar=0');
+        const is_chrome = Boolean(mywindow.chrome);
         mywindow.document.write( elem.prop("outerHTML") );
         mywindow.document.close(); // necessary for IE >= 10 and necessary before onload for chrome
         if(is_chrome) {
-            var b_need_load = false;
+            let b_need_load = false;
             // 確認是否需要使用到 onload 狀態（如頁面沒有這個需求會導致無法觸發 onload）
             if( elem.prop("outerHTML").includes("<img") ) b_need_load = true;
             if( b_need_load ) {
@@ -660,64 +679,175 @@ var axios: any = window.axios || null;
             mywindow.print();
             mywindow.close();
         }
-    };
+    }
 })();
 
-// get os browser scroll width size
-// 主要是對於 windows os 時有效
+// Get the scroll width size of the browser in Windows OS.
 (function(){
     website["scroll_width"] = function() {
-        var scr = null;
-        var inn = null;
-        var wNoScroll = 0;
-        var wScroll = 0;
-        // Outer scrolling div
-        scr = document.createElement('div');
-        var div_id = "_scroll_test_" + website.randomString(16);
-        scr.id = div_id;
-        scr.style.position = 'absolute';
-        scr.style.top = '-1000px';
-        scr.style.left = '-1000px';
-        scr.style.width = '100px';
-        scr.style.height = '50px';
-        // scr.padding='0px';
-        // scr.margin='0px';
-        // Start with no scrollbar
-        scr.style.overflow = 'hidden';
-        // Inner content div
-        inn = document.createElement('div');
-        inn.style.width = '100%';
-        inn.style.height = '200px';
-        // Put the inner div in the scrolling div
-        scr.appendChild(inn);
-        // Append the scrolling div to the doc
-        document.getElementsByTagName('html')[0].appendChild(scr);
-        // Width of the inner div sans scrollbar
-        wNoScroll = inn.offsetWidth;
-        // Add the scrollbar
-        scr.style.overflow = 'auto';
-        // Width of the inner div width scrollbar
-        wScroll = inn.offsetWidth;
-        // Remove the scrolling div from the doc
-        var elem = document.getElementById(div_id);
+        let scr = null;
+        let inn = null;
+        let wNoScroll = 0;
+        let wScroll = 0;
+        const div_id = "_scroll_test_" + website.random_string(16);
+        (function(){
+            scr = document.createElement("div");
+            scr.id = div_id;
+            scr.style.position = "absolute";
+            scr.style.top = "-1000px";
+            scr.style.left = "-1000px";
+            scr.style.width = "100px";
+            scr.style.height = "100px";
+            scr.style.overflow = "hidden";
+        })();
+        (function(){
+            inn = document.createElement("div");
+            inn.style.width = "100%";
+            inn.style.height = "200px";
+        })();
+        (function(){
+            // Put the inner div in the scrolling div
+            scr.appendChild(inn);
+            // Append the scrolling div to the doc
+            document.getElementsByTagName("html")[0].appendChild(scr);
+            // Width of the inner div sans scrollbar
+            wNoScroll = inn.offsetWidth;
+            // Add the scrollbar
+            scr.style.overflow = "auto";
+            // Width of the inner div width scrollbar
+            wScroll = inn.offsetWidth;
+            // Remove the scrolling div from the doc
+        })();
+        const elem = document.getElementById(div_id);
         if(null != elem) elem.remove();
         // Pixel width of the scroller
         return (wNoScroll - wScroll);
     };
 })();
 
+// number format currency style
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/NumberFormat
 (function(){
-    // ( 輸入值, 處理四捨五入到小數點第幾位 )
-    website["float"] = function(number: any, fractionDigits: any) {
-        var def = fractionDigits || 2;
-        return Math.round(number* Math.pow(10, def))/ Math.pow(10, def);
+    website["number_format"] = function( num_val: number, style: string ) {
+        const locales = "zh-tw";
+        const options = {
+            // style: decimal, currency, percent, unit
+            style: "currency",
+            currency: "TWD",
+            // minimumIntegerDigits: 4,
+            // minimumFractionDigits: 4,
+            // maximumFractionDigits: 2,
+            // useGrouping: true, // 分位逗號
+        };
+        return new Intl.NumberFormat(locales, options).format( num_val );
+    };
+    website["number_currency"] = function( num_val: number, min_digits: number ) {
+        let _min_digits = 2;
+        if(null != min_digits) _min_digits = min_digits;
+        const locales = "zh-tw";
+        const options = {
+            style: "decimal",
+            minimumFractionDigits: _min_digits,
+            maximumFractionDigits: _min_digits,
+            useGrouping: true,
+        };
+        return new Intl.NumberFormat(locales, options).format( num_val );
+    };
+    website["percent"] = function( num_val: number, min_digits: number ) {
+        let _min_digits = 2;
+        if(null != min_digits) _min_digits = min_digits;
+        const locales = "zh-tw";
+        const options = {
+            style: "percent",
+            minimumFractionDigits: _min_digits,
+            maximumFractionDigits: _min_digits,
+            useGrouping: false,
+        };
+        return new Intl.NumberFormat(locales, options).format( num_val );
+    };
+    // ( 輸入值, 處理四捨五入到小數點第幾位；預設為小數後兩位 )
+    website["float"] = function( num_val: number, min_digits: number ) {
+        let _min_digits = 2;
+        if(null != min_digits) _min_digits = min_digits;
+        const locales = "zh-tw";
+        const options = {
+            style: "decimal",
+            minimumFractionDigits: _min_digits,
+            maximumFractionDigits: _min_digits,
+            useGrouping: false,
+        };
+        return new Intl.NumberFormat(locales, options).format( num_val );
     };
 })();
 
-// https://stackoverflow.com/questions/494035/how-do-you-use-a-variable-in-a-regular-expression
+// replace all
 (function(){
+    // https://stackoverflow.com/questions/494035/how-do-you-use-a-variable-in-a-regular-expression
     website["replace_all"] = function(str: any, scan_str: any, fix_str: any) {
         return str.split(scan_str).join(fix_str);
+    };
+})();
+
+// HMAC-SHA-256, SHA-256 hash string
+(function(){
+    website["hash_string"] = function(){
+        return {
+            // PlainText to SHA256
+            sha_256: function(plainText: any) {
+                const def = $.Deferred();
+                const text_byte_buffer = new TextEncoder().encode(plainText);
+                const hashBuffer = window.crypto.subtle.digest('sha-256', text_byte_buffer);
+                hashBuffer.then(function(hash_byte){
+                    const hashArray = Array.from(new Uint8Array(hash_byte));
+                    const digest = hashArray.map(b => padStart(b.toString(16), 2, '0')).join('');
+                    def.resolve(digest);
+                }, function(e){
+                    console.log(e);
+                    def.reject(e);
+                });
+                // String.prototype.padStart 相容
+                // https://www.freecodecamp.org/news/how-does-string-padstart-actually-work-abba34d982e/
+                function padStart(str: any, targetLength: any, padString: any) {
+                    // floor if number of convert non-number to 0;
+                    targetLength = targetLength >> 0;
+                    padString = String(padString || ' ');
+                    if(str.length > targetLength) {
+                        return String(str);
+                    } else {
+                        targetLength = targetLength - str.length;
+                        if(targetLength > padStart.length) {
+                            // append to original to ensure we are longer than needed
+                            padString += padString.repeat(targetLength / padString.length);
+                        }
+                        return padString.slice(0, targetLength) + String(str);
+                    }
+                }
+                return def;
+            },
+            // PlainText to HMAC-SHA256
+            hmac_sha_256: function(plainText: any, private_key: any) {
+                const def = $.Deferred();
+                const encoder = new TextEncoder();
+                const pkey_str = encoder.encode(private_key);
+                const key_gen = window.crypto.subtle.importKey(
+                    "raw", pkey_str, { name: "HMAC", hash: "SHA-256" },false,["sign"]
+                );
+                key_gen.then(function(key){
+                    const text_byte = encoder.encode(plainText);
+                    const signature = window.crypto.subtle.sign("HMAC", key, text_byte );
+                    signature.then(function(sign_data){
+                        const hashArray = Array.from(new Uint8Array(sign_data));
+                        const hashHex = website["base64_url_enc_byte"](hashArray);
+                        def.resolve(hashHex);
+                    }, function(e){
+                        def.reject(e);
+                    });
+                }, function(e){
+                    def.reject(e);
+                });
+                return def;
+            },
+        }; // return end.
     };
 })();
 
@@ -726,18 +856,12 @@ var axios: any = window.axios || null;
     website["aes_gcm"] = function(){
         // byte encode, decode
         const text_encoder = new TextEncoder();
-        const text_decoder = new TextDecoder("UTF-8");
+        const text_decoder = new TextDecoder("utf-8");
 
         function build_aes_key(key_byte: any) {
             const def = $.Deferred();
             // importKey(format, keyData, algorithm, extractable, keyUsages)
-            crypto.subtle.importKey (
-                "raw",
-                key_byte,
-                "aes-gcm",
-                false,
-                ["encrypt","decrypt"]
-            ).then(function(key) {
+            crypto.subtle.importKey("raw", key_byte, "aes-gcm", false, ["encrypt","decrypt"]).then(function(key) {
                 def.resolve(key);
             }, function(e){
                 console.log(e.message);
@@ -754,12 +878,12 @@ var axios: any = window.axios || null;
             const def = $.Deferred();
             (function(){
                 const res = { key: "", key_byte: new ArrayBuffer(1), iv: "", iv_byte: new ArrayBuffer(1) };
-                stringToSha256(plain_text).done(function(hash_str: any){
+                website.hash_string().sha_256(plain_text).done(function(hash_str: any){
                     const key_str = hash_str.substr(0, 32); // 16 or 32
                     const key_byte = text_encoder.encode(key_str);
                     res["key"] = key_str;
                     res["key_byte"] = key_byte;
-                    stringToSha256(hash_str).done(function(iv_str: any){
+                    website.hash_string().sha_256(hash_str).done(function(iv_str: any){
                         const iv_byte = text_encoder.encode(iv_str);
                         res["iv"] = iv_str;
                         res["iv_byte"] = iv_byte;
@@ -767,39 +891,6 @@ var axios: any = window.axios || null;
                     });
                 });
             })();
-            return def;
-        }
-
-        // PlainText to SHA256
-        function stringToSha256(plainText: any) {
-            const def = $.Deferred();
-            const textAsBuffer = new TextEncoder().encode(plainText);
-            const hashBuffer = window.crypto.subtle.digest('SHA-256', textAsBuffer);
-            hashBuffer.then(function(hash_byte){
-                const hashArray = Array.from(new Uint8Array(hash_byte));
-                const digest = hashArray.map(b => padStart(b.toString(16), 2, '0')).join('');
-                def.resolve(digest);
-            }, function(e){
-                console.log(e);
-                def.reject(e);
-            });
-            // String.prototype.padStart 相容
-            // https://www.freecodecamp.org/news/how-does-string-padstart-actually-work-abba34d982e/
-            function padStart(str: any, targetLength: any, padString: any) {
-                // floor if number of convert non-number to 0;
-                targetLength = targetLength >> 0;
-                padString = String(padString || ' ');
-                if(str.length > targetLength) {
-                    return String(str);
-                } else {
-                    targetLength = targetLength - str.length;
-                    if(targetLength > padStart.length) {
-                        // append to original to ensure we are longer than needed
-                        padString += padString.repeat(targetLength / padString.length);
-                    }
-                    return padString.slice(0, targetLength) + String(str);
-                }
-            }
             return def;
         }
 
@@ -815,7 +906,7 @@ var axios: any = window.axios || null;
                             const b64_enc_str = website["base64_url_enc_byte"](enc_byte);
                             def.resolve(b64_enc_str);
                         }, function(e){
-                            console.log(e.message);
+                            console.log("aes_exception: " + e.message);
                             def.reject(e);
                         });
                     });
@@ -832,7 +923,7 @@ var axios: any = window.axios || null;
                             const dec_str = text_decoder.decode(dec_byte);
                             def.resolve(dec_str);
                         }, function(e){
-                            console.log(e.message);
+                            console.log("aes_exception: " + e.message);
                             def.reject(e);
                         });
                     });
@@ -846,6 +937,59 @@ var axios: any = window.axios || null;
                 });
                 return def;
             }
-        };
+        }; // return end.
+    };
+})();
+
+// observer
+/*
+使用範例
+
+新增監聽主題
+const loading_subject = website.subject();
+
+定義 observer 實作內容
+const obs1 = website.observer(function(msg){console.log(msg);});
+
+將 observer 註冊至監聽主題
+loading_subject.subscribe(obs1);
+
+通知已註冊的 observers 事件發生
+loading_subject.notify("test_msg");
+*/
+(function(){
+    interface Observer {
+        update(data: any): void;
+    }
+    website["observer"] = function(_process_fn: any) {
+        class DefaultObserver implements Observer {
+            update(data: any): void {
+                if(null != _process_fn && (typeof _process_fn === 'function') ) {
+                    _process_fn(data);
+                } else {
+                    console.error("observer 的 _process_fn 未定義為 function，無法正常接收監聽內容回傳");
+                }
+            }
+        }
+        return new DefaultObserver();
+    };
+    website["subject"] = function() {
+        class Subject {
+            private observers: Observer[] = [];
+
+            subscribe(observer: Observer): void {
+                this.observers.push(observer);
+            }
+
+            unsubscribe(observer: Observer): void {
+                const observerIndex = this.observers.indexOf(observer);
+                if(observerIndex > -1) { this.observers.splice(observerIndex, 1); }
+            }
+
+            notify(data: any): void {
+                this.observers.forEach(observer => observer.update(data));
+            }
+        }
+        return new Subject();
     };
 })();

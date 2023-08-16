@@ -5,16 +5,16 @@ import java.util.concurrent.*;
 /**
  * 不建議直接使用 Executors.newCachedThreadPool(); 因為其並未針對使用資源最大值設定限制，
  * 其他預設的 Executors 模式彈性也不好控制，所以建議直接採用 ThreadPoolExecutor 建立去制定。
- *
- * https://docs.oracle.com/javase/7/docs/api/java/util/concurrent/ThreadPoolExecutor.html
- * https://docs.oracle.com/javase/7/docs/api/java/util/concurrent/Executors.html
- * https://juejin.im/post/5c90698ef265da611d7423ae
- * http://givemepass-blog.logdown.com/posts/296960-how-to-use-the-threadpool
- * https://blog.csdn.net/zxysshgood/article/details/80499034
- *
+ * -
+ * <a href="https://docs.oracle.com/javase/7/docs/api/java/util/concurrent/ThreadPoolExecutor.html">...</a>
+ * <a href="https://docs.oracle.com/javase/7/docs/api/java/util/concurrent/Executors.html">...</a>
+ * <a href="https://juejin.im/post/5c90698ef265da611d7423ae">...</a>
+ * <a href="http://givemepass-blog.logdown.com/posts/296960-how-to-use-the-threadpool">...</a>
+ * <a href="https://blog.csdn.net/zxysshgood/article/details/80499034">...</a>
+ * -
  * TODO 目前此類別不採用，因為自建的 ThreadPool 會造成固定數量的執行緒使用完畢後就造成卡死的問題
- *
- * https://my.oschina.net/u/5079097/blog/5448512
+ * -
+ * <a href="https://my.oschina.net/u/5079097/blog/5448512">...</a>
  */
 @Deprecated public class ThreadPool {
 

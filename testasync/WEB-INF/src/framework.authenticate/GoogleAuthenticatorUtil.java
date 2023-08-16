@@ -14,13 +14,13 @@ import java.util.Formatter;
 
 /**
  * 實作 Google Authenticator
- *
+ * -
  * require jar
- * https://mvnrepository.com/artifact/org.bouncycastle/bcprov-jdk15on
- *
+ * <a href="https://mvnrepository.com/artifact/org.bouncycastle/bcprov-jdk15on">...</a>
+ * -
  * Google Authenticator QRCode generator
- * https://greddyblogs.gitlab.io/2019/07/04/googleAuthenticator
- * https://github.com/google/google-authenticator/wiki/Key-Uri-Format
+ * <a href="https://greddyblogs.gitlab.io/2019/07/04/googleAuthenticator">...</a>
+ * <a href="https://github.com/google/google-authenticator/wiki/Key-Uri-Format">...</a>
  */
 public class GoogleAuthenticatorUtil {
 
@@ -191,8 +191,8 @@ public class GoogleAuthenticatorUtil {
         }
 
         /**
-         * https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/security/MessageDigest.html
-         * https://docs.oracle.com/en/java/javase/11/docs/specs/security/standard-names.html#messagedigest-algorithms
+         * <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/security/MessageDigest.html">...</a>
+         * <a href="https://docs.oracle.com/en/java/javase/11/docs/specs/security/standard-names.html#messagedigest-algorithms">...</a>
          */
         private static String stringToHash(String hashType, String content) {
             String result = null;

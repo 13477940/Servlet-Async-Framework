@@ -29,7 +29,7 @@ public class Bundle {
     }
 
     public boolean isEmpty() {
-        return (null == map || map.size() == 0);
+        return (null == map || map.isEmpty());
     }
 
     public LinkedHashMap<String, Object> prototype() {

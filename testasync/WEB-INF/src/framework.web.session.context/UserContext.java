@@ -119,16 +119,16 @@ public class UserContext {
     private String getIpFromRequest() {
         HttpServletRequest request = requestContext.getHttpRequest();
         String ip = request.getHeader("X-Real-IP");
-        if (null == ip || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+        if (null == ip || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
             ip = request.getHeader("X-Forwarded-For");
         }
-        if (null == ip || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+        if (null == ip || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
             ip = request.getHeader("Proxy-Client-IP");
         }
-        if (null == ip || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+        if (null == ip || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
             ip = request.getHeader("WL-Proxy-Client-IP");
         }
-        if (null == ip || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+        if (null == ip || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
             ip = request.getRemoteAddr();
         }
         return ip;

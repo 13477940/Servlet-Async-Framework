@@ -20,7 +20,7 @@ public class WebAppServiceExecutor {
         ArrayList<RequestHandler> handlers = getHandlerChain();
         // 尚未成功建立責任鏈時
         {
-            if (handlers.size() == 0) {
+            if (handlers.isEmpty()) {
                 Bundle b = new Bundle();
                 b.putString("status", "fail");
                 b.putString("msg", "not_exist_request_handler");
@@ -71,7 +71,7 @@ public class WebAppServiceExecutor {
             }
         }
         // 重新建立新實例間的責任鏈關係（requestHandler 要知道是否還有下一位處理者）
-        if(runHandlers.size() > 0) {
+        if(!runHandlers.isEmpty()) {
             // 首節點不具有前一個節點，所以可由 null 值判斷，接下來都將現有節點設定為上一個節點的 nextHandler
             RequestHandler prevHandler = null;
             for(RequestHandler runHandler : runHandlers) {

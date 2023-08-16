@@ -1,159 +1,106 @@
 package framework.file;
 
 import java.io.File;
-import java.net.URL;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Locale;
+import java.util.Optional;
 
 /**
- * FileFinder 並不是萬能的，搜尋原理為每一個資料夾階層查詢一次檔案名稱，
- * 依序往上尋找父階層與其指定資料夾下一階層的內容是否具有查詢目標。
- * 要注意此處不能使用 AppSetting 要不然會有重複嵌套的邏輯錯誤發生，
- * 主要是因為 AppSetting 改為 new Builder() 模式，所以每次都會重新建立實例，
- * 如果在此類別引用 AppSetting 的情況下會造成無窮迴圈的錯誤。
- * https://stackoverflow.com/questions/37902711/getting-the-path-of-a-running-jar-file-returns-rsrc
+ * FileFinder 使用 find 主要是快速搜尋某個資料夾或檔案，
+ * 當使用 find_all 才會遍歷每個子資料夾內部
  */
 public class FileFinder {
 
-    private String dirSlash = null;
+    private File base_file; // 搜尋起始點
 
-    private File baseFile = null; // 搜尋起始點
+    private FileFinder(File base_file) {
+        this.base_file = base_file;
+        init_fn();
+    }
 
-    private FileFinder(File baseFile) { initFileFinder(baseFile); }
-
-    // 該階層與往上查找的階層內的：資料夾名稱 or 檔案名稱
-    public File find(String fileName) {
-        if(null == fileName || fileName.length() == 0) return null;
-        // for Windows directory root path
-        if(System.getProperty("os.name").toLowerCase(Locale.ENGLISH).contains("windows")) {
-            if("/".equals(fileName) || "\\".equals(fileName)) {
-                URL resourceURL = this.getClass().getClassLoader().getResource("");
-                if(null != resourceURL) {
-                    String tmpPath = resourceURL.getPath();
-                    String[] arr = tmpPath.split(":");
-                    String diskFlag = arr[0];
-                    return new File(diskFlag + ":/");
-                } else {
-                    try {
-                        throw new Exception("無法取得目前類別於 Windows OS 根目錄的 ClassLoader 路徑！");
-                    } catch (Exception e) {
-                        e.printStackTrace();
+    /**
+     * 向上資料夾持續遍歷，每次只尋找同層級的資料夾內容
+     */
+    public File find(String file_name) {
+        final String _file_name = file_name.toLowerCase(Locale.ENGLISH);
+        boolean hit = false;
+        Path now_target_path = Paths.get(base_file.getPath());
+        File file = null;
+        if( Files.isDirectory( now_target_path ) ) {
+            try (DirectoryStream<Path> stream = Files.newDirectoryStream( now_target_path )) {
+                for (Path _path : stream) {
+                    String now_file_name = _path.getFileName().toString().toLowerCase(Locale.ENGLISH);
+                    if (now_file_name.equalsIgnoreCase(_file_name)) {
+                        file = _path.toFile();
+                        hit = true;
+                        break;
                     }
                 }
-            }
-        }
-        File res;
-        if(fileName.contains(dirSlash)) {
-            res = new File(fileName);
-        } else {
-            res = findFunc(this.baseFile, null, fileName);
-        }
-        if(null == res) return null;
-        if(!res.exists()) return null;
-        return res;
-    }
-
-    // 該階層與往上查找的階層內的：子資料夾路徑 + 資料夾名稱 or 檔案名稱
-    public File find(String fileDirectoryName, String fileName) {
-        return findFunc(this.baseFile, fileDirectoryName, fileName);
-    }
-
-    // 藉由迴圈替代遞迴實作訪問資料夾的動作
-    private File findFunc(File baseFile, String fileDirectoryName, String fileName) {
-        File res = null; // result
-        File tempFile = baseFile;
-        while(true) {
-            if(null == tempFile) break; // 已到磁區最頂層時
-            if(null != res) break; // 已找到最接近的相符檔案時
-            {
-                if(null == fileDirectoryName) {
-                    res = processFile(tempFile, fileName);
-                } else {
-                    res = processDirectory(tempFile, fileDirectoryName, fileName);
-                }
-                if(null == res) tempFile = tempFile.getParentFile(); // update to parent
-            }
-        }
-        return res;
-    }
-
-    // 針對檔案處理方式
-    private File processFile(File baseFile, String fileName) {
-        if(null == baseFile) return null; // break;
-        File res = null; // result
-        if(baseFile.isDirectory()) {
-            File[] list = baseFile.listFiles();
-            if(null == list) return null;
-            for(File pFile : list) {
-                if(fileName.equalsIgnoreCase(pFile.getName())) {
-                    res = pFile;
-                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         } else {
-            if(fileName.equalsIgnoreCase(baseFile.getName())) {
-                res = baseFile;
+            // 由於封裝成 jar 發布，所以搜尋初始階層可能是 .jar 本身，會有這個情況
+            String now_file_name = now_target_path.getFileName().toString().toLowerCase(Locale.ENGLISH);
+            if (now_file_name.equalsIgnoreCase(_file_name)) {
+                file = now_target_path.toFile();
+                hit = true;
             }
         }
-        return res;
-    }
-
-    // 針對資料夾處理方式
-    private File processDirectory(File baseFile, String fileDirectoryName, String fileName) {
-        if (null == baseFile) return null; // break;
-        File pFile = new File(baseFile.getPath()); // current directory
-        // pFile 為向上查找的路徑，並加上想要尋找的子路徑（可以藉由 file.separator 多層存取）作為查詢條件
-        if (fileDirectoryName.contains(dirSlash)) {
-            pFile = new File(pFile.getPath() + dirSlash + fileDirectoryName);
-        }
-        if (pFile.isDirectory()) {
-            File[] list = pFile.listFiles();
-            if (null == list) return null;
-            for (File listFile : list) {
-                if (fileDirectoryName.equals(listFile.getName())) {
-                    return processFile(new File(pFile.getPath() + dirSlash + fileDirectoryName), fileName);
-                }
-                // 如果直接輸入兩階層含以上的資料夾路徑會直接找到該檔案
-                if (fileDirectoryName.equals(fileName)) {
-                    return new File(pFile.getPath() + dirSlash + fileDirectoryName);
-                }
+        if(!hit) {
+            Path parent_path = Paths.get(base_file.getPath()).getParent();
+            if(null != parent_path) {
+                this.base_file = parent_path.toFile();
+                return find(file_name);
             }
         }
-        return null;
+        return file;
     }
 
-    // 設定系統參數
-    private void setHostInfo() {
-        this.dirSlash = System.getProperty("file.separator"); // 系統資料夾階層符號
-    }
-
-    // 初始化
-    private void initFileFinder(File baseFile) {
-        setHostInfo();
-        if(null == baseFile) {
-            URL resourceURL = this.getClass().getClassLoader().getResource("");
-            // URL resourceURL = Thread.currentThread().getContextClassLoader().getResource("");
-            if(null != resourceURL) {
-                String classPath = URLDecoder.decode(resourceURL.getPath(), StandardCharsets.UTF_8);
-                this.baseFile = new File(classPath);
+    public File find_all(String file_name) {
+        String _file_name = file_name.toLowerCase(Locale.ENGLISH);
+        File file = null;
+        try {
+            Optional<Path> res = Files.walk(Paths.get(base_file.getPath()))
+                    .filter(path -> path.getFileName().toString().toLowerCase(Locale.ENGLISH).contains(_file_name))
+                    .findFirst();
+            if(res.isEmpty()) {
+                Path parent_path = Paths.get(base_file.getPath()).getParent();
+                if(null != parent_path) {
+                    this.base_file = parent_path.toFile();
+                    return find_all(file_name);
+                }
             } else {
-                try {
-                    throw new Exception("FileFinder 無法取得目前類別的 ClassLoader 路徑！");
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+                file = res.get().toFile();
             }
-        } else {
-            this.baseFile = baseFile;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return file;
+    }
+
+    /**
+     * 總的來說，使用 Java NIO 的 Paths 類別和 getProtectionDomain().getCodeSource().getLocation()
+     * 方法更加通用和可靠，可以處理各種不同的路徑。而使用 Java 的 Class.getResource()
+     * 方法則只適用於較簡單的路徑，並且可能會因為操作系統不同而產生問題。
+     */
+    private void init_fn() {
+        if(null == base_file) {
+            try {
+                Path targetPath = Paths.get(this.getClass().getProtectionDomain().getCodeSource().getLocation().toURI());
+                base_file = targetPath.toFile();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 
     public static class Builder {
         private File baseFile = null;
 
-        /**
-         * 設定搜尋起始點，未設定則由目前的類別資料夾層級向上查找
-         */
         public FileFinder.Builder setBaseFile(File file) {
             this.baseFile = file;
             return this;
